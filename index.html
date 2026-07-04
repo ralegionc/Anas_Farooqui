@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lemon — ML & Systems Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0e0e;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.18);
+    --text-primary: #f0eee8;
+    --text-muted: rgba(240,238,232,0.38);
+    --text-dim: rgba(240,238,232,0.18);
+    --accent: #6c47ff;
+    --accent-light: rgba(255,255,255,0.05);
+    --accent-glow: rgba(255,255,255,0.03);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text-primary); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+
+  header { position:fixed; top:0; left:0; right:0; z-index:200; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:52px; border-bottom:1px solid var(--border); background:rgba(14,14,14,0.92); backdrop-filter:blur(12px); }
+  .logo { font-family:var(--mono); font-size:13px; letter-spacing:0.08em; color:var(--text-primary); text-decoration:none; }
+  .logo span { color:var(--accent); }
+  nav { display:flex; gap:28px; align-items:center; }
+  nav a { font-size:12px; letter-spacing:0.06em; color:var(--text-muted); text-decoration:none; text-transform:uppercase; transition:color 0.2s; }
+  nav a:hover { color:var(--text-primary); }
+  .nav-cta { font-family:var(--mono); font-size:11px; padding:7px 16px; border:1px solid var(--border-hover); color:var(--text-primary)!important; letter-spacing:0.05em; transition:border-color 0.2s,background 0.2s!important; }
+  .nav-cta:hover { border-color:var(--accent)!important; background:var(--accent-light)!important; }
+
+  .grid { position:fixed; top:52px; left:0; right:0; bottom:0; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; grid-template-rows:1.3fr 1fr; }
+
+  .tile { position:relative; border-right:1px solid var(--border); border-bottom:1px solid var(--border); overflow:hidden; cursor:pointer; }
+  .tile:nth-child(4) { border-right:none; }
+  .tile:nth-child(5),.tile:nth-child(6),.tile:nth-child(7),.tile:nth-child(8) { border-bottom:none; }
+  .tile:last-child { border-right:none; }
+
+  /* static fallback bg */
+  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.45; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
+  .tile:not(.vid-playing):hover .tile-bg { opacity:0.6; transform:scale(1); }
+
+  /* canvas animation layer — hidden at rest, shown on hover only */
+  .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
+  .tile:hover .tile-canvas { opacity:1; }
+  .tile:hover .tile-bg { opacity:0.6; transform:scale(1); }
+  /* hero canvas always faintly visible */
+  .tile--hero .tile-canvas { opacity:0.5; }
+  .tile--hero:hover .tile-canvas { opacity:0.7; }
+
+  .tile-overlay { position:absolute; inset:0; z-index:2; background:var(--bg); opacity:0.3; transition:opacity 0.45s ease; }
+  .tile:hover .tile-overlay { opacity:0.15; }
+  .tile-wash { position:absolute; inset:0; z-index:3; background:rgba(255,255,255,0.04); opacity:0; transition:opacity 0.35s; }
+  .tile:hover .tile-wash { opacity:1; }
+
+  .tile-inner { position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; justify-content:space-between; padding:28px 32px; }
+  .tile-top { display:flex; align-items:flex-start; justify-content:space-between; }
+  .tile-index { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
+  .tile-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.3s,transform 0.3s; }
+  .tile:hover .tile-tag { opacity:1; transform:translateY(0); }
+  .tile-title { font-size:15px; font-weight:500; line-height:1.3; color:var(--text-primary); margin-bottom:8px; transition:color 0.2s; }
+  .tile:hover .tile-title { color:#fff; }
+  .tile-desc { font-size:12px; line-height:1.6; color:var(--text-muted); max-width:320px; opacity:0; transform:translateY(6px); transition:opacity 0.3s 0.04s,transform 0.3s 0.04s; }
+  .tile:hover .tile-desc { opacity:1; transform:translateY(0); }
+  .tile-arrow { position:absolute; bottom:28px; right:32px; z-index:5; font-size:18px; color:var(--accent); opacity:0; transform:translate(-6px,6px); transition:opacity 0.3s,transform 0.3s; }
+  .tile:hover .tile-arrow { opacity:1; transform:translate(0,0); }
+  .tile-accent-bar { position:absolute; bottom:0; left:0; z-index:6; height:2px; width:0; background:var(--accent); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .tile:hover .tile-accent-bar { width:100%; }
+
+  /* live pip */
+  .tile-play-pip { position:absolute; top:10px; left:12px; z-index:5; display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:9px; letter-spacing:0.1em; color:rgba(255,255,255,0.5); opacity:0; transition:opacity 0.3s; }
+  .tile-play-pip .rec { width:5px; height:5px; border-radius:50%; background:#ff4d4d; animation:recpulse 1s ease infinite; }
+  @keyframes recpulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .tile.vid-playing .tile-play-pip { opacity:1; }
+
+  /* HERO */
+  .tile--hero { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); border-bottom:none; }
+  .tile--hero .tile-bg { opacity:0.3; }
+  .tile--hero:hover .tile-bg { opacity:0.22; }
+  .tile--hero .tile-overlay { opacity:0.4; }
+  .tile--hero:hover .tile-overlay { opacity:0.35; }
+  .tile--hero .tile-inner { padding:40px 44px; justify-content:flex-end; }
+  .tile--hero .tile-pattern { position:absolute; top:0; right:0; width:55%; height:55%; z-index:1; background:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px),repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px); mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); -webkit-mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); pointer-events:none; }
+  .hero-eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:0.18em; color:var(--accent); text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .hero-eyebrow::before { content:''; display:inline-block; width:24px; height:1px; background:var(--accent); }
+  .hero-name { font-size:clamp(38px,3.2vw,58px); font-weight:600; line-height:1.04; letter-spacing:-0.02em; margin-bottom:20px; color:var(--text-primary); }
+  .hero-sub { font-size:14px; line-height:1.7; color:var(--text-muted); max-width:340px; margin-bottom:40px; }
+  .hero-links { display:flex; gap:16px; }
+  .hero-link { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none; padding:10px 20px; border:1px solid var(--border-hover); color:var(--text-primary); transition:border-color 0.2s,background 0.2s; }
+  .hero-link:hover { border-color:var(--accent); background:var(--accent-light); }
+  .hero-link--solid { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .hero-link--solid:hover { background:#7d5cff; border-color:#7d5cff; }
+  .tile-status { position:absolute; top:28px; right:32px; z-index:4; display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.08em; }
+  .dot { width:5px; height:5px; border-radius:50%; background:#3adb76; animation:pulse 2.4s ease infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(58,219,118,0.4)} 50%{box-shadow:0 0 0 5px rgba(58,219,118,0)} }
+
+  /* MODAL */
+  .modal-backdrop { position:fixed; inset:0; z-index:300; background:rgba(0,0,0,0); pointer-events:none; transition:background 0.4s ease; }
+  .modal-backdrop.open { background:rgba(0,0,0,0.72); pointer-events:auto; }
+  .modal { position:fixed; top:52px; right:0; bottom:0; z-index:400; width:min(600px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.45s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; }
+  .modal.open { transform:translateX(0); }
+  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.65) saturate(0.8); }
+  .modal-img-wrap { position:relative; flex-shrink:0; }
+  .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
+  .modal-body { flex:1; overflow-y:auto; padding:32px 40px 48px; scrollbar-width:thin; scrollbar-color:rgba(108,71,255,0.3) transparent; }
+  .modal-body::-webkit-scrollbar { width:4px; }
+  .modal-body::-webkit-scrollbar-thumb { background:rgba(108,71,255,0.3); border-radius:2px; }
+  .modal-tag { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+  .modal-title { font-size:28px; font-weight:600; line-height:1.15; letter-spacing:-0.02em; color:#fff; margin-bottom:14px; }
+  .modal-desc { font-size:14px; line-height:1.75; color:var(--text-muted); margin-bottom:28px; }
+  .modal-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:32px; }
+  .chip { font-family:var(--mono); font-size:10px; letter-spacing:0.06em; padding:5px 11px; border:1px solid rgba(108,71,255,0.3); color:rgba(108,71,255,0.85); background:rgba(108,71,255,0.06); }
+  .modal-links { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+  .modal-link { display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; letter-spacing:0.07em; text-transform:uppercase; text-decoration:none; padding:11px 22px; border:1px solid var(--border-hover); color:var(--text-primary); transition:border-color 0.2s,background 0.2s,color 0.2s; }
+  .modal-link:hover { border-color:var(--accent); background:var(--accent-light); color:#fff; }
+  .modal-link--primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .modal-link--primary:hover { background:#7d5cff; border-color:#7d5cff; }
+  .modal-link svg { width:14px; height:14px; flex-shrink:0; }
+  .modal-close { position:absolute; top:16px; right:16px; z-index:10; width:36px; height:36px; background:rgba(14,14,14,0.8); border:1px solid var(--border-hover); color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; line-height:1; transition:color 0.2s,border-color 0.2s; }
+  .modal-close:hover { color:#fff; border-color:var(--accent); }
+  .modal-stats { display:flex; gap:32px; margin-bottom:28px; }
+  .modal-stat-label { font-family:var(--mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+  .modal-stat-val { font-size:15px; font-weight:500; color:var(--text-primary); }
+
+  /* ── LOADER ── */
+  #loader {
+    position:fixed; inset:0; z-index:1000;
+    background:#000;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    overflow:hidden;
+    transition:opacity 1.2s ease;
+  }
+  #loader.done { opacity:0; pointer-events:none; }
+
+  /* Fog layers — pure CSS, no canvas */
+  .fog-layer {
+    position:absolute;
+    border-radius:50%;
+    filter:blur(72px);
+    opacity:0;
+    pointer-events:none;
+  }
+  .fog-layer:nth-child(1) {
+    width:80vw; height:60vh;
+    top:20%; left:5%;
+    background:radial-gradient(ellipse, rgba(80,80,80,0.55) 0%, transparent 70%);
+    animation:fogrise 2.4s cubic-bezier(0.16,1,0.3,1) 0s forwards, fogdrift1 9s ease-in-out 2.4s infinite alternate;
+  }
+  .fog-layer:nth-child(2) {
+    width:70vw; height:55vh;
+    top:30%; right:0%;
+    background:radial-gradient(ellipse, rgba(60,60,60,0.45) 0%, transparent 65%);
+    animation:fogrise 2.6s cubic-bezier(0.16,1,0.3,1) 0.1s forwards, fogdrift2 11s ease-in-out 2.6s infinite alternate;
+  }
+  .fog-layer:nth-child(3) {
+    width:90vw; height:50vh;
+    bottom:10%; left:10%;
+    background:radial-gradient(ellipse, rgba(100,100,100,0.35) 0%, transparent 60%);
+    animation:fogrise 3s cubic-bezier(0.16,1,0.3,1) 0.2s forwards, fogdrift3 13s ease-in-out 3s infinite alternate;
+  }
+  .fog-layer:nth-child(4) {
+    width:60vw; height:45vh;
+    top:10%; right:15%;
+    background:radial-gradient(ellipse, rgba(50,50,50,0.4) 0%, transparent 65%);
+    animation:fogrise 2.8s cubic-bezier(0.16,1,0.3,1) 0.05s forwards, fogdrift1 10s ease-in-out 2.8s infinite alternate-reverse;
+  }
+  .fog-layer:nth-child(5) {
+    width:75vw; height:65vh;
+    bottom:5%; right:5%;
+    background:radial-gradient(ellipse, rgba(70,70,70,0.3) 0%, transparent 55%);
+    animation:fogrise 3.2s cubic-bezier(0.16,1,0.3,1) 0.3s forwards, fogdrift2 12s ease-in-out 3.2s infinite alternate;
+  }
+
+  @keyframes fogrise {
+    0%   { opacity:0; transform:translateY(8%) scale(0.9); }
+    40%  { opacity:1; }
+    100% { opacity:0.85; transform:translateY(0%) scale(1); }
+  }
+  @keyframes fogdrift1 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(3%,-4%) scale(1.06); }
+  }
+  @keyframes fogdrift2 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(-4%,3%) scale(0.96); }
+  }
+  @keyframes fogdrift3 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(2%,-2%) scale(1.04); }
+  }
+
+  .loader-quote {
+    position:relative; z-index:2;
+    font-family:'Cinzel', serif;
+    font-size:clamp(16px,1.8vw,26px);
+    font-weight:400;
+    line-height:2;
+    letter-spacing:0.04em;
+    color:rgba(255,253,248,0.96);
+    max-width:580px;
+    text-align:center;
+    padding:0 40px;
+    text-shadow:0 0 60px rgba(255,255,255,0.08), 0 2px 24px rgba(0,0,0,0.6);
+  }
+  .loader-quote .line-wrap {
+    display:block;
+    overflow:hidden;
+  }
+  .loader-quote .line {
+    display:block;
+    opacity:0;
+    transform:translateY(110%);
+    filter:blur(5px);
+    transition:opacity 1.1s cubic-bezier(0.16,1,0.3,1),
+                transform 1.1s cubic-bezier(0.16,1,0.3,1),
+                filter 1.1s ease;
+  }
+  .loader-quote .line.visible {
+    opacity:1;
+    transform:translateY(0);
+    filter:blur(0);
+  }
+  .loader-quote .line.attr {
+    font-family:'Space Mono', monospace;
+    font-size:10px;
+    font-weight:400;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:rgba(210,195,160,0.7);
+    text-shadow:none;
+    margin-top:2px;
+  }
+
+  .loader-bar-wrap {
+    position:relative; z-index:2;
+    margin-top:56px;
+    width:140px; height:1px;
+    background:rgba(255,255,255,0.04);
+    overflow:hidden;
+  }
+  .loader-bar {
+    position:absolute; top:0; left:0; height:100%;
+    width:0; background:var(--accent);
+    box-shadow:none;
+    transition:width 0.06s linear;
+  }
+  .loader-pct {
+    position:relative; z-index:2;
+    margin-top:14px;
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:0.14em;
+    color:rgba(240,238,232,0.2);
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  body { cursor:none; }
+  #cursor {
+    position:fixed; z-index:9999;
+    pointer-events:none;
+    width:4px; height:4px;
+    border-radius:50%;
+    background:#fff;
+    transform:translate(-50%,-50%);
+  }
+  #cursor-ring {
+    position:fixed; z-index:9998;
+    pointer-events:none;
+    width:20px; height:20px;
+    border-radius:50%;
+    border:1px solid rgba(108,71,255,0.6);
+    transform:translate(-50%,-50%);
+    transition:width 0.15s ease, height 0.15s ease, border-color 0.15s ease;
+  }
+
+  body.cursor-hover #cursor { width:4px; height:4px; background:var(--accent); }
+  body.cursor-hover #cursor-ring { width:28px; height:28px; border-color:rgba(108,71,255,1); }
+  body.cursor-click #cursor { width:3px; height:3px; }
+
+  /* ── VIEW PROJECT hint inside tile ── */
+  .tile-view-hint {
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:10px;
+    letter-spacing:0.1em; text-transform:uppercase;
+    color:rgba(240,238,232,0.0);
+    margin-top:10px;
+    transform:translateY(4px);
+    transition:color 0.3s ease, transform 0.3s ease;
+  }
+  .tile-view-hint::after {
+    content:'→';
+    display:inline-block;
+    transition:transform 0.3s ease;
+  }
+  .tile:hover .tile-view-hint {
+    color:rgba(255,200,80,0.9);
+    transform:translateY(0);
+  }
+  .tile:hover .tile-view-hint::after {
+    transform:translateX(3px);
+  }
+
+  /* ── TILE ENTRANCE STAGGER ── */
+  .tile { opacity:0; transform:translateY(16px); transition:opacity 0.5s ease, transform 0.5s ease, border-color 0.2s; }
+  .tile.entered { opacity:1; transform:translateY(0); }
+  /* grid-projects is invisible to the desktop grid layout */
+  .grid-projects { display:contents; }
+  /* active tile when modal open */
+  .tile.active { box-shadow:inset 0 0 0 1.5px var(--accent); }
+
+  /* ══ ALL PROJECTS OVERLAY ══ */
+  #all-projects {
+    position:fixed; inset:0; z-index:500;
+    background:#0e0e0e;
+    display:flex; flex-direction:column;
+    opacity:0; visibility:hidden;
+    transition:opacity 0.45s ease, visibility 0.45s ease;
+    overflow:hidden;
+  }
+  #all-projects.open { opacity:1; visibility:visible; }
+
+  .ap-header {
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 40px; height:64px;
+    border-bottom:1px solid var(--border);
+    background:rgba(10,8,16,0.95);
+    backdrop-filter:blur(12px);
+  }
+  .ap-title {
+    font-family:var(--mono); font-size:11px;
+    letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-muted);
+  }
+  .ap-title span { color:var(--accent); margin-left:10px; }
+  .ap-close {
+    width:36px; height:36px;
+    background:transparent;
+    border:1px solid var(--border-hover);
+    color:var(--text-muted); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    transition:color 0.2s, border-color 0.2s;
+  }
+  .ap-close:hover { color:#fff; border-color:var(--accent); }
+
+  .ap-grid {
+    flex:1; overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:1px;
+    background:var(--border);
+    padding:0;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(108,71,255,0.3) transparent;
+  }
+  .ap-grid::-webkit-scrollbar { width:4px; }
+  .ap-grid::-webkit-scrollbar-thumb { background:rgba(108,71,255,0.3); }
+
+  .ap-card {
+    position:relative;
+    background:var(--bg);
+    padding:32px 36px;
+    cursor:pointer;
+    display:flex; flex-direction:column; justify-content:space-between;
+    min-height:200px;
+    transition:background 0.25s;
+    overflow:hidden;
+  }
+  .ap-card::before {
+    content:'';
+    position:absolute; inset:0;
+    background:rgba(255,255,255,0.03);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .ap-card:hover::before { opacity:1; }
+  .ap-card:hover { background:#111; }
+
+  .ap-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:auto; }
+  .ap-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
+  .ap-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.25s, transform 0.25s; }
+  .ap-card:hover .ap-tag { opacity:1; transform:translateY(0); }
+
+  .ap-card-title { font-size:18px; font-weight:500; line-height:1.3; color:var(--text-primary); margin:20px 0 10px; transition:color 0.2s; }
+  .ap-card:hover .ap-card-title { color:#fff; }
+  .ap-card-desc { font-size:12px; line-height:1.65; color:var(--text-muted); }
+
+  .ap-card-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; }
+  .ap-card-chip { font-family:var(--mono); font-size:9px; letter-spacing:0.06em; padding:3px 8px; border:1px solid rgba(108,71,255,0.25); color:rgba(108,71,255,0.7); background:rgba(108,71,255,0.05); }
+
+  .ap-card-arrow { position:absolute; bottom:28px; right:28px; font-size:16px; color:var(--accent); opacity:0; transform:translate(-4px,4px); transition:opacity 0.25s, transform 0.25s; }
+  .ap-card:hover .ap-card-arrow { opacity:1; transform:translate(0,0); }
+  .ap-card-accent { position:absolute; bottom:0; left:0; height:2px; width:0; background:var(--accent); transition:width 0.45s cubic-bezier(0.16,1,0.3,1); }
+  .ap-card:hover .ap-card-accent { width:100%; }
+
+  /* ══ MOBILE ══ */
+  @media (max-width:768px) {
+    /* images always visible on mobile — no hover state on touch */
+    .tile-bg,
+    .tile:hover .tile-bg,
+    .tile--hero .tile-bg,
+    .tile--hero:hover .tile-bg,
+    .tile:not(.vid-playing):hover .tile-bg { opacity:0.45 !important; transform:scale(1) !important; }
+    .tile--hero .tile-bg,
+    .tile--hero:hover .tile-bg { opacity:0.3 !important; }
+    /* reduce overlay so bg image shows through */
+    .tile-overlay,
+    .tile:hover .tile-overlay { opacity:0.3 !important; }
+    .tile--hero .tile-overlay,
+    .tile--hero:hover .tile-overlay { opacity:0.4 !important; }
+    /* hide canvas on mobile — no hover animations */
+    .tile-canvas { display:none !important; }
+
+    /* cursor */
+    body { cursor:auto; }
+    #cursor, #cursor-ring { display:none; }
+
+    /* header */
+    header { padding:0 16px; height:48px; }
+    nav a:not(.nav-cta):not(#allProjectsBtn) { display:none; }
+    #allProjectsBtn { font-size:10px; padding:6px 10px; }
+    .nav-cta { font-size:10px; padding:6px 10px; }
+
+    /* unlock scroll, kill fixed grid */
+    html, body { overflow-x:hidden; overflow-y:auto; height:auto; min-height:100%; }
+
+    .grid {
+      position:relative;
+      top:auto; left:auto; right:auto; bottom:auto;
+      display:block;
+      margin-top:48px;
+      height:auto;
+    }
+
+    /* hero — full screen, content centered vertically */
+    .tile--hero {
+      display:flex;
+      flex-direction:column;
+      min-height:calc(100svh - 48px);
+      border-right:none;
+      border-bottom:1px solid var(--border);
+      grid-column:unset;
+      grid-row:unset;
+    }
+    .tile--hero .tile-inner {
+      position:relative;
+      inset:auto;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      padding:64px 28px 48px;
+      z-index:4;
+    }
+    .tile--hero canvas,
+    .tile--hero .tile-overlay,
+    .tile--hero .tile-pattern,
+    .tile--hero .tile-wash,
+    .tile--hero .tile-accent-bar { position:absolute; }
+
+    .tile-status { top:18px; right:16px; }
+    .hero-eyebrow { font-size:9px; margin-bottom:14px; }
+    .hero-name { font-size:clamp(40px,11vw,58px); margin-bottom:16px; }
+    .hero-sub { font-size:13px; line-height:1.65; max-width:100%; margin-bottom:32px; }
+    .hero-links { display:flex; flex-wrap:wrap; gap:10px; }
+    .hero-link { font-size:10px; padding:9px 16px; }
+
+    /* project tiles — 2-col grid block */
+    .grid-projects {
+      display:grid !important;
+      grid-template-columns:1fr 1fr;
+      grid-auto-rows:auto;
+    }
+    .tile--sm {
+      position:relative;
+      min-height:180px;
+      border-right:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      opacity:1 !important;
+      transform:none !important;
+    }
+    .tile--sm:nth-child(2n) { border-right:none; }
+    .tile--sm:last-child,
+    .tile--sm:nth-last-child(2):nth-child(odd) { border-bottom:none; }
+    .tile--sm .tile-inner { padding:18px 16px; }
+    .tile-title { font-size:12px; line-height:1.3; }
+    .tile-desc { display:none; }
+    .tile-index { font-size:9px; }
+    .tile-arrow { bottom:12px; right:14px; font-size:13px; }
+    .tile-accent-bar { height:2px; }
+
+    /* modal full screen */
+    .modal { top:0; width:100vw; border-left:none; }
+    .modal-body { padding:24px 20px 40px; }
+    .modal-title { font-size:20px; }
+    .modal-stats { gap:16px; flex-wrap:wrap; }
+    .modal-img { height:180px; }
+    .modal-desc { font-size:13px; }
+
+    /* all projects overlay */
+    .ap-header { padding:0 16px; height:52px; }
+    .ap-grid { grid-template-columns:1fr; }
+    .ap-card { padding:20px; min-height:140px; }
+    .ap-card-title { font-size:16px; }
+  }
+
+  @media (max-width:420px) {
+    .hero-name { font-size:clamp(36px,12vw,52px); }
+    .tile--sm { min-height:150px; }
+    .grid-projects { grid-template-columns:1fr; }
+    .tile--sm:nth-child(2n) { border-right:none; }
+    .tile--sm { border-right:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  <div class="loader-quote">
+    <span class="line-wrap"><span class="line">"Talk is cheap.</span></span>
+    <span class="line-wrap"><span class="line">Show me the code."</span></span>
+    <span class="line-wrap"><span class="line line-attr">— Linus Torvalds</span></span>
+  </div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar" id="loaderBar"></div>
+  </div>
+  <div class="loader-pct" id="loaderPct">0%</div>
+</div>
+
+<header>
+  <a href="#" class="logo">Anas Farooqui</a>
+  <nav>
+    <a href="https://medium.com/@anasfarooqui373" target="_blank" rel="noopener">Writing</a>
+    <a href="https://github.com/ralegionc" target="_blank">GitHub</a>
+    <button id="allProjectsBtn" class="nav-cta" style="background:none;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:0.05em;border:1px solid var(--border-hover);color:var(--text-primary);padding:7px 16px;">All Work ↗</button>
+    <a href="https://www.linkedin.com/in/anas-farooqui-5617b1244/" target="_blank" rel="noopener" class="nav-cta">Contact ↗</a>
+  </nav>
+</header>
+
+<div class="grid">
+
+  <!-- HERO — WebGL Darcy flow solver -->
+  <div class="tile tile--hero">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.22;"></div>
+    <canvas id="darcy-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0;transition:opacity 1.5s ease;"></canvas>
+    <div class="tile-overlay" style="opacity:0.55;transition:opacity 0.45s ease;"></div>
+    <div class="tile-pattern"></div>
+    <div class="tile-wash"></div>
+    <div class="tile-inner">
+      <div class="tile-status"><span class="dot"></span>Available for work</div>
+      <div>
+        <div class="hero-eyebrow">Master of Applied Computer Science Student</div>
+        <h1 class="hero-name">Building<br>systems<br>that scale.</h1>
+        <p class="hero-sub">Computer Science engineer focused on ML infrastructure, platform engineering, and data systems. Currently targeting internship roles.</p>
+        <div class="hero-links">
+          <a href="https://github.com/ralegionc" target="_blank" class="hero-link hero-link--solid">View GitHub ↗</a>
+          <a href="https://medium.com/@anasfarooqui373" target="_blank" rel="noopener" class="hero-link">Read Writing</a>
+        </div>
+      </div>
+    </div>
+    <div style="position:absolute;bottom:16px;left:20px;z-index:5;font-family:var(--mono);font-size:9px;letter-spacing:0.12em;color:rgba(108,71,255,0.5);text-transform:uppercase;">Darcy flow · live WebGL solver</div>
+    <div class="tile-accent-bar"></div>
+  </div>
+
+  <div class="grid-projects">
+
+  <!-- 01 Convergent Evolution -->
+  <div class="tile tile--sm" data-project="0" data-anim="fluid">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">01</span><span class="tile-tag">ML / Bioinformatics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Convergent Evolution<br>Detector</div>
+        <div class="tile-desc">Unsupervised detector for molecular convergent evolution using ESM-2 embeddings and a homology gate. Finds non-homologous proteins with identical function — no phylogeny required.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 02 War Lethality -->
+  <div class="tile tile--sm" data-project="1" data-anim="bars">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1580922110301-a666f6745565?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">02</span><span class="tile-tag">Data / Research</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">War Lethality<br>Analysis</div>
+        <div class="tile-desc">Statistical analysis of conflict lethality across 200 years of warfare data. Regression models, changepoint detection, and historical trend decomposition.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 03 Neural ODE -->
+  <div class="tile tile--sm" data-project="2" data-anim="wave">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1552833172-fd5ac167c18c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">03</span><span class="tile-tag">ML / Physics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Predator-Prey Neural<br>ODE</div>
+        <div class="tile-desc">Neural ODE fitted to 120 years of Hudson Bay lynx-hare fur trading records. Learns continuous-time Lotka-Volterra dynamics directly from data.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 04 Sleep Atlas -->
+  <div class="tile tile--sm" data-project="3" data-anim="scatter">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">04</span><span class="tile-tag">ML / Ecology</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Sleep Atlas</div>
+        <div class="tile-desc">Regression analysis of sleep architecture across 42 species. Uncovers evolutionary pressures on sleep duration, REM cycles, and brain mass scaling laws.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 05 Fluid SR -->
+  <div class="tile tile--sm" data-project="4" data-anim="matrix">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1594026662586-ba0d4b5e0947?q=80&w=626&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">05</span><span class="tile-tag">ML / Physics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Diffusion-Based Fluid<br>Super-Resolution</div>
+        <div class="tile-desc">Reconstructing high-resolution fluid simulations from coarse inputs using EDM diffusion with an FNO backbone on NVIDIA PhysicsNeMo.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 06 Disease Spillover -->
+  <div class="tile tile--sm" data-project="5" data-anim="lines">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1629100393338-bb81ff9c365a?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">06</span><span class="tile-tag">ML / Epidemiology</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Disease Spillover<br>Risk Mapping</div>
+        <div class="tile-desc">Predictive mapping of zoonotic spillover risk using wildlife-human interface data, land-use change, and ensemble ML models trained on known outbreak locations.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+</div><!-- /grid-projects -->
+</div><!-- /grid -->
+
+<!-- ALL PROJECTS OVERLAY -->
+<div id="all-projects">
+  <div class="ap-header">
+    <div class="ap-title">All Work <span id="ap-count"></span></div>
+    <button class="ap-close" id="apClose">✕</button>
+  </div>
+  <div class="ap-grid" id="apGrid"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="backdrop"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+  <div class="modal-img-wrap">
+    <img class="modal-img" id="modalImg" src="" alt="">
+    <div class="modal-img-gradient"></div>
+  </div>
+  <div class="modal-body">
+    <div class="modal-tag" id="modalTag"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-links" id="modalLinks"></div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-chips" id="modalChips"></div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   CANVAS ANIMATIONS — one per tile type
+   Each animator gets: ctx, W, H, t (seconds)
+   Returns a draw(t) closure.
+════════════════════════════════════════ */
+
+const ACCENT = '#6c47ff';
+const ACCENT2 = 'rgba(108,71,255,';
+
+const animators = {
+
+  /* Fluid: advecting dye particles */
+  fluid(ctx, W, H) {
+    const N = 120;
+    const pts = Array.from({length:N}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6,
+      life: Math.random(), maxLife: 0.6+Math.random()*0.4,
+      r: 1.5+Math.random()*3
+    }));
+    return function(t) {
+      ctx.fillStyle = 'rgba(10,8,20,0.18)';
+      ctx.fillRect(0,0,W,H);
+      pts.forEach(p => {
+        // curl-like velocity field
+        const nx = p.x/W, ny = p.y/H;
+        const angle = Math.sin(nx*4+t*0.4)*Math.cos(ny*3-t*0.3)*Math.PI*2;
+        p.vx += Math.cos(angle)*0.04; p.vy += Math.sin(angle)*0.04;
+        p.vx *= 0.96; p.vy *= 0.96;
+        p.x += p.vx; p.y += p.vy;
+        if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+        if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+        p.life += 0.004;
+        if(p.life>p.maxLife) { p.life=0; p.x=Math.random()*W; p.y=Math.random()*H; }
+        const a = Math.sin(p.life/p.maxLife*Math.PI)*0.7;
+        const hue = 240+Math.sin(p.x/W*3+t*0.2)*30;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle = `hsla(${hue},80%,65%,${a})`;
+        ctx.fill();
+      });
+    };
+  },
+
+  /* Grid: schema diff — two column tables with highlighted rows changing */
+  grid(ctx, W, H) {
+    const rows = 9, cols = 2;
+    const cw = W/cols, rh = H/rows;
+    let highlight = {row:0, progress:0};
+    const changed = new Set([2,5,7]);
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      const beat = t*0.6;
+      const curRow = Math.floor(beat % rows);
+      ctx.strokeStyle = 'rgba(108,71,255,0.15)';
+      ctx.lineWidth = 1;
+      for(let r=0;r<=rows;r++) { ctx.beginPath(); ctx.moveTo(0,r*rh); ctx.lineTo(W,r*rh); ctx.stroke(); }
+      for(let c=0;c<=cols;c++) { ctx.beginPath(); ctx.moveTo(c*cw,0); ctx.lineTo(c*cw,H); ctx.stroke(); }
+      for(let r=0;r<rows;r++) {
+        const isChanged = changed.has(r);
+        const isCurrent = r===curRow;
+        if(isCurrent) {
+          ctx.fillStyle = 'rgba(108,71,255,0.18)';
+          ctx.fillRect(0,r*rh,W,rh);
+        }
+        if(isChanged) {
+          const side = Math.floor(t*0.4+r)%2;
+          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.12)' : 'rgba(50,220,120,0.12)';
+          ctx.fillRect(side*cw+2,r*rh+2,cw-4,rh-4);
+          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.6)' : 'rgba(50,220,120,0.6)';
+          ctx.fillRect(side*cw+2,r*rh+2,3,rh-4);
+        }
+        // fake text bars
+        for(let c=0;c<cols;c++) {
+          const bw = (0.3+Math.sin(r*7.3+c*3.1)*0.2)*cw*0.7;
+          ctx.fillStyle = isCurrent ? 'rgba(200,190,255,0.5)' : 'rgba(180,170,255,0.15)';
+          ctx.fillRect(c*cw+14, r*rh+rh/2-3, bw, 5);
+        }
+      }
+    };
+  },
+
+  /* Wave: oscillating predator-prey curves */
+  wave(ctx, W, H) {
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      // grid
+      ctx.strokeStyle = 'rgba(108,71,255,0.08)';
+      ctx.lineWidth = 0.5;
+      for(let i=0;i<6;i++) { ctx.beginPath(); ctx.moveTo(0,i*H/5); ctx.lineTo(W,i*H/5); ctx.stroke(); }
+      const draw = (phase, color, amp) => {
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=2) {
+          const fq = 2.5, u=x/W;
+          const y = H/2 - amp * Math.sin(u*Math.PI*fq - t*0.8 + phase)
+                       * Math.sin(u*Math.PI + phase*0.3)
+                       * (0.6 + 0.4*Math.sin(u*Math.PI*0.5));
+          x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      };
+      draw(0, 'rgba(108,71,255,0.8)', H*0.22);
+      draw(Math.PI*0.7, 'rgba(50,210,130,0.6)', H*0.18);
+      // phase dot
+      const dotX = ((t*0.8*0.5/Math.PI) % 1)*W;
+      [[0,'rgba(108,71,255,1)'],[Math.PI*0.7,'rgba(50,210,130,1)']].forEach(([ph,col])=>{
+        const u=dotX/W, fq=2.5;
+        const dotY = H/2 - H*0.22*Math.sin(u*Math.PI*fq-t*0.8+ph)*Math.sin(u*Math.PI+ph*0.3)*(0.6+0.4*Math.sin(u*Math.PI*0.5));
+        ctx.beginPath(); ctx.arc(dotX,dotY,4,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+      });
+    };
+  },
+
+  /* Bars: animated histogram — price inflation */
+  bars(ctx, W, H) {
+    const N = 17;
+    const seeds = Array.from({length:N},(_,i)=>0.3+Math.sin(i*2.3)*0.35+Math.cos(i*1.1)*0.2);
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      const bw = (W-N-2)/(N+1)*0.85, gap=(W-bw*N)/(N+1);
+      for(let i=0;i<N;i++) {
+        const base = seeds[i];
+        const h = (base + 0.12*Math.sin(t*0.5+i*0.8)) * H * 0.75;
+        const x = gap + i*(bw+gap);
+        const y = H-h-8;
+        const prog = (t*0.3+i/N)%1;
+        const alpha = 0.3 + 0.5*(0.5+0.5*Math.sin(prog*Math.PI*2));
+        const isHighlit = i===Math.floor(t*1.2)%N;
+        ctx.fillStyle = isHighlit ? `rgba(108,71,255,0.9)` : `rgba(108,71,255,${alpha})`;
+        ctx.fillRect(x,y,bw,h);
+        if(isHighlit) {
+          ctx.fillStyle='rgba(255,255,255,0.7)';
+          ctx.fillRect(x,y-2,bw,2);
+        }
+      }
+      // x axis
+      ctx.fillStyle='rgba(108,71,255,0.2)'; ctx.fillRect(0,H-8,W,1);
+    };
+  },
+
+  /* Scatter: monte carlo dots converging */
+  scatter(ctx, W, H) {
+    const N = 280;
+    const pts = Array.from({length:N},(_,i)=>({
+      x:Math.random()*W, y:Math.random()*H,
+      tx:Math.random()*W, ty:Math.random()*H,
+      phase:Math.random()*Math.PI*2,
+      col:Math.random()>0.5?0:1
+    }));
+    return function(t) {
+      ctx.fillStyle='rgba(10,8,20,0.25)'; ctx.fillRect(0,0,W,H);
+      const progress = 0.5+0.5*Math.sin(t*0.25);
+      pts.forEach(p=>{
+        const cx = p.x+(p.tx-p.x)*progress + Math.sin(t*0.3+p.phase)*8*(1-progress);
+        const cy = p.y+(p.ty-p.y)*progress + Math.cos(t*0.3+p.phase)*8*(1-progress);
+        const a = 0.3+0.5*progress;
+        ctx.beginPath(); ctx.arc(cx,cy,1.5,0,Math.PI*2);
+        ctx.fillStyle = p.col===0 ? `rgba(108,71,255,${a})` : `rgba(50,200,130,${a})`;
+        ctx.fill();
+      });
+      // two cluster centers
+      [[W*0.35,H*0.45],[W*0.65,H*0.55]].forEach(([cx,cy],i)=>{
+        ctx.beginPath(); ctx.arc(cx,cy,4+2*Math.sin(t+i),0,Math.PI*2);
+        ctx.fillStyle=i===0?'rgba(108,71,255,0.9)':'rgba(50,200,130,0.9)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx,cy,14+4*Math.sin(t+i),0,Math.PI*2);
+        ctx.strokeStyle=i===0?'rgba(108,71,255,0.3)':'rgba(50,200,130,0.3)'; ctx.lineWidth=1; ctx.stroke();
+      });
+    };
+  },
+
+  /* Matrix: scrolling token columns — LLM eval */
+  matrix(ctx, W, H) {
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>{}[]|!?'.split('');
+    const cols = Math.floor(W/14);
+    const drops = Array.from({length:cols},()=>Math.random()*H/14|0);
+    const speeds = Array.from({length:cols},()=>0.3+Math.random()*0.7);
+    let last=0;
+    return function(t) {
+      if(t-last>0.05) {
+        ctx.fillStyle='rgba(10,8,20,0.18)'; ctx.fillRect(0,0,W,H);
+        ctx.font='bold 11px monospace';
+        for(let i=0;i<cols;i++) {
+          const ch=CHARS[Math.random()*CHARS.length|0];
+          const x=i*14+2, y=drops[i]*14;
+          const distFromTop=drops[i]/(H/14);
+          const a=0.1+0.7*(1-distFromTop);
+          ctx.fillStyle=`rgba(108,71,255,${a})`; ctx.fillText(ch,x,y);
+          // bright head
+          if(Math.random()>0.5){ctx.fillStyle='rgba(200,190,255,0.9)'; ctx.fillText(ch,x,y);}
+          drops[i]+=speeds[i];
+          if(drops[i]*14>H && Math.random()>0.9) drops[i]=0;
+        }
+        last=t;
+      }
+    };
+  },
+
+  /* Lines: flowing text lines — writing */
+  lines(ctx, W, H) {
+    const lineCount=12;
+    const lineData=Array.from({length:lineCount},(_,i)=>({
+      width:0.4+Math.random()*0.5,
+      speed:0.004+Math.random()*0.006,
+      y:(i+0.5)*(H/lineCount),
+      phase:Math.random()*Math.PI*2
+    }));
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      lineData.forEach((l,i)=>{
+        const progress=(t*l.speed + l.phase/(Math.PI*2))%1;
+        const lineW=l.width*W;
+        const x=progress*W-lineW;
+        const a=0.15+0.35*Math.sin(progress*Math.PI);
+        ctx.fillStyle=`rgba(108,71,255,${a})`;
+        ctx.fillRect(x,l.y-2,lineW,3);
+        // cursor blink at end
+        if(progress>0.1&&progress<0.9){
+          const cx=x+lineW;
+          const ba=0.8*Math.sin(t*4+i);
+          ctx.fillStyle=`rgba(200,190,255,${Math.max(0,ba)})`;
+          ctx.fillRect(cx+2,l.y-6,2,12);
+        }
+      });
+    };
+  }
+};
+
+/* ── Bootstrap tiles ── */
+function initTiles() {
+  document.querySelectorAll('.tile[data-anim]').forEach(tile => {
+    const canvas = tile.querySelector('.tile-canvas');
+    const type = tile.dataset.anim;
+    const anim = animators[type];
+    if (!anim) return;
+
+    const rect = tile.getBoundingClientRect();
+    const W = Math.round(rect.width)  || tile.clientWidth  || 300;
+    const H = Math.round(rect.height) || tile.clientHeight || 200;
+    canvas.width  = W;
+    canvas.height = H;
+
+    const ctx = canvas.getContext('2d');
+    const draw = anim(ctx, W, H);
+
+    let rafId = null;
+    let startTime = null;
+    let elapsed = 0;
+
+    function loop(ts) {
+      if (!startTime) startTime = ts - elapsed;
+      elapsed = ts - startTime;
+      draw(elapsed / 1000);
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (rafId) return;
+      startTime = null; // will be set in loop using saved elapsed
+      rafId = requestAnimationFrame(loop);
+      tile.classList.add('vid-playing');
+    }
+
+    function stop() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      tile.classList.remove('vid-playing');
+    }
+
+    // Hero always plays; all others only on hover
+    if (type === 'hero') {
+      start();
+    } else {
+      tile.addEventListener('mouseenter', start);
+      tile.addEventListener('mouseleave', stop);
+    }
+  });
+}
+
+// Wait for layout to settle before measuring tile dimensions
+if (document.readyState === 'complete') {
+  requestAnimationFrame(initTiles);
+} else {
+  window.addEventListener('load', () => requestAnimationFrame(initTiles));
+}
+
+/* ════════════════════════════════════════
+   LOADER — pure CSS fog + simultaneous reveal
+════════════════════════════════════════ */
+(function() {
+  const loader = document.getElementById('loader');
+  const bar    = document.getElementById('loaderBar');
+  const pct    = document.getElementById('loaderPct');
+  const lines  = document.querySelectorAll('.loader-quote .line');
+
+  /* All lines rise simultaneously — short delay so CSS transitions fire */
+  setTimeout(() => lines.forEach(l => l.classList.add('visible')), 120);
+
+  /* Progress bar */
+  let progress = 0;
+  function stepBar() {
+    const speed = progress < 72 ? 1.5 : 0.3;
+    progress = Math.min(progress + speed, progress < 72 ? 72 : 96);
+    bar.style.width = progress + '%';
+    pct.textContent = Math.floor(progress) + '%';
+    if (progress < 96) requestAnimationFrame(stepBar);
+  }
+  requestAnimationFrame(stepBar);
+
+  /* Dismiss at 2.8s */
+  setTimeout(() => {
+    bar.style.width = '100%';
+    pct.textContent = '100%';
+    setTimeout(() => {
+      loader.classList.add('done');
+      setTimeout(staggerTilesIn, 400);
+    }, 350);
+  }, 2800);
+})();
+
+/* ════════════════════════════════════════
+   STAGGER TILE ENTRANCE
+════════════════════════════════════════ */
+function staggerTilesIn() {
+  const tiles = document.querySelectorAll('.tile');
+  // hero first, then row 1 left→right, then row 2 left→right
+  const order = [0, 1, 2, 3, 4, 5, 6, 7];
+  order.forEach((idx, i) => {
+    setTimeout(() => {
+      if (tiles[idx]) tiles[idx].classList.add('entered');
+    }, i * 70);
+  });
+}
+
+/* ════════════════════════════════════════
+   CUSTOM CURSOR
+════════════════════════════════════════ */
+(function() {
+  const dot   = document.getElementById('cursor');
+  const ring  = document.getElementById('cursor-ring');
+  let mx=0, my=0, rx=0, ry=0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    dot.style.left   = mx + 'px';
+    dot.style.top    = my + 'px';
+  });
+
+  // Ring follows with slight lag
+  (function lagLoop() {
+    rx += (mx - rx) * 0.28;
+    ry += (my - ry) * 0.28;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(lagLoop);
+  })();
+
+  // Tile hover — show "View ↗" label
+  document.querySelectorAll('.tile--sm').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      document.body.classList.add('cursor-hover');
+    });
+    el.addEventListener('mouseleave', () => {
+      document.body.classList.remove('cursor-hover');
+    });
+  });
+
+  // Other clickable elements — ring expands, no label
+  document.querySelectorAll('nav a, .hero-link, .modal-link, .modal-close, .nav-cta, #allProjectsBtn').forEach(el => {
+    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
+    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
+  });
+
+  document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
+  document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+})();
+
+/* ── Project data ── */
+const PROJECTS = [
+  {
+    tag:"ML / Bioinformatics",
+    title:"Convergent Evolution Detector",
+    img:"https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=1200&q=80",
+    stats:[{label:"Method",val:"ESM-2 + Gate"},{label:"AP (gated)",val:"~1.0"},{label:"AP (naive)",val:"~0.38"}],
+    desc:"Unsupervised detector for molecular convergent evolution — proteins that independently evolved the same function across unrelated lineages, with no phylogeny given. Uses ESM-2 embeddings with a homology gate: exclude pairs with detectable sequence alignment, then rank survivors by functional similarity. Moves average precision from 0.38 (naive) to ~1.0 (gated) on type-1 vs type-2 rhodopsins. Also includes a substitution-convergence detector for echolocation prestin orthologs using Fitch parsimony ancestral reconstruction.",
+    chips:["ESM-2","Python","Biopython","HDBSCAN","UMAP","FastICA","UniProt REST"],
+    github:"https://github.com/ralegionc/Convergent-Evolution-Detector",
+    medium:"https://medium.com/@anasfarooqui373"
+  },
+  {
+    tag:"Data / Research",
+    title:"War Lethality Analysis",
+    img:"https://images.unsplash.com/photo-1525711857929-4272fb4a040f?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    stats:[{label:"Dataset",val:"200 years"},{label:"Method",val:"Regression + PELT"},{label:"Output",val:"Trend analysis"}],
+    desc:"Statistical analysis of conflict lethality across two centuries of warfare data. Applies regression modelling, PELT changepoint detection, and historical trend decomposition to identify structural breaks in conflict intensity, weapon-technology transitions, and the statistical signature of industrialised warfare versus counterinsurgency.",
+    chips:["Python","Pandas","Statsmodels","ruptures","Matplotlib","NumPy"],
+    github:"https://github.com/ralegionc/War-Lethality-Analysis",
+    medium:"https://medium.com/@anasfarooqui373"
+  },
+  {
+    tag:"ML / Physics",
+    title:"Predator-Prey Neural ODE",
+    img:"https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=1200&q=80",
+    stats:[{label:"Dataset",val:"120-year HBC"},{label:"Species",val:"Lynx & Hare"},{label:"Method",val:"Neural ODE"}],
+    desc:"A Neural ODE trained on 120 years of Hudson Bay Company fur trading records to learn continuous-time predator-prey dynamics from data alone. The network discovers Lotka-Volterra-like oscillations without being told the governing equations, then phase portraits are compared against the analytical solution. Covered in a Medium article that reached the Towards Data Science front page.",
+    chips:["torchdiffeq","PyTorch","SciPy","Matplotlib","NumPy"],
+    github:"https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation",
+    medium:"https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9"
+  },
+  {
+    tag:"ML / Ecology",
+    title:"Sleep Atlas",
+    img:"https://images.unsplash.com/photo-1599886964275-41dac3b442c4?q=80&w=1046&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    stats:[{label:"Species",val:"42"},{label:"Method",val:"Multi-regression"},{label:"Signals",val:"REM, NREM, total"}],
+    desc:"Cross-species regression analysis of sleep architecture across 42 species, from shrews to elephants. Fits and compares multiple regression models to uncover how brain mass, metabolic rate, predation pressure, and social structure predict total sleep time, REM fraction, and cycle length. Reveals allometric scaling laws and evolutionary trade-offs that single-species sleep research cannot see.",
+    chips:["Python","Pandas","Scikit-learn","Statsmodels","Matplotlib","Seaborn"],
+    github:"https://github.com/ralegionc/Sleep-Atlas",
+    medium:"https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f"
+  },
+  {
+    tag:"ML / Physics",
+    title:"Diffusion-Based Fluid Super-Resolution",
+    img:"https://images.unsplash.com/photo-1594026662586-ba0d4b5e0947?q=80&w=626&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    stats:[{label:"Model",val:"EDM + FNO"},{label:"Platform",val:"PhysicsNeMo"},{label:"Metric",val:"↓ RMSE vs bicubic"}],
+    desc:"Reconstructing high-resolution fluid simulations from coarse 32x32 inputs using EDM diffusion with a Fourier Neural Operator backbone, built on NVIDIA PhysicsNeMo. The FNO learns global spectral structure while the diffusion process recovers fine-scale vorticity. Consistently outperforms bicubic interpolation on reconstruction error across multiple Reynolds numbers.",
+    chips:["PyTorch","PhysicsNeMo","EDM","FNO","CUDA","NumPy","Matplotlib"],
+    github:"https://github.com/ralegionc/Diffusion-Based-Fluid-Super-Resolution",
+    medium:"https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f"
+  },
+  {
+    tag:"ML / Epidemiology",
+    title:"Disease Spillover Risk Mapping",
+    img:"https://images.unsplash.com/photo-1669413453455-7a3837deb6ca?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    stats:[{label:"Task",val:"Spillover risk"},{label:"Data",val:"GBIF + land-use"},{label:"Method",val:"Ensemble ML"}],
+    desc:"Predictive mapping of zoonotic disease spillover risk at the wildlife-human interface. Integrates GBIF species occurrence data, land-use change indices, and known outbreak locations to train ensemble ML models that estimate where the next cross-species transmission event is most likely to occur. Produces interpretable risk maps with SHAP-based feature attribution.",
+    chips:["Python","Scikit-learn","GeoPandas","SHAP","GBIF API","Rasterio","Matplotlib"],
+    github:"https://github.com/ralegionc/Disease-spillover-risk-mapping",
+    medium:"https://medium.com/@anasfarooqui373/trying-to-map-the-next-pandemic-before-it-starts-building-a-disease-spillover-predictor-from-c58a7b31fcb0?source=friends_link&sk=e8073db06309d6f9a7560fff03aa9622"
+  }
+];
+
+/* ── Modal ── */
+const modal=document.getElementById('modal'), backdrop=document.getElementById('backdrop');
+const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
+
+function openModal(idx) {
+  // clear previous active
+  document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+  // mark source tile
+  const srcTile = document.querySelector(`.tile[data-project="${idx}"]`);
+  if (srcTile) srcTile.classList.add('active');
+
+  const p=PROJECTS[idx];
+  document.getElementById('modalImg').src=p.img;
+  document.getElementById('modalImg').alt=p.title;
+  document.getElementById('modalTag').textContent=p.tag;
+  document.getElementById('modalTitle').textContent=p.title;
+  document.getElementById('modalStats').innerHTML=p.stats.map(s=>`<div><div class="modal-stat-label">${s.label}</div><div class="modal-stat-val">${s.val}</div></div>`).join('');
+  document.getElementById('modalDesc').textContent=p.desc;
+  document.getElementById('modalChips').innerHTML=p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+  document.getElementById('modalLinks').innerHTML=`<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
+  modal.classList.add('open'); backdrop.classList.add('open');
+}
+function closeModal() {
+  modal.classList.remove('open'); backdrop.classList.remove('open');
+  document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+}
+document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click',()=>openModal(+t.dataset.project)));
+document.getElementById('modalClose').addEventListener('click',closeModal);
+backdrop.addEventListener('click',closeModal);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') { closeModal(); closeAllProjects(); } });
+
+/* ════════════════════════════════════════
+   ALL PROJECTS OVERLAY
+════════════════════════════════════════ */
+const ALL_PROJECTS = [
+  { num:'01', tag:'ML / Physics',       title:'Fluid Super-Resolution via Diffusion',   desc:'EDM diffusion with a custom FNO backbone on NVIDIA PhysicsNeMo. Outperforms bicubic interpolation across multiple Reynolds number regimes.',              chips:['PyTorch','PhysicsNeMo','EDM','FNO','CUDA'],          github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'02', tag:'Platform / Backend', title:'SchemaVault',                             desc:'Postgres schema version control — visual diffing, migration management, ephemeral query environments, and NL-to-SQL.',                                   chips:['PostgreSQL','FastAPI','React','D3.js','Docker'],      github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'03', tag:'ML / Research',      title:'Neural ODE & PINN Dynamics',             desc:'Lynx–hare predator-prey system modeled with physics-informed neural networks and continuous-time Neural ODEs. Diagnostic phase-portrait plots.',          chips:['torchdiffeq','PyTorch','SciPy','PINN'],              github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'04', tag:'Data / Viz',         title:'Price Revolution Visualizer',             desc:'D3.js dashboard analyzing 16th-century European inflation across 17 cities. Full Python statistical pipeline with animated choropleth maps.',             chips:['D3.js','Python','Pandas','Statsmodels'],              github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'05', tag:'Simulation',         title:'World Cup Format Simulator',              desc:'20,000 Monte Carlo iterations comparing the 2026 48-team format against the prior 32-team bracket using Kaggle Elo ratings.',                            chips:['Python','NumPy','Monte Carlo','Elo Rating'],          github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'06', tag:'LLM / Eval',         title:'Prompt Mutation Engine',                  desc:'Six mutation strategies with LLM-as-judge scoring. Dark-themed dashboard for systematic prompt evaluation and ablation.',                                  chips:['Python','Anthropic API','D3.js','FastAPI'],           github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'07', tag:'Writing',            title:'Technical Writing',                       desc:'Medium articles on ML systems, data engineering, and research-adjacent projects. Wikipedia-style neutral prose.',                                          chips:['Medium','LinkedIn','ML Systems','Data Engineering'],  github:'https://github.com/ralegionc', medium:'https://medium.com/@ralegionc' },
+  { num:'08', tag:'Data / Justice',     title:'Wrongful Conviction Dashboard',           desc:'Epidemiological analysis of wrongful convictions with D3.js visualizations and a FastAPI backend. Examines systemic bias across case types and states.',   chips:['D3.js','FastAPI','Python','PostgreSQL'],              github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'09', tag:'ML / Bio',           title:'Venom Protein Function Predictor',        desc:'ESM-2 protein language model fine-tuned on toxin sequences to predict functional class. Self-supervised — no manual labels.',                            chips:['ESM-2','PyTorch','Biopython','HuggingFace'],          github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'10', tag:'ML / Ecology',       title:'Species Distribution Modeling',           desc:'Panthera leo and Project Cheetah reintroduction audit using MaxEnt and GNN-based habitat suitability models with SHAP explainability.',                   chips:['PyTorch','MaxEnt','SHAP','GeoPandas','GBIF'],         github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'11', tag:'Multi-Agent',        title:'Multi-Agent Coordination Simulator',      desc:'Deadlock detection and resolution in a simulated multi-agent system. Visualizes resource contention graphs and recovery strategies.',                     chips:['Python','NetworkX','D3.js','FastAPI'],                github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'12', tag:'LLM / NLP',          title:'AI Writing Style Fingerprinter',          desc:'Style fingerprinting from a personal Medium corpus to train an AI writing assistant that mimics prose patterns, rhythm, and vocabulary.',                  chips:['Python','Anthropic API','NLP','Transformers'],        github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'13', tag:'Bioinformatics',     title:'HGT Detector for Animal Genomes',         desc:'Horizontal gene transfer detector for eukaryotic genomes using compositional bias and phylogenetic incongruence signals.',                                chips:['Biopython','BLAST','Python','Pandas'],                github:'https://github.com/ralegionc', medium:'https://medium.com' },
+  { num:'14', tag:'Algorithms',         title:'DNA Sequence Alignment Suite',            desc:'Needleman-Wunsch, Smith-Waterman, Hirschberg, and BLAST-style alignment with a novel entropy-adaptive k-mer seeding algorithm. Streamlit visualizer.',    chips:['Python','Streamlit','NumPy','Algorithms'],            github:'https://github.com/ralegionc', medium:'https://medium.com' },
+];
+
+function buildApGrid() {
+  const grid = document.getElementById('apGrid');
+  const count = document.getElementById('ap-count');
+  count.textContent = ALL_PROJECTS.length;
+  grid.innerHTML = ALL_PROJECTS.map((p, i) => `
+    <div class="ap-card" data-ap="${i}">
+      <div class="ap-card-top">
+        <span class="ap-num">${p.num}</span>
+        <span class="ap-tag">${p.tag}</span>
+      </div>
+      <div class="ap-card-title">${p.title}</div>
+      <div class="ap-card-desc">${p.desc}</div>
+      <div class="ap-card-chips">${p.chips.map(c=>`<span class="ap-card-chip">${c}</span>`).join('')}</div>
+      <div class="ap-card-arrow">↗</div>
+      <div class="ap-card-accent"></div>
+    </div>
+  `).join('');
+
+  // clicking a card opens the links in a mini-modal (reuse existing modal)
+  grid.querySelectorAll('.ap-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const p = ALL_PROJECTS[+card.dataset.ap];
+      const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+      const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
+      document.getElementById('modalImg').src = 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=1200&q=80';
+      document.getElementById('modalTag').textContent = p.tag;
+      document.getElementById('modalTitle').textContent = p.title;
+      document.getElementById('modalStats').innerHTML = '';
+      document.getElementById('modalDesc').textContent = p.desc;
+      document.getElementById('modalChips').innerHTML = p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+      document.getElementById('modalLinks').innerHTML = `<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
+      document.getElementById('modal').classList.add('open');
+      document.getElementById('backdrop').classList.add('open');
+    });
+  });
+}
+
+function openAllProjects() {
+  document.getElementById('all-projects').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAllProjects() {
+  document.getElementById('all-projects').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+buildApGrid();
+document.getElementById('allProjectsBtn').addEventListener('click', openAllProjects);
+document.getElementById('apClose').addEventListener('click', closeAllProjects);
+
+/* ════════════════════════════════════════
+   DARCY FLOW — WebGL solver
+   Solves:  ∇·(K∇p) = f  (pressure)
+            u = -K∇p      (Darcy velocity)
+   Then advects a passive dye scalar.
+
+   Pipeline:
+     1. Jacobi iteration → pressure field p
+     2. Gradient of p    → velocity (u,v)
+     3. Semi-Lagrangian advection of dye
+     4. Render dye with indigo colormap
+════════════════════════════════════════ */
+(function initDarcy() {
+  const canvas = document.getElementById('darcy-canvas');
+  if (!canvas) return;
+
+  const gl = canvas.getContext('webgl', {
+    antialias: false, alpha: true,
+    preserveDrawingBuffer: false
+  });
+  if (!gl) { console.warn('WebGL unavailable'); return; }
+
+  const ext = gl.getExtension('OES_texture_float');
+  if (!ext) { console.warn('OES_texture_float unavailable'); return; }
+
+  // ── Grid resolution ──
+  const N = 128; // cells per side
+
+  // ── Resize canvas to pixel-perfect tile size ──
+  function resize() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    canvas.width  = Math.round(r.width);
+    canvas.height = Math.round(r.height);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // ── Compile shader ──
+  function shader(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+      console.error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  function program(vsrc, fsrc) {
+    const p = gl.createProgram();
+    gl.attachShader(p, shader(gl.VERTEX_SHADER,   vsrc));
+    gl.attachShader(p, shader(gl.FRAGMENT_SHADER, fsrc));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS))
+      console.error(gl.getProgramInfoLog(p));
+    return p;
+  }
+
+  const VS = `
+    attribute vec2 a_pos;
+    varying vec2 v_uv;
+    void main(){
+      v_uv = a_pos * 0.5 + 0.5;
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }`;
+
+  // Jacobi pressure solve: p_new = (p_left+p_right+p_up+p_down - h²*f) / 4
+  const FS_JACOBI = `
+    precision highp float;
+    uniform sampler2D u_p;    // current pressure
+    uniform sampler2D u_div;  // divergence / source
+    uniform vec2 u_px;        // 1/N
+    varying vec2 v_uv;
+    void main(){
+      float pL = texture2D(u_p, v_uv - vec2(u_px.x, 0.0)).r;
+      float pR = texture2D(u_p, v_uv + vec2(u_px.x, 0.0)).r;
+      float pD = texture2D(u_p, v_uv - vec2(0.0, u_px.y)).r;
+      float pU = texture2D(u_p, v_uv + vec2(0.0, u_px.y)).r;
+      float div = texture2D(u_div, v_uv).r;
+      float p = (pL + pR + pD + pU - div) * 0.25;
+      gl_FragColor = vec4(p, 0.0, 0.0, 1.0);
+    }`;
+
+  // Gradient: velocity = -grad(p)
+  const FS_GRAD = `
+    precision highp float;
+    uniform sampler2D u_p;
+    uniform vec2 u_px;
+    varying vec2 v_uv;
+    void main(){
+      float pR = texture2D(u_p, v_uv + vec2(u_px.x, 0.0)).r;
+      float pL = texture2D(u_p, v_uv - vec2(u_px.x, 0.0)).r;
+      float pU = texture2D(u_p, v_uv + vec2(0.0, u_px.y)).r;
+      float pD = texture2D(u_p, v_uv - vec2(0.0, u_px.y)).r;
+      float ux = -(pR - pL) / (2.0 * u_px.x);
+      float uy = -(pU - pD) / (2.0 * u_px.y);
+      gl_FragColor = vec4(ux, uy, 0.0, 1.0);
+    }`;
+
+  // Semi-Lagrangian dye advection
+  const FS_ADVECT = `
+    precision highp float;
+    uniform sampler2D u_dye;
+    uniform sampler2D u_vel;
+    uniform vec2 u_px;
+    uniform float u_dt;
+    varying vec2 v_uv;
+    void main(){
+      vec2 vel = texture2D(u_vel, v_uv).rg;
+      vec2 pos = v_uv - vel * u_dt * u_px * 80.0;
+      pos = clamp(pos, u_px, 1.0 - u_px);
+      float d = texture2D(u_dye, pos).r;
+      d *= 0.992; // gentle dissipation
+      gl_FragColor = vec4(d, 0.0, 0.0, 1.0);
+    }`;
+
+  // Inject dye at a point
+  const FS_INJECT = `
+    precision highp float;
+    uniform sampler2D u_dye;
+    uniform vec2 u_pos;
+    uniform float u_radius;
+    uniform float u_amount;
+    varying vec2 v_uv;
+    void main(){
+      float d = texture2D(u_dye, v_uv).r;
+      float dist = length(v_uv - u_pos);
+      float blob = smoothstep(u_radius, 0.0, dist) * u_amount;
+      gl_FragColor = vec4(min(1.0, d + blob), 0.0, 0.0, 1.0);
+    }`;
+
+  const FS_RENDER = `
+    precision highp float;
+    uniform sampler2D u_dye;
+    varying vec2 v_uv;
+
+    // 5-stop perceptually-uniform colormap
+    // black → deep purple → electric indigo → cyan → white
+    // Luminance rises monotonically so structure stays legible
+    vec3 colormap(float t) {
+      t = clamp(t, 0.0, 1.0);
+      vec3 c0 = vec3(0.02, 0.01, 0.05);   // near-black
+      vec3 c1 = vec3(0.18, 0.04, 0.38);   // deep purple  #2e0a61
+      vec3 c2 = vec3(0.42, 0.18, 1.00);   // electric indigo #6b2eff
+      vec3 c3 = vec3(0.10, 0.72, 0.92);   // vivid cyan   #19b8eb
+      vec3 c4 = vec3(0.95, 0.98, 1.00);   // near-white
+      float s = t * 4.0;
+      if(s < 1.0) return mix(c0, c1, s);
+      if(s < 2.0) return mix(c1, c2, s - 1.0);
+      if(s < 3.0) return mix(c2, c3, s - 2.0);
+                  return mix(c3, c4, s - 3.0);
+    }
+
+    void main(){
+      float d = texture2D(u_dye, v_uv).r;
+      // gamma-lift so low-density wisps are visible
+      float d2 = pow(d, 0.55);
+      vec3 col = colormap(d2);
+      gl_FragColor = vec4(col, d2 * 0.92 + 0.02);
+    }`;
+
+  // ── Programs ──
+  const pJacobi  = program(VS, FS_JACOBI);
+  const pGrad    = program(VS, FS_GRAD);
+  const pAdvect  = program(VS, FS_ADVECT);
+  const pInject  = program(VS, FS_INJECT);
+  const pRender  = program(VS, FS_RENDER);
+
+  // ── Full-screen quad ──
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER,
+    new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+  function bindQuad(prog) {
+    const loc = gl.getAttribLocation(prog, 'a_pos');
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+  }
+
+  // ── Float textures ──
+  function makeTex(data) {
+    const t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0,
+      gl.RGBA, gl.FLOAT, data || null);
+    return t;
+  }
+  function makeFBO(tex) {
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D, tex, 0);
+    return fb;
+  }
+
+  // Pressure ping-pong
+  const pTex  = [makeTex(), makeTex()];
+  const pFBO  = [makeFBO(pTex[0]), makeFBO(pTex[1])];
+  // Dye ping-pong
+  const dTex  = [makeTex(), makeTex()];
+  const dFBO  = [makeFBO(dTex[0]), makeFBO(dTex[1])];
+  // Velocity
+  const vTex  = makeTex();
+  const vFBO  = makeFBO(vTex);
+  // Divergence / source (permeability field)
+  const divData = new Float32Array(N * N * 4);
+  // Random permeability contrast: sparse high-K zones
+  for (let i = 0; i < N * N; i++) {
+    const x = (i % N) / N, y = Math.floor(i / N) / N;
+    // Gaussian permeability blobs
+    const k = 0.3
+      + 0.5 * Math.exp(-((x-0.3)**2+(y-0.6)**2) / 0.04)
+      + 0.4 * Math.exp(-((x-0.7)**2+(y-0.3)**2) / 0.03)
+      + 0.3 * Math.exp(-((x-0.5)**2+(y-0.8)**2) / 0.05);
+    divData[i * 4] = k * 0.02;
+  }
+  const divTex = makeTex(divData);
+
+  let pIdx = 0, dIdx = 0;
+
+  function setTex(prog, name, unit, tex) {
+    gl.activeTexture(gl.TEXTURE0 + unit);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(gl.getUniformLocation(prog, name), unit);
+  }
+  function uni1f(p, n, v) { gl.uniform1f(gl.getUniformLocation(p,n), v); }
+  function uni2f(p, n, a, b) { gl.uniform2f(gl.getUniformLocation(p,n), a, b); }
+
+  const px = 1.0 / N;
+  const JACOBI_ITERS = 20;
+
+  // Dye injection sources that move slowly
+  const sources = [
+    { x:0.15, y:0.5,  dx:0.0008, dy:0.0003, r:0.06,  a:0.28 },
+    { x:0.85, y:0.45, dx:-0.0006, dy:0.0005, r:0.055, a:0.24 },
+    { x:0.5,  y:0.85, dx:0.0004,  dy:-0.0007,r:0.05,  a:0.22 },
+    { x:0.3,  y:0.2,  dx:0.0005,  dy:0.0006, r:0.045, a:0.20 },
+  ];
+
+  // ── Main loop ──
+  function step() {
+    gl.viewport(0, 0, N, N);
+
+    // 1. Jacobi pressure solve
+    gl.useProgram(pJacobi);
+    bindQuad(pJacobi);
+    uni2f(pJacobi, 'u_px', px, px);
+    for (let iter = 0; iter < JACOBI_ITERS; iter++) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, pFBO[1 - pIdx]);
+      setTex(pJacobi, 'u_p',   0, pTex[pIdx]);
+      setTex(pJacobi, 'u_div', 1, divTex);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      pIdx = 1 - pIdx;
+    }
+
+    // 2. Gradient → velocity
+    gl.useProgram(pGrad);
+    bindQuad(pGrad);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, vFBO);
+    setTex(pGrad, 'u_p', 0, pTex[pIdx]);
+    uni2f(pGrad, 'u_px', px, px);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    // 3. Advect dye
+    gl.useProgram(pAdvect);
+    bindQuad(pAdvect);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, dFBO[1 - dIdx]);
+    setTex(pAdvect, 'u_dye', 0, dTex[dIdx]);
+    setTex(pAdvect, 'u_vel', 1, vTex);
+    uni2f(pAdvect, 'u_px', px, px);
+    uni1f(pAdvect, 'u_dt', 1.2);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+    dIdx = 1 - dIdx;
+
+    // 4. Inject dye at moving sources
+    gl.useProgram(pInject);
+    bindQuad(pInject);
+    sources.forEach(s => {
+      s.x += s.dx; s.y += s.dy;
+      if (s.x < 0.05 || s.x > 0.95) s.dx *= -1;
+      if (s.y < 0.05 || s.y > 0.95) s.dy *= -1;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, dFBO[1 - dIdx]);
+      setTex(pInject, 'u_dye', 0, dTex[dIdx]);
+      uni2f(pInject, 'u_pos', s.x, s.y);
+      uni1f(pInject, 'u_radius', s.r);
+      uni1f(pInject, 'u_amount', s.a);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      dIdx = 1 - dIdx;
+    });
+
+    // 5. Render to screen
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.useProgram(pRender);
+    bindQuad(pRender);
+    setTex(pRender, 'u_dye', 0, dTex[dIdx]);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    requestAnimationFrame(step);
+  }
+
+  // Fade canvas in after a short warm-up
+  setTimeout(() => { canvas.style.opacity = '1'; }, 600);
+  requestAnimationFrame(step);
+
+})();
+</script>
+</body>
+</html>
