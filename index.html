@@ -749,6 +749,7 @@ const ODE_IMG = 'assets/neuralode-tile.jpg';
 const ODE_VID = 'assets/neuralode-video.mp4';
 const HELIO_IMG = 'assets/heliostream-tile.jpg';
 const HELIO_VID = 'assets/heliostream-video.mp4';
+const DNA_VID = 'assets/dna.mp4';
 document.addEventListener('DOMContentLoaded', () => {
   const paint = (id, uri) => {
     const el = document.getElementById(id);
@@ -1158,6 +1159,7 @@ const PROJECTS = [
     tag:"ML / Bioinformatics",
     title:"Convergent Evolution Detector",
     img:"https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=1200&q=80",
+    video:DNA_VID,
     stats:[{label:"Method",val:"ESM-2 + Gate"},{label:"AP (gated)",val:"~1.0"},{label:"AP (naive)",val:"~0.38"}],
     desc:"Unsupervised detector for molecular convergent evolution — proteins that independently evolved the same function across unrelated lineages, with no phylogeny given. Uses ESM-2 embeddings with a homology gate: exclude pairs with detectable sequence alignment, then rank survivors by functional similarity. Moves average precision from 0.38 (naive) to ~1.0 (gated) on type-1 vs type-2 rhodopsins. Also includes a substitution-convergence detector for echolocation prestin orthologs using Fitch parsimony ancestral reconstruction.",
     chips:["ESM-2","Python","Biopython","HDBSCAN","UMAP","FastICA","UniProt REST"],
@@ -1286,7 +1288,7 @@ document.addEventListener('keydown',e=>{
    ALL PROJECTS OVERLAY
 ════════════════════════════════════════ */
 const ALL_PROJECTS = [
-  { num:'01', tag:'ML / Bioinformatics', title:'Convergent Evolution Detector', img:'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80', desc:'Unsupervised detector for molecular convergent evolution using ESM-2 embeddings and a homology gate. Moves average precision from 0.38 to ~1.0 on rhodopsins and prestin orthologs.', chips:['ESM-2','Biopython','HDBSCAN','UMAP','UniProt'], github:'https://github.com/ralegionc/Convergent-Evolution-Detector', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'01', tag:'ML / Bioinformatics', title:'Convergent Evolution Detector', img:'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80', video:DNA_VID, desc:'Unsupervised detector for molecular convergent evolution using ESM-2 embeddings and a homology gate. Moves average precision from 0.38 to ~1.0 on rhodopsins and prestin orthologs.', chips:['ESM-2','Biopython','HDBSCAN','UMAP','UniProt'], github:'https://github.com/ralegionc/Convergent-Evolution-Detector', medium:'https://medium.com/@anasfarooqui373' },
   { num:'02', tag:'Data / Research', title:'War Lethality Analysis', img:'https://images.unsplash.com/photo-1580922110301-a666f6745565?w=800&q=80', desc:'Statistical analysis of conflict lethality across two centuries of warfare data using regression, PELT changepoint detection, and trend decomposition.', chips:['Python','Statsmodels','ruptures','Pandas'], github:'https://github.com/ralegionc/War-Lethality-Analysis', medium:'https://medium.com/@anasfarooqui373' },
   { num:'03', tag:'ML / Physics', title:'Predator-Prey Neural ODE', img:ODE_IMG, video:ODE_VID, desc:'Neural ODE trained on 120 years of Hudson Bay fur-trading records to learn continuous-time Lotka-Volterra dynamics from data alone.', chips:['torchdiffeq','PyTorch','SciPy'], github:'https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation', medium:'https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9' },
   { num:'04', tag:'ML / Ecology', title:'Sleep Atlas', img:SLEEP_IMG, video:SLEEP_VID, desc:'Cross-species regression across 42 species uncovering how brain mass, metabolism, and predation predict sleep duration and REM fraction.', chips:['Scikit-learn','Statsmodels','Pandas','Seaborn'], github:'https://github.com/ralegionc/Sleep-Atlas', medium:'https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f' },
