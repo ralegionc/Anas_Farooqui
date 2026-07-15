@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anas Farooqui</title>
+<title>Lemon — ML & Systems Engineer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
@@ -104,7 +104,10 @@
   .modal { position:fixed; top:52px; right:0; bottom:0; z-index:700; width:min(600px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; will-change:transform; }
   .modal.open { transform:translateX(0); }
   .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.65) saturate(0.8); }
-  .modal-img-wrap { position:relative; flex-shrink:0; }
+  .modal-img-wrap { position:relative; flex-shrink:0; height:240px; overflow:hidden; }
+  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.72) saturate(0.95); }
+  .modal-img-wrap.has-video .modal-video { display:block; }
+  .modal-img-wrap.has-video .modal-img { opacity:0; }
   .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
   .modal-body { flex:1; overflow-y:auto; padding:32px 40px 48px; scrollbar-width:thin; scrollbar-color:rgba(108,71,255,0.3) transparent; }
   .modal-body::-webkit-scrollbar { width:4px; }
@@ -141,7 +144,6 @@
   .fog-layer {
     position:absolute;
     border-radius:50%;
-    filter:blur(48px);
     opacity:0;
     pointer-events:none;
     will-change:transform, opacity;
@@ -151,19 +153,19 @@
     width:80vw; height:60vh;
     top:20%; left:5%;
     background:radial-gradient(ellipse, rgba(80,80,80,0.55) 0%, transparent 70%);
-    animation:fogrise 2.4s cubic-bezier(0.16,1,0.3,1) 0s forwards, fogdrift1 9s ease-in-out 2.4s infinite alternate;
+    animation:fogrise 2.4s cubic-bezier(0.16,1,0.3,1) 0s forwards;
   }
   .fog-layer:nth-child(2) {
     width:70vw; height:55vh;
     top:30%; right:0%;
     background:radial-gradient(ellipse, rgba(60,60,60,0.45) 0%, transparent 65%);
-    animation:fogrise 2.6s cubic-bezier(0.16,1,0.3,1) 0.1s forwards, fogdrift2 11s ease-in-out 2.6s infinite alternate;
+    animation:fogrise 2.6s cubic-bezier(0.16,1,0.3,1) 0.1s forwards;
   }
   .fog-layer:nth-child(3) {
     width:90vw; height:50vh;
     bottom:10%; left:10%;
     background:radial-gradient(ellipse, rgba(100,100,100,0.35) 0%, transparent 60%);
-    animation:fogrise 3s cubic-bezier(0.16,1,0.3,1) 0.2s forwards, fogdrift3 13s ease-in-out 3s infinite alternate;
+    animation:fogrise 3s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
   }
 
   @keyframes fogrise {
@@ -249,27 +251,31 @@
 
   /* ── CUSTOM CURSOR ── */
   body { cursor:none; }
+  /* Position and size are driven entirely by transform in JS.
+     left/top/width/height would force a layout pass every frame. */
   #cursor {
-    position:fixed; z-index:9999;
+    position:fixed; left:0; top:0; z-index:9999;
     pointer-events:none;
     width:4px; height:4px;
     border-radius:50%;
     background:#fff;
-    transform:translate(-50%,-50%);
+    transform:translate3d(-100px,-100px,0);
+    will-change:transform;
+    transition:background 0.15s ease;
   }
   #cursor-ring {
-    position:fixed; z-index:9998;
+    position:fixed; left:0; top:0; z-index:9998;
     pointer-events:none;
     width:20px; height:20px;
     border-radius:50%;
     border:1px solid rgba(108,71,255,0.6);
-    transform:translate(-50%,-50%);
-    transition:width 0.15s ease, height 0.15s ease, border-color 0.15s ease;
+    transform:translate3d(-100px,-100px,0);
+    will-change:transform;
+    transition:border-color 0.15s ease;
   }
 
-  body.cursor-hover #cursor { width:4px; height:4px; background:var(--accent); }
-  body.cursor-hover #cursor-ring { width:28px; height:28px; border-color:rgba(108,71,255,1); }
-  body.cursor-click #cursor { width:3px; height:3px; }
+  body.cursor-hover #cursor { background:var(--accent); }
+  body.cursor-hover #cursor-ring { border-color:rgba(108,71,255,1); }
 
   /* ── VIEW PROJECT hint inside tile ── */
   .tile-view-hint {
@@ -636,7 +642,7 @@
 
   <!-- 03 Neural ODE -->
   <div class="tile tile--sm" data-project="2" data-anim="wave">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1552833172-fd5ac167c18c?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <div class="tile-bg" id="odeTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
     <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
@@ -653,7 +659,7 @@
 
   <!-- 04 Sleep Atlas -->
   <div class="tile tile--sm" data-project="3" data-anim="scatter">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80')"></div>
+    <div class="tile-bg" id="sleepTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
     <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
@@ -670,7 +676,7 @@
 
   <!-- 05 Fluid SR -->
   <div class="tile tile--sm" data-project="4" data-anim="matrix">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1594026662586-ba0d4b5e0947?q=80&w=626&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <div class="tile-bg" id="fluidTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
     <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
@@ -685,17 +691,17 @@
     <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
   </div>
 
-  <!-- 06 Disease Spillover -->
-  <div class="tile tile--sm" data-project="5" data-anim="lines">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1629100393338-bb81ff9c365a?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+  <!-- 06 Heliostream -->
+  <div class="tile tile--sm" data-project="5" data-anim="wave">
+    <div class="tile-bg" id="helioTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
     <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
     <div class="tile-inner">
-      <div class="tile-top"><span class="tile-index">06</span><span class="tile-tag">ML / Epidemiology</span></div>
+      <div class="tile-top"><span class="tile-index">06</span><span class="tile-tag">Data Engineering</span></div>
       <div class="tile-bottom">
-        <div class="tile-title">Disease Spillover<br>Risk Mapping</div>
-        <div class="tile-desc">Predictive mapping of zoonotic spillover risk using wildlife-human interface data, land-use change, and ensemble ML models trained on known outbreak locations.</div>
+        <div class="tile-title">Heliostream</div>
+        <div class="tile-desc">Physics-informed geomagnetic storm nowcaster with split-conformal uncertainty, running on a full Kafka to DuckDB to dbt to Dagster pipeline over real NASA OMNI data.</div>
         <div class="tile-view-hint">View project</div>
       </div>
     </div>
@@ -720,6 +726,7 @@
   <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
   <div class="modal-img-wrap">
     <img class="modal-img" id="modalImg" src="" alt="">
+    <video class="modal-video" id="modalVideo" muted loop playsinline preload="none"></video>
     <div class="modal-img-gradient"></div>
   </div>
   <div class="modal-body">
@@ -733,6 +740,26 @@
 </div>
 
 <script>
+/* Heliostream media, inlined so the page is a single portable file */
+const FLUID_IMG = 'assets/fluidsr-tile.jpg';
+const FLUID_VID = 'assets/fluidsr-video.mp4';
+const SLEEP_IMG = 'assets/sleepatlas-tile.jpg';
+const SLEEP_VID = 'assets/sleepatlas-video.mp4';
+const ODE_IMG = 'assets/neuralode-tile.jpg';
+const ODE_VID = 'assets/neuralode-video.mp4';
+const HELIO_IMG = 'assets/heliostream-tile.jpg';
+const HELIO_VID = 'assets/heliostream-video.mp4';
+document.addEventListener('DOMContentLoaded', () => {
+  const paint = (id, uri) => {
+    const el = document.getElementById(id);
+    if (el) el.style.backgroundImage = `url(${uri})`;
+  };
+  paint('helioTileBg', HELIO_IMG);
+  paint('sleepTileBg', SLEEP_IMG);
+  paint('odeTileBg',   ODE_IMG);
+  paint('fluidTileBg', FLUID_IMG);
+});
+
 /* ════════════════════════════════════════
    CANVAS ANIMATIONS — one per tile type
    Each animator gets: ctx, W, H, t (seconds)
@@ -1047,6 +1074,11 @@ if (document.readyState === 'complete') {
     setTimeout(() => {
       loader.classList.add('done');
       setTimeout(staggerTilesIn, 250);
+      // Fully detach after the fade, and let the solver start.
+      setTimeout(() => {
+        loader.remove();
+        window.dispatchEvent(new Event('loader-done'));
+      }, 1300);
     }, 300);
   }, 1900);
 })();
@@ -1069,43 +1101,55 @@ function staggerTilesIn() {
    CUSTOM CURSOR
 ════════════════════════════════════════ */
 (function() {
-  const dot   = document.getElementById('cursor');
-  const ring  = document.getElementById('cursor-ring');
-  let mx=0, my=0, rx=0, ry=0;
+  const dot  = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+
+  let mx = -100, my = -100, rx = -100, ry = -100;
+  let ringS = 1, ringT = 1, dotS = 1, dotT = 1;
+  let rafId = null;
+
+  const place = (el, x, y, s) =>
+    el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(${s})`;
+
+  const wake = () => { if (!rafId) rafId = requestAnimationFrame(loop); };
+
+  function loop() {
+    rx += (mx - rx) * 0.28;
+    ry += (my - ry) * 0.28;
+    ringS += (ringT - ringS) * 0.2;
+    dotS  += (dotT - dotS)  * 0.2;
+
+    place(ring, rx, ry, ringS);
+    place(dot,  mx, my, dotS);
+
+    // Once the ring has caught up and the scales have settled, stop.
+    // No reason to burn a frame every 16ms while the mouse sits still.
+    const settled = Math.abs(mx - rx) < 0.1 && Math.abs(my - ry) < 0.1
+                 && Math.abs(ringT - ringS) < 0.005
+                 && Math.abs(dotT - dotS)  < 0.005;
+    rafId = settled ? null : requestAnimationFrame(loop);
+  }
 
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
-    dot.style.left   = mx + 'px';
-    dot.style.top    = my + 'px';
-  });
+    place(dot, mx, my, dotS);   // dot tracks instantly, no lag
+    wake();                     // ring catches up on the loop
+  }, { passive: true });
 
-  // Ring follows with slight lag
-  (function lagLoop() {
-    rx += (mx - rx) * 0.28;
-    ry += (my - ry) * 0.28;
-    ring.style.left = rx + 'px';
-    ring.style.top  = ry + 'px';
-    requestAnimationFrame(lagLoop);
-  })();
+  const target = (r, d) => { ringT = r; dotT = d; wake(); };
 
-  // Tile hover — show "View ↗" label
-  document.querySelectorAll('.tile--sm').forEach(el => {
+  const HOVER = '.tile--sm, nav a, .hero-link, .modal-link, .modal-close, .nav-cta, #allProjectsBtn';
+  document.querySelectorAll(HOVER).forEach(el => {
     el.addEventListener('mouseenter', () => {
-      document.body.classList.add('cursor-hover');
+      document.body.classList.add('cursor-hover'); target(1.4, 1);
     });
     el.addEventListener('mouseleave', () => {
-      document.body.classList.remove('cursor-hover');
+      document.body.classList.remove('cursor-hover'); target(1, 1);
     });
   });
 
-  // Other clickable elements — ring expands, no label
-  document.querySelectorAll('nav a, .hero-link, .modal-link, .modal-close, .nav-cta, #allProjectsBtn').forEach(el => {
-    el.addEventListener('mouseenter', () => document.body.classList.add('cursor-hover'));
-    el.addEventListener('mouseleave', () => document.body.classList.remove('cursor-hover'));
-  });
-
-  document.addEventListener('mousedown', () => document.body.classList.add('cursor-click'));
-  document.addEventListener('mouseup',   () => document.body.classList.remove('cursor-click'));
+  document.addEventListener('mousedown', () => target(ringT, 0.7));
+  document.addEventListener('mouseup',   () => target(ringT, 1));
 })();
 
 /* ── Project data ── */
@@ -1133,7 +1177,8 @@ const PROJECTS = [
   {
     tag:"ML / Physics",
     title:"Predator-Prey Neural ODE",
-    img:"https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=1200&q=80",
+    img:ODE_IMG,
+    video:ODE_VID,
     stats:[{label:"Dataset",val:"120-year HBC"},{label:"Species",val:"Lynx & Hare"},{label:"Method",val:"Neural ODE"}],
     desc:"A Neural ODE trained on 120 years of Hudson Bay Company fur trading records to learn continuous-time predator-prey dynamics from data alone. The network discovers Lotka-Volterra-like oscillations without being told the governing equations, then phase portraits are compared against the analytical solution. Covered in a Medium article that reached the Towards Data Science front page.",
     chips:["torchdiffeq","PyTorch","SciPy","Matplotlib","NumPy"],
@@ -1143,7 +1188,8 @@ const PROJECTS = [
   {
     tag:"ML / Ecology",
     title:"Sleep Atlas",
-    img:"https://images.unsplash.com/photo-1599886964275-41dac3b442c4?q=80&w=1046&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    img:SLEEP_IMG,
+    video:SLEEP_VID,
     stats:[{label:"Species",val:"42"},{label:"Method",val:"Multi-regression"},{label:"Signals",val:"REM, NREM, total"}],
     desc:"Cross-species regression analysis of sleep architecture across 42 species, from shrews to elephants. Fits and compares multiple regression models to uncover how brain mass, metabolic rate, predation pressure, and social structure predict total sleep time, REM fraction, and cycle length. Reveals allometric scaling laws and evolutionary trade-offs that single-species sleep research cannot see.",
     chips:["Python","Pandas","Scikit-learn","Statsmodels","Matplotlib","Seaborn"],
@@ -1153,7 +1199,8 @@ const PROJECTS = [
   {
     tag:"ML / Physics",
     title:"Diffusion-Based Fluid Super-Resolution",
-    img:"https://images.unsplash.com/photo-1594026662586-ba0d4b5e0947?q=80&w=626&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    img:FLUID_IMG,
+    video:FLUID_VID,
     stats:[{label:"Model",val:"EDM + FNO"},{label:"Platform",val:"PhysicsNeMo"},{label:"Metric",val:"↓ RMSE vs bicubic"}],
     desc:"Reconstructing high-resolution fluid simulations from coarse 32x32 inputs using EDM diffusion with a Fourier Neural Operator backbone, built on NVIDIA PhysicsNeMo. The FNO learns global spectral structure while the diffusion process recovers fine-scale vorticity. Consistently outperforms bicubic interpolation on reconstruction error across multiple Reynolds numbers.",
     chips:["PyTorch","PhysicsNeMo","EDM","FNO","CUDA","NumPy","Matplotlib"],
@@ -1161,14 +1208,15 @@ const PROJECTS = [
     medium:"https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f"
   },
   {
-    tag:"ML / Epidemiology",
-    title:"Disease Spillover Risk Mapping",
-    img:"https://images.unsplash.com/photo-1669413453455-7a3837deb6ca?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    stats:[{label:"Task",val:"Spillover risk"},{label:"Data",val:"GBIF + land-use"},{label:"Method",val:"Ensemble ML"}],
-    desc:"Predictive mapping of zoonotic disease spillover risk at the wildlife-human interface. Integrates GBIF species occurrence data, land-use change indices, and known outbreak locations to train ensemble ML models that estimate where the next cross-species transmission event is most likely to occur. Produces interpretable risk maps with SHAP-based feature attribution.",
-    chips:["Python","Scikit-learn","GeoPandas","SHAP","GBIF API","Rasterio","Matplotlib"],
-    github:"https://github.com/ralegionc/Disease-spillover-risk-mapping",
-    medium:"https://medium.com/@anasfarooqui373/trying-to-map-the-next-pandemic-before-it-starts-building-a-disease-spillover-predictor-from-c58a7b31fcb0?source=friends_link&sk=e8073db06309d6f9a7560fff03aa9622"
+    tag:"Data Engineering",
+    title:"Heliostream",
+    img:HELIO_IMG,
+    video:HELIO_VID,
+    stats:[{label:"Data",val:"NASA OMNI"},{label:"Model",val:"Physics-informed GRU"},{label:"Uncertainty",val:"Split-conformal"}],
+    desc:"A geomagnetic storm nowcaster that predicts the Dst index from real-time solar wind measurements. A physics-informed GRU is constrained by the Burton-OBrien coupling equation, and split-conformal prediction wraps every forecast in a calibrated uncertainty band. Behind it sits a complete data engineering layer: Kafka streams the OMNI feed, DuckDB stores it, dbt models the transformations, and Dagster orchestrates the whole pipeline. Validated end to end on real NASA OMNI records rather than synthetic data.",
+    chips:["PyTorch","Kafka","DuckDB","dbt","Dagster","Conformal Prediction","NASA OMNI"],
+    github:"https://github.com/ralegionc/heliostream",
+    medium:"https://medium.com/@anasfarooqui373"
   }
 ];
 
@@ -1176,6 +1224,29 @@ const PROJECTS = [
 const modal=document.getElementById('modal'), backdrop=document.getElementById('backdrop');
 const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
 const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
+
+/* Set modal cover: video if the project has one, otherwise a still image */
+function setModalCover(p) {
+  const wrap  = document.querySelector('.modal-img-wrap');
+  const img   = document.getElementById('modalImg');
+  const video = document.getElementById('modalVideo');
+
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+
+  img.src = p.img;
+  img.alt = p.title;
+
+  if (p.video) {
+    wrap.classList.add('has-video');
+    video.poster = p.img;
+    video.src = p.video;
+    video.play().catch(() => {});
+  } else {
+    wrap.classList.remove('has-video');
+  }
+}
 
 function openModal(idx) {
   // clear previous active
@@ -1185,8 +1256,7 @@ function openModal(idx) {
   if (srcTile) srcTile.classList.add('active');
 
   const p=PROJECTS[idx];
-  document.getElementById('modalImg').src=p.img;
-  document.getElementById('modalImg').alt=p.title;
+  setModalCover(p);
   document.getElementById('modalTag').textContent=p.tag;
   document.getElementById('modalTitle').textContent=p.title;
   document.getElementById('modalStats').innerHTML=p.stats.map(s=>`<div><div class="modal-stat-label">${s.label}</div><div class="modal-stat-val">${s.val}</div></div>`).join('');
@@ -1197,6 +1267,8 @@ function openModal(idx) {
 }
 function closeModal() {
   modal.classList.remove('open'); backdrop.classList.remove('open');
+  const mv = document.getElementById('modalVideo');
+  if (mv) { mv.pause(); mv.currentTime = 0; }
   document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
 }
 document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click',()=>openModal(+t.dataset.project)));
@@ -1216,24 +1288,23 @@ document.addEventListener('keydown',e=>{
 const ALL_PROJECTS = [
   { num:'01', tag:'ML / Bioinformatics', title:'Convergent Evolution Detector', img:'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80', desc:'Unsupervised detector for molecular convergent evolution using ESM-2 embeddings and a homology gate. Moves average precision from 0.38 to ~1.0 on rhodopsins and prestin orthologs.', chips:['ESM-2','Biopython','HDBSCAN','UMAP','UniProt'], github:'https://github.com/ralegionc/Convergent-Evolution-Detector', medium:'https://medium.com/@anasfarooqui373' },
   { num:'02', tag:'Data / Research', title:'War Lethality Analysis', img:'https://images.unsplash.com/photo-1580922110301-a666f6745565?w=800&q=80', desc:'Statistical analysis of conflict lethality across two centuries of warfare data using regression, PELT changepoint detection, and trend decomposition.', chips:['Python','Statsmodels','ruptures','Pandas'], github:'https://github.com/ralegionc/War-Lethality-Analysis', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'03', tag:'ML / Physics', title:'Predator-Prey Neural ODE', img:'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=800&q=80', desc:'Neural ODE trained on 120 years of Hudson Bay fur-trading records to learn continuous-time Lotka-Volterra dynamics from data alone.', chips:['torchdiffeq','PyTorch','SciPy'], github:'https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation', medium:'https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9' },
-  { num:'04', tag:'ML / Ecology', title:'Sleep Atlas', img:'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=800&q=80', desc:'Cross-species regression across 42 species uncovering how brain mass, metabolism, and predation predict sleep duration and REM fraction.', chips:['Scikit-learn','Statsmodels','Pandas','Seaborn'], github:'https://github.com/ralegionc/Sleep-Atlas', medium:'https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f' },
-  { num:'05', tag:'ML / Physics', title:'Diffusion-Based Fluid Super-Resolution', img:'https://images.unsplash.com/photo-1534294668821-28a3054f4256?w=800&q=80', desc:'Reconstructing high-resolution fluid simulations from coarse 32x32 inputs using EDM diffusion with an FNO backbone on NVIDIA PhysicsNeMo.', chips:['PyTorch','PhysicsNeMo','EDM','FNO','CUDA'], github:'https://github.com/ralegionc/Diffusion-Based-Fluid-Super-Resolution', medium:'https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f' },
-  { num:'06', tag:'ML / Epidemiology', title:'Disease Spillover Risk Mapping', img:'https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?w=800&q=80', desc:'Predictive mapping of zoonotic spillover risk using GBIF occurrence data, land-use change, and ensemble ML with SHAP attribution.', chips:['Scikit-learn','GeoPandas','SHAP','GBIF'], github:'https://github.com/ralegionc/Disease-spillover-risk-mapping', medium:'https://medium.com/@anasfarooqui373/trying-to-map-the-next-pandemic-before-it-starts-building-a-disease-spillover-predictor-from-c58a7b31fcb0?source=friends_link&sk=e8073db06309d6f9a7560fff03aa9622' },
-  { num:'07', tag:'ML / Bayesian', title:'Prime Atlas', img:'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80', desc:'Hierarchical Bayesian aging-curve system across 12 sports and 18 positions using PyMC. Validated on 850 players with position-level hierarchy.', chips:['PyMC','DuckDB','FastAPI','ArviZ'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'08', tag:'Data Engineering', title:'Heliostream', img:'https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?w=800&q=80', desc:'Physics-informed geomagnetic storm nowcasting with a full data engineering layer: Kafka/Redpanda, DuckDB, dbt, Dagster on real NASA OMNI data.', chips:['Kafka','dbt','Dagster','DuckDB'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'09', tag:'ML / Medical', title:'Brain Tumor MRI UQ', img:'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80', desc:'Nine-module MRI pipeline with uncertainty quantification, OOD detection, Grad-CAM shortcut auditing, and conformal prediction sets.', chips:['PyTorch','MC Dropout','Conformal','Grad-CAM'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'10', tag:'ML / Recsys', title:'Movie Recommendation Engine', img:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80', desc:'Two-tower neural model with collaborative filtering baselines, popularity-matched negative sampling, FastAPI + Redis serving, Docker.', chips:['PyTorch','FastAPI','Redis','Docker'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'11', tag:'Graph / Fraud', title:'Graph Fraud Pipeline', img:'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&q=80', desc:'Neo4j+GDS versus GraphFrames+Spark comparison on synthetic transaction networks with planted fraud structures.', chips:['Neo4j','Spark','GraphFrames','Python'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'12', tag:'ML / Bio', title:'Venom Protein Function Predictor', img:'https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=800&q=80', desc:'ESM-2 fine-tuning for multi-label toxin mechanism classification across venomous species.', chips:['ESM-2','PyTorch','HuggingFace'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'13', tag:'Simulation', title:'World Cup 2026 Simulator', img:'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80', desc:'Elo + Poisson Monte Carlo simulator with SHAP-based inferential model, backtested across 2006-2022 tournaments.', chips:['Python','Monte Carlo','SHAP','Elo'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'14', tag:'Data / Viz', title:'Price Revolution Visualizer', img:'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80', desc:'D3.js dashboard analyzing 16th-century European inflation across 17 cities with Granger causality and PELT changepoints.', chips:['D3.js','Python','Statsmodels'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'15', tag:'Climate / ML', title:'El Nino / Wildfire Analysis', img:'https://images.unsplash.com/photo-1519074069444-1ba4ffadcbc8?w=800&q=80', desc:'Correlation r=0.72 between peak ONI and US wildfire acreage; logistic regression AUC=0.77 for high-fire seasons.', chips:['Python','Scikit-learn','Pandas','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'16', tag:'ML / Medical', title:'METABRIC Survival Analysis', img:'https://images.unsplash.com/photo-1583912267550-d6c2ac3196c0?w=800&q=80', desc:'Cox PH, Random Survival Forest, gradient boosted survival, and custom DeepSurv in PyTorch. RSF best discrimination (C=0.644).', chips:['PyTorch','lifelines','scikit-survival'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'17', tag:'Data / Justice', title:'Wrongful Conviction Epidemiology', img:'https://images.unsplash.com/photo-1589391886645-d51941baf7fb?w=800&q=80', desc:'Full-stack dashboard with force-directed network, Kaplan-Meier curves, choropleth, and Bayesian network structure learning.', chips:['D3.js','FastAPI','lifelines','pgmpy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'18', tag:'ML / Ecology', title:'Species Distribution Modeling', img:'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&q=80', desc:'MaxEnt-proxy and ensemble SDMs for lion and cheetah reintroduction audit at Kuno NP with spatial block cross-validation and Boyce Index.', chips:['MaxEnt','GeoPandas','SHAP','GBIF'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'19', tag:'ML / Uncertainty', title:'EUQ Library', img:'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80', desc:'Epistemological Uncertainty Quantification: Python library with Monte Carlo perturbation logic showing ~9x wider bands than bootstrap alone.', chips:['Python','NumPy','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
-  { num:'20', tag:'Bioinformatics', title:'HGT Detector', img:'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=800&q=80', desc:'Horizontal gene transfer detection in animal genomes using codon usage bias features and a stacking ensemble with SMOTE-Tomek resampling.', chips:['Biopython','XGBoost','imblearn'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'03', tag:'ML / Physics', title:'Predator-Prey Neural ODE', img:ODE_IMG, video:ODE_VID, desc:'Neural ODE trained on 120 years of Hudson Bay fur-trading records to learn continuous-time Lotka-Volterra dynamics from data alone.', chips:['torchdiffeq','PyTorch','SciPy'], github:'https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation', medium:'https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9' },
+  { num:'04', tag:'ML / Ecology', title:'Sleep Atlas', img:SLEEP_IMG, video:SLEEP_VID, desc:'Cross-species regression across 42 species uncovering how brain mass, metabolism, and predation predict sleep duration and REM fraction.', chips:['Scikit-learn','Statsmodels','Pandas','Seaborn'], github:'https://github.com/ralegionc/Sleep-Atlas', medium:'https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f' },
+  { num:'05', tag:'ML / Physics', title:'Diffusion-Based Fluid Super-Resolution', img:FLUID_IMG, video:FLUID_VID, desc:'Reconstructing high-resolution fluid simulations from coarse 32x32 inputs using EDM diffusion with an FNO backbone on NVIDIA PhysicsNeMo.', chips:['PyTorch','PhysicsNeMo','EDM','FNO','CUDA'], github:'https://github.com/ralegionc/Diffusion-Based-Fluid-Super-Resolution', medium:'https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f' },
+  { num:'06', tag:'ML / Bayesian', title:'Prime Atlas', img:'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80', desc:'Hierarchical Bayesian aging-curve system across 12 sports and 18 positions using PyMC. Validated on 850 players with position-level hierarchy.', chips:['PyMC','DuckDB','FastAPI','ArviZ'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'07', tag:'Data Engineering', title:'Heliostream', img:HELIO_IMG, video:HELIO_VID, desc:'Physics-informed GRU nowcasting the Dst index from solar wind, with split-conformal uncertainty bands. Full Kafka to DuckDB to dbt to Dagster pipeline on real NASA OMNI data.', chips:['PyTorch','Kafka','DuckDB','dbt','Dagster','Conformal'], github:'https://github.com/ralegionc/heliostream', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'08', tag:'ML / Medical', title:'Brain Tumor MRI UQ', img:'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80', desc:'Nine-module MRI pipeline with uncertainty quantification, OOD detection, Grad-CAM shortcut auditing, and conformal prediction sets.', chips:['PyTorch','MC Dropout','Conformal','Grad-CAM'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'09', tag:'ML / Recsys', title:'Movie Recommendation Engine', img:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80', desc:'Two-tower neural model with collaborative filtering baselines, popularity-matched negative sampling, FastAPI + Redis serving, Docker.', chips:['PyTorch','FastAPI','Redis','Docker'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'10', tag:'Graph / Fraud', title:'Graph Fraud Pipeline', img:'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&q=80', desc:'Neo4j+GDS versus GraphFrames+Spark comparison on synthetic transaction networks with planted fraud structures.', chips:['Neo4j','Spark','GraphFrames','Python'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'11', tag:'ML / Bio', title:'Venom Protein Function Predictor', img:'https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=800&q=80', desc:'ESM-2 fine-tuning for multi-label toxin mechanism classification across venomous species.', chips:['ESM-2','PyTorch','HuggingFace'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'12', tag:'Simulation', title:'World Cup 2026 Simulator', img:'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80', desc:'Elo + Poisson Monte Carlo simulator with SHAP-based inferential model, backtested across 2006-2022 tournaments.', chips:['Python','Monte Carlo','SHAP','Elo'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'13', tag:'Data / Viz', title:'Price Revolution Visualizer', img:'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80', desc:'D3.js dashboard analyzing 16th-century European inflation across 17 cities with Granger causality and PELT changepoints.', chips:['D3.js','Python','Statsmodels'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'14', tag:'Climate / ML', title:'El Nino / Wildfire Analysis', img:'https://images.unsplash.com/photo-1519074069444-1ba4ffadcbc8?w=800&q=80', desc:'Correlation r=0.72 between peak ONI and US wildfire acreage; logistic regression AUC=0.77 for high-fire seasons.', chips:['Python','Scikit-learn','Pandas','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'15', tag:'ML / Medical', title:'METABRIC Survival Analysis', img:'https://images.unsplash.com/photo-1583912267550-d6c2ac3196c0?w=800&q=80', desc:'Cox PH, Random Survival Forest, gradient boosted survival, and custom DeepSurv in PyTorch. RSF best discrimination (C=0.644).', chips:['PyTorch','lifelines','scikit-survival'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'16', tag:'Data / Justice', title:'Wrongful Conviction Epidemiology', img:'https://images.unsplash.com/photo-1589391886645-d51941baf7fb?w=800&q=80', desc:'Full-stack dashboard with force-directed network, Kaplan-Meier curves, choropleth, and Bayesian network structure learning.', chips:['D3.js','FastAPI','lifelines','pgmpy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'17', tag:'ML / Ecology', title:'Species Distribution Modeling', img:'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&q=80', desc:'MaxEnt-proxy and ensemble SDMs for lion and cheetah reintroduction audit at Kuno NP with spatial block cross-validation and Boyce Index.', chips:['MaxEnt','GeoPandas','SHAP','GBIF'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'18', tag:'ML / Uncertainty', title:'EUQ Library', img:'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80', desc:'Epistemological Uncertainty Quantification: Python library with Monte Carlo perturbation logic showing ~9x wider bands than bootstrap alone.', chips:['Python','NumPy','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'19', tag:'Bioinformatics', title:'HGT Detector', img:'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=800&q=80', desc:'Horizontal gene transfer detection in animal genomes using codon usage bias features and a stacking ensemble with SMOTE-Tomek resampling.', chips:['Biopython','XGBoost','imblearn'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
 ];
 
 function buildApGrid() {
@@ -1261,7 +1332,7 @@ function buildApGrid() {
       const p = ALL_PROJECTS[+card.dataset.ap];
       const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
       const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
-      document.getElementById('modalImg').src = p.img.replace('w=800', 'w=1200');
+      setModalCover(p);
       document.getElementById('modalTag').textContent = p.tag;
       document.getElementById('modalTitle').textContent = p.title;
       document.getElementById('modalStats').innerHTML = '';
@@ -1625,9 +1696,28 @@ document.getElementById('apClose').addEventListener('click', closeAllProjects);
     else if (!rafId) scheduleNext();
   });
 
-  // Fade canvas in after a short warm-up
-  setTimeout(() => { canvas.style.opacity = '1'; }, 600);
-  scheduleNext();
+  // Pause when the hero scrolls off-screen — matters most on mobile,
+  // where the solver would otherwise keep running under the project list.
+  let onScreen = true;
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(([e]) => {
+      onScreen = e.isIntersecting;
+      if (!onScreen) { if (rafId) cancelAnimationFrame(rafId); rafId = null; }
+      else if (!rafId && !document.hidden) scheduleNext();
+    }, { threshold: 0 }).observe(canvas);
+  }
+
+  // Wait for the loader to clear before solving — running the fluid sim
+  // underneath the intro was what made the intro feel heavy.
+  let started = false;
+  const begin = () => {
+    if (started) return;
+    started = true;
+    canvas.style.opacity = '1';
+    scheduleNext();
+  };
+  window.addEventListener('loader-done', begin, { once: true });
+  setTimeout(begin, 4000);   // fallback if the loader never fires
 
 })();
 </script>
