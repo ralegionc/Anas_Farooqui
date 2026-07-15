@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anas Farooqui</title>
+<title>Lemon — ML & Systems Engineer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
@@ -41,13 +41,13 @@
   .tile:last-child { border-right:none; }
 
   /* static fallback bg */
-  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.45; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
-  .tile:not(.vid-playing):hover .tile-bg { opacity:0.6; transform:scale(1); }
+  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.495; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
+  .tile:not(.vid-playing):hover .tile-bg { opacity:0.66; transform:scale(1); }
 
   /* canvas animation layer — hidden at rest, shown on hover only */
   .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
   .tile:hover .tile-canvas { opacity:1; }
-  .tile:hover .tile-bg { opacity:0.6; transform:scale(1); }
+  .tile:hover .tile-bg { opacity:0.66; transform:scale(1); }
   /* hero canvas always faintly visible */
   .tile--hero .tile-canvas { opacity:0.5; }
   .tile--hero:hover .tile-canvas { opacity:0.7; }
@@ -79,8 +79,8 @@
 
   /* HERO */
   .tile--hero { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); border-bottom:none; }
-  .tile--hero .tile-bg { opacity:0.3; }
-  .tile--hero:hover .tile-bg { opacity:0.22; }
+  .tile--hero .tile-bg { opacity:0.33; }
+  .tile--hero:hover .tile-bg { opacity:0.242; }
   .tile--hero .tile-overlay { opacity:0.4; }
   .tile--hero:hover .tile-overlay { opacity:0.35; }
   .tile--hero .tile-inner { padding:40px 44px; justify-content:flex-end; }
@@ -103,9 +103,9 @@
   .modal-backdrop.open { background:rgba(0,0,0,0.72); pointer-events:auto; }
   .modal { position:fixed; top:52px; right:0; bottom:0; z-index:700; width:min(600px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; will-change:transform; }
   .modal.open { transform:translateX(0); }
-  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.65) saturate(0.8); }
+  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.715) saturate(0.8); }
   .modal-img-wrap { position:relative; flex-shrink:0; height:240px; overflow:hidden; }
-  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.72) saturate(0.95); }
+  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.792) saturate(0.95); }
   .modal-img-wrap.has-video .modal-video { display:block; }
   .modal-img-wrap.has-video .modal-img { opacity:0; }
   .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
@@ -379,8 +379,8 @@
   .ap-card:hover { background:#111; }
 
   .ap-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:auto; position:relative; z-index:2; }
-  .ap-card-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.14; transition:opacity 0.3s ease; }
-  .ap-card:hover .ap-card-bg { opacity:0.3; }
+  .ap-card-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.154; transition:opacity 0.3s ease; }
+  .ap-card:hover .ap-card-bg { opacity:0.33; }
   .ap-card-title, .ap-card-desc, .ap-card-chips { position:relative; z-index:2; }
   .ap-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
   .ap-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.25s, transform 0.25s; }
@@ -429,9 +429,9 @@
     .tile:hover .tile-bg,
     .tile--hero .tile-bg,
     .tile--hero:hover .tile-bg,
-    .tile:not(.vid-playing):hover .tile-bg { opacity:0.45 !important; transform:scale(1) !important; }
+    .tile:not(.vid-playing):hover .tile-bg { opacity:0.495 !important; transform:scale(1) !important; }
     .tile--hero .tile-bg,
-    .tile--hero:hover .tile-bg { opacity:0.3 !important; }
+    .tile--hero:hover .tile-bg { opacity:0.33 !important; }
     /* reduce overlay so bg image shows through */
     .tile-overlay,
     .tile:hover .tile-overlay { opacity:0.3 !important; }
@@ -579,7 +579,7 @@
 
   <!-- HERO — WebGL Darcy flow solver -->
   <div class="tile tile--hero">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.22;"></div>
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.242;"></div>
     <canvas id="darcy-canvas" style="position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:0;transition:opacity 1.5s ease;"></canvas>
     <div class="tile-overlay" style="opacity:0.55;transition:opacity 0.45s ease;"></div>
     <div class="tile-pattern"></div>
