@@ -1400,6 +1400,8 @@ document.getElementById('apClose').addEventListener('click', closeAllProjects);
 (function initDarcy() {
   const canvas = document.getElementById('darcy-canvas');
   if (!canvas) return;
+  // Users who ask for reduced motion get the static background, no solver.
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
   const gl = canvas.getContext('webgl', {
     antialias: false, alpha: true,
@@ -1407,11 +1409,52 @@ document.getElementById('apClose').addEventListener('click', closeAllProjects);
   });
   if (!gl) { console.warn('WebGL unavailable'); return; }
 
-  const ext = gl.getExtension('OES_texture_float');
-  if (!ext) { console.warn('OES_texture_float unavailable'); return; }
 
   // ── Grid resolution ──
   const N = 96; // cells per side
+  // ── Pick the lightest usable float texture format ──
+  // Half-float is far cheaper than full 32-bit float on integrated/mobile GPUs
+  // and looks identical for a background dye field. Fall back to full float,
+  // then bail if neither can serve as a render target.
+  const halfExt  = gl.getExtension('OES_texture_half_float');
+  const halfLin  = gl.getExtension('OES_texture_half_float_linear');
+  const floatExt = gl.getExtension('OES_texture_float');
+  const floatLin = gl.getExtension('OES_texture_float_linear');
+  function targetOK(type) {
+    const tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0, gl.RGBA, type, null);
+    const fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.deleteFramebuffer(fb); gl.deleteTexture(tex);
+    return ok;
+  }
+  let TEX_TYPE, TEX_LINEAR;
+  if (halfExt && targetOK(halfExt.HALF_FLOAT_OES)) {
+    TEX_TYPE = halfExt.HALF_FLOAT_OES; TEX_LINEAR = !!halfLin;
+  } else if (floatExt && targetOK(gl.FLOAT)) {
+    TEX_TYPE = gl.FLOAT; TEX_LINEAR = !!floatLin;
+  } else {
+    console.warn('No renderable float texture; skipping solver'); return;
+  }
+  // Pack a Float32 value into IEEE-754 half-float bits (for initial uploads)
+  const _f32 = new Float32Array(1), _i32 = new Int32Array(_f32.buffer);
+  function floatToHalf(v) {
+    _f32[0] = v; const x = _i32[0];
+    let bits = (x >> 16) & 0x8000;
+    let m = (x >> 12) & 0x07ff;
+    const e = (x >> 23) & 0xff;
+    if (e < 103) return bits;
+    if (e > 142) { bits |= 0x7c00; return bits; }
+    if (e < 113) { m |= 0x0800; bits |= (m >> (114 - e)); return bits; }
+    bits |= ((e - 112) << 10) | (m >> 1);
+    return bits;
+  }
 
   // ── Resize canvas to pixel-perfect tile size ──
   function resize() {
@@ -1569,12 +1612,17 @@ document.getElementById('apClose').addEventListener('click', closeAllProjects);
   function makeTex(data) {
     const t = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, t);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    const filter = TEX_LINEAR ? gl.LINEAR : gl.NEAREST;
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filter);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filter);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0,
-      gl.RGBA, gl.FLOAT, data || null);
+    let payload = data || null;
+    if (data && TEX_TYPE !== gl.FLOAT) {
+      payload = new Uint16Array(data.length);
+      for (let i = 0; i < data.length; i++) payload[i] = floatToHalf(data[i]);
+    }
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, N, N, 0, gl.RGBA, TEX_TYPE, payload);
     return t;
   }
   function makeFBO(tex) {
@@ -1619,7 +1667,7 @@ document.getElementById('apClose').addEventListener('click', closeAllProjects);
   function uni2f(p, n, a, b) { gl.uniform2f(gl.getUniformLocation(p,n), a, b); }
 
   const px = 1.0 / N;
-  const JACOBI_ITERS = 12;
+  const JACOBI_ITERS = 5;
 
   // Dye injection sources that move slowly
   const sources = [
