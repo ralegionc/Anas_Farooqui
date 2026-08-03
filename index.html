@@ -1076,20 +1076,33 @@ if (document.readyState === 'complete') {
   }
   requestAnimationFrame(stepBar);
 
-  /* Dismiss at 1.9s — snappier */
-  setTimeout(() => {
+  /* Dismiss as soon as the page has loaded (min 600ms so the intro reads),
+     with a 2.5s hard cap in case 'load' never fires. */
+  const startedAt = performance.now();
+  const MIN_MS = 600, CAP_MS = 2500;
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
     bar.style.width = '100%';
     pct.textContent = '100%';
     setTimeout(() => {
       loader.classList.add('done');
-      setTimeout(staggerTilesIn, 250);
-      // Fully detach after the fade, and let the solver start.
+      setTimeout(staggerTilesIn, 200);
       setTimeout(() => {
         loader.remove();
         window.dispatchEvent(new Event('loader-done'));
-      }, 1300);
-    }, 300);
-  }, 1900);
+      }, 700);
+    }, 200);
+  }
+  function maybeDismiss() {
+    const waited = performance.now() - startedAt;
+    if (waited < MIN_MS) setTimeout(dismiss, MIN_MS - waited);
+    else dismiss();
+  }
+  if (document.readyState === 'complete') maybeDismiss();
+  else window.addEventListener('load', maybeDismiss);
+  setTimeout(dismiss, CAP_MS);
 })();
 
 /* ════════════════════════════════════════
@@ -1356,6 +1369,7 @@ function buildApGrid() {
 }
 
 function openAllProjects() {
+  if (!apBuilt) { buildApGrid(); apBuilt = true; }
   document.getElementById('all-projects').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -1364,7 +1378,7 @@ function closeAllProjects() {
   document.body.style.overflow = '';
 }
 
-buildApGrid();
+let apBuilt = false;
 
 /* Scroll cue — fade out once the user scrolls on mobile */
 (function() {
