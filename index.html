@@ -1079,7 +1079,7 @@ if (document.readyState === 'complete') {
   /* Dismiss as soon as the page has loaded (min 600ms so the intro reads),
      with a 2.5s hard cap in case 'load' never fires. */
   const startedAt = performance.now();
-  const MIN_MS = 600, CAP_MS = 2500;
+  const MIN_MS = 2200, CAP_MS = 3200;
   let dismissed = false;
   function dismiss() {
     if (dismissed) return;
