@@ -1,0 +1,1344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anas Farooqui</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0e0e'/%3E%3Ctext x='32' y='40' font-family='Space Mono, monospace' font-size='22' font-weight='700' fill='%236c47ff' text-anchor='middle' letter-spacing='1'%3EAF%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0e0e0e;
+    --border: rgba(255,255,255,0.07);
+    --border-hover: rgba(255,255,255,0.18);
+    --text-primary: #f0eee8;
+    --text-muted: rgba(240,238,232,0.38);
+    --text-dim: rgba(240,238,232,0.18);
+    --accent: #6c47ff;
+    --accent-light: rgba(255,255,255,0.05);
+    --accent-glow: rgba(255,255,255,0.03);
+    --mono: 'Space Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text-primary); font-family:var(--sans); -webkit-font-smoothing:antialiased; }
+
+  header { position:fixed; top:0; left:0; right:0; z-index:200; display:flex; align-items:center; justify-content:space-between; padding:0 28px; height:52px; border-bottom:1px solid var(--border); background:rgba(14,14,14,0.97); }
+  .logo { font-family:var(--mono); font-size:13px; letter-spacing:0.08em; color:var(--text-primary); text-decoration:none; }
+  .logo span { color:var(--accent); }
+  nav { display:flex; gap:28px; align-items:center; }
+  nav a { font-size:12px; letter-spacing:0.06em; color:var(--text-muted); text-decoration:none; text-transform:uppercase; transition:color 0.2s; }
+  nav a:hover { color:var(--text-primary); }
+  .nav-cta { font-family:var(--mono); font-size:11px; padding:7px 16px; border:1px solid var(--border-hover); color:var(--text-primary)!important; letter-spacing:0.05em; transition:border-color 0.2s,background 0.2s!important; }
+  .nav-cta:hover { border-color:var(--accent)!important; background:var(--accent-light)!important; }
+
+  .grid { position:fixed; top:52px; left:0; right:0; bottom:0; display:grid; grid-template-columns:1.6fr 1fr 1fr 1fr; grid-template-rows:1fr 1fr; }
+
+  .tile { position:relative; border-right:1px solid var(--border); border-bottom:1px solid var(--border); overflow:hidden; cursor:pointer; }
+  .tile:nth-child(4) { border-right:none; }
+  .tile:nth-child(5),.tile:nth-child(6),.tile:nth-child(7),.tile:nth-child(8) { border-bottom:none; }
+  .tile:last-child { border-right:none; }
+
+  /* static fallback bg */
+  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.495; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
+  .tile:not(.vid-playing):hover .tile-bg { opacity:0.66; transform:scale(1); }
+
+  /* canvas animation layer - hidden at rest, shown on hover only */
+  .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
+  .tile:hover .tile-canvas { opacity:1; }
+  .tile:hover .tile-bg { opacity:0.66; transform:scale(1); }
+  /* hero canvas always faintly visible */
+  .tile--hero .tile-canvas { opacity:0.5; }
+  .tile--hero:hover .tile-canvas { opacity:0.7; }
+
+  .tile-overlay { position:absolute; inset:0; z-index:2; background:var(--bg); opacity:0.3; transition:opacity 0.45s ease; }
+  .tile:hover .tile-overlay { opacity:0.15; }
+  .tile-wash { position:absolute; inset:0; z-index:3; background:rgba(255,255,255,0.04); opacity:0; transition:opacity 0.35s; }
+  .tile:hover .tile-wash { opacity:1; }
+
+  .tile-inner { position:absolute; inset:0; z-index:4; display:flex; flex-direction:column; justify-content:space-between; padding:28px 32px; }
+  .tile-top { display:flex; align-items:flex-start; justify-content:space-between; }
+  .tile-index { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
+  .tile-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.3s,transform 0.3s; }
+  .tile:hover .tile-tag { opacity:1; transform:translateY(0); }
+  .tile-title { font-size:15px; font-weight:500; line-height:1.3; color:var(--text-primary); margin-bottom:8px; transition:color 0.2s; }
+  .tile:hover .tile-title { color:#fff; }
+  .tile-desc { font-size:12px; line-height:1.6; color:var(--text-muted); max-width:320px; opacity:0; transform:translateY(6px); transition:opacity 0.3s 0.04s,transform 0.3s 0.04s; }
+  .tile:hover .tile-desc { opacity:1; transform:translateY(0); }
+  .tile-arrow { position:absolute; bottom:28px; right:32px; z-index:5; font-size:18px; color:var(--accent); opacity:0; transform:translate(-6px,6px); transition:opacity 0.3s,transform 0.3s; }
+  .tile:hover .tile-arrow { opacity:1; transform:translate(0,0); }
+  .tile-accent-bar { position:absolute; bottom:0; left:0; z-index:6; height:2px; width:0; background:var(--accent); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
+  .tile:hover .tile-accent-bar { width:100%; }
+
+  /* live pip */
+  .tile-play-pip { position:absolute; top:10px; left:12px; z-index:5; display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:9px; letter-spacing:0.1em; color:rgba(255,255,255,0.5); opacity:0; transition:opacity 0.3s; }
+  .tile-play-pip .rec { width:5px; height:5px; border-radius:50%; background:#ff4d4d; animation:recpulse 1s ease infinite; }
+  @keyframes recpulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .tile.vid-playing .tile-play-pip { opacity:1; }
+
+  /* HERO */
+  .tile--hero { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); border-bottom:none; }
+  .tile--hero .tile-bg { opacity:0.33; }
+  .tile--hero:hover .tile-bg { opacity:0.242; }
+  .tile--hero .tile-overlay { opacity:0.4; }
+  .tile--hero:hover .tile-overlay { opacity:0.35; }
+  .tile--hero .tile-inner { padding:40px 44px; justify-content:flex-end; }
+  .tile--hero .tile-pattern { position:absolute; top:0; right:0; width:55%; height:55%; z-index:1; background:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px),repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px); mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); -webkit-mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); pointer-events:none; }
+  .hero-eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:0.18em; color:var(--accent); text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .hero-eyebrow::before { content:''; display:inline-block; width:24px; height:1px; background:var(--accent); }
+  .hero-name { font-size:clamp(38px,3.2vw,58px); font-weight:600; line-height:1.04; letter-spacing:-0.02em; margin-bottom:20px; color:var(--text-primary); }
+  .hero-sub { font-size:14px; line-height:1.7; color:var(--text-muted); max-width:340px; margin-bottom:40px; }
+  .hero-links { display:flex; gap:16px; }
+  .hero-link { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none; padding:10px 20px; border:1px solid var(--border-hover); color:var(--text-primary); transition:border-color 0.2s,background 0.2s; }
+  .hero-link:hover { border-color:var(--accent); background:var(--accent-light); }
+  .hero-link--solid { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .hero-link--solid:hover { background:#7d5cff; border-color:#7d5cff; }
+  .tile-status { position:absolute; top:28px; right:32px; z-index:4; display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.08em; }
+  .dot { width:5px; height:5px; border-radius:50%; background:#3adb76; animation:pulse 2.4s ease infinite; }
+  @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(58,219,118,0.4)} 50%{box-shadow:0 0 0 5px rgba(58,219,118,0)} }
+
+  /* MODAL */
+  .modal-backdrop { position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0); pointer-events:none; transition:background 0.4s ease; }
+  .modal-backdrop.open { background:rgba(0,0,0,0.72); pointer-events:auto; }
+  .modal { position:fixed; top:52px; right:0; bottom:0; z-index:700; width:min(600px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; will-change:transform; }
+  .modal.open { transform:translateX(0); }
+  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.715) saturate(0.8); }
+  .modal-img-wrap { position:relative; flex-shrink:0; height:240px; overflow:hidden; }
+  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.792) saturate(0.95); }
+  .modal-img-wrap.has-video .modal-video { display:block; }
+  .modal-img-wrap.has-video .modal-img { opacity:0; }
+  .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
+  .modal-body { flex:1; overflow-y:auto; padding:32px 40px 48px; scrollbar-width:thin; scrollbar-color:rgba(108,71,255,0.3) transparent; }
+  .modal-body::-webkit-scrollbar { width:4px; }
+  .modal-body::-webkit-scrollbar-thumb { background:rgba(108,71,255,0.3); border-radius:2px; }
+  .modal-tag { font-family:var(--mono); font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin-bottom:12px; }
+  .modal-title { font-size:28px; font-weight:600; line-height:1.15; letter-spacing:-0.02em; color:#fff; margin-bottom:14px; }
+  .modal-desc { font-size:14px; line-height:1.75; color:var(--text-muted); margin-bottom:28px; }
+  .modal-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:32px; }
+  .chip { font-family:var(--mono); font-size:10px; letter-spacing:0.06em; padding:5px 11px; border:1px solid rgba(108,71,255,0.3); color:rgba(108,71,255,0.85); background:rgba(108,71,255,0.06); }
+  .modal-links { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; }
+  .modal-link { display:inline-flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11px; letter-spacing:0.07em; text-transform:uppercase; text-decoration:none; padding:11px 22px; border:1px solid var(--border-hover); color:var(--text-primary); transition:border-color 0.2s,background 0.2s,color 0.2s; }
+  .modal-link:hover { border-color:var(--accent); background:var(--accent-light); color:#fff; }
+  .modal-link--primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .modal-link--primary:hover { background:#7d5cff; border-color:#7d5cff; }
+  .modal-link svg { width:14px; height:14px; flex-shrink:0; }
+  .modal-close { position:absolute; top:16px; right:16px; z-index:10; width:36px; height:36px; background:rgba(14,14,14,0.8); border:1px solid var(--border-hover); color:var(--text-muted); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; line-height:1; transition:color 0.2s,border-color 0.2s; }
+  .modal-close:hover { color:#fff; border-color:var(--accent); }
+  .modal-stats { display:flex; gap:32px; margin-bottom:28px; }
+  .modal-stat-label { font-family:var(--mono); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-dim); margin-bottom:4px; }
+  .modal-stat-val { font-size:15px; font-weight:500; color:var(--text-primary); }
+
+  /* ── LOADER ── */
+  #loader {
+    position:fixed; inset:0; z-index:1000;
+    background:#000;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    overflow:hidden;
+    transition:opacity 1.2s ease;
+  }
+  #loader.done { opacity:0; pointer-events:none; }
+
+  /* Fog layers - pure CSS, no canvas */
+  .fog-layer {
+    position:absolute;
+    border-radius:50%;
+    opacity:0;
+    pointer-events:none;
+    will-change:transform, opacity;
+    transform:translateZ(0);
+  }
+  .fog-layer:nth-child(1) {
+    width:80vw; height:60vh;
+    top:20%; left:5%;
+    background:radial-gradient(ellipse, rgba(80,80,80,0.55) 0%, transparent 70%);
+    animation:fogrise 2.4s cubic-bezier(0.16,1,0.3,1) 0s forwards;
+  }
+  .fog-layer:nth-child(2) {
+    width:70vw; height:55vh;
+    top:30%; right:0%;
+    background:radial-gradient(ellipse, rgba(60,60,60,0.45) 0%, transparent 65%);
+    animation:fogrise 2.6s cubic-bezier(0.16,1,0.3,1) 0.1s forwards;
+  }
+  .fog-layer:nth-child(3) {
+    width:90vw; height:50vh;
+    bottom:10%; left:10%;
+    background:radial-gradient(ellipse, rgba(100,100,100,0.35) 0%, transparent 60%);
+    animation:fogrise 3s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
+  }
+
+  @keyframes fogrise {
+    0%   { opacity:0; transform:translateY(8%) scale(0.9); }
+    40%  { opacity:1; }
+    100% { opacity:0.85; transform:translateY(0%) scale(1); }
+  }
+  @keyframes fogdrift1 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(3%,-4%) scale(1.06); }
+  }
+  @keyframes fogdrift2 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(-4%,3%) scale(0.96); }
+  }
+  @keyframes fogdrift3 {
+    0%   { transform:translate(0,0) scale(1); }
+    100% { transform:translate(2%,-2%) scale(1.04); }
+  }
+
+  .loader-quote {
+    position:relative; z-index:2;
+    font-family:'Cinzel', serif;
+    font-size:clamp(16px,1.8vw,26px);
+    font-weight:400;
+    line-height:2;
+    letter-spacing:0.04em;
+    color:rgba(255,253,248,0.96);
+    max-width:580px;
+    text-align:center;
+    padding:0 40px;
+    text-shadow:0 0 60px rgba(255,255,255,0.08), 0 2px 24px rgba(0,0,0,0.6);
+  }
+  .loader-quote .line-wrap {
+    display:block;
+    overflow:hidden;
+  }
+  .loader-quote .line {
+    display:block;
+    opacity:0;
+    transform:translateY(110%);
+    filter:blur(5px);
+    transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1),
+                transform 0.8s cubic-bezier(0.16,1,0.3,1),
+                filter 0.8s ease;
+  }
+  .loader-quote .line.visible {
+    opacity:1;
+    transform:translateY(0);
+    filter:blur(0);
+  }
+  .loader-quote .line.attr {
+    font-family:'Space Mono', monospace;
+    font-size:10px;
+    font-weight:400;
+    letter-spacing:0.28em;
+    text-transform:uppercase;
+    color:rgba(210,195,160,0.7);
+    text-shadow:none;
+    margin-top:2px;
+  }
+
+  .loader-bar-wrap {
+    position:relative; z-index:2;
+    margin-top:56px;
+    width:140px; height:1px;
+    background:rgba(255,255,255,0.04);
+    overflow:hidden;
+  }
+  .loader-bar {
+    position:absolute; top:0; left:0; height:100%;
+    width:0; background:var(--accent);
+    box-shadow:none;
+    transition:width 0.06s linear;
+  }
+  .loader-pct {
+    position:relative; z-index:2;
+    margin-top:14px;
+    font-family:var(--mono);
+    font-size:10px; letter-spacing:0.14em;
+    color:rgba(240,238,232,0.2);
+  }
+
+  /* ── CUSTOM CURSOR ── */
+  /* native cursor restored - custom JS cursor removed for performance */
+  /* Position and size are driven entirely by transform in JS.
+     left/top/width/height would force a layout pass every frame. */
+  #cursor {
+    position:fixed; left:0; top:0; z-index:9999;
+    pointer-events:none;
+    width:4px; height:4px;
+    border-radius:50%;
+    background:#fff;
+    transform:translate3d(-100px,-100px,0);
+    will-change:transform;
+    transition:background 0.15s ease;
+  }
+  #cursor-ring {
+    position:fixed; left:0; top:0; z-index:9998;
+    pointer-events:none;
+    width:20px; height:20px;
+    border-radius:50%;
+    border:1px solid rgba(108,71,255,0.6);
+    transform:translate3d(-100px,-100px,0);
+    will-change:transform;
+    transition:border-color 0.15s ease;
+  }
+
+  body.cursor-hover #cursor { background:var(--accent); }
+  body.cursor-hover #cursor-ring { border-color:rgba(108,71,255,1); }
+
+  /* ── VIEW PROJECT hint inside tile ── */
+  .tile-view-hint {
+    display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:10px;
+    letter-spacing:0.1em; text-transform:uppercase;
+    color:rgba(240,238,232,0.0);
+    margin-top:10px;
+    transform:translateY(4px);
+    transition:color 0.3s ease, transform 0.3s ease;
+  }
+  .tile-view-hint::after {
+    content:'→';
+    display:inline-block;
+    transition:transform 0.3s ease;
+  }
+  .tile:hover .tile-view-hint {
+    color:rgba(255,200,80,0.9);
+    transform:translateY(0);
+  }
+  .tile:hover .tile-view-hint::after {
+    transform:translateX(3px);
+  }
+
+  /* ── TILE ENTRANCE STAGGER ── */
+  .tile { opacity:0; transform:translateY(12px); transition:opacity 0.4s cubic-bezier(0.16,1,0.3,1), transform 0.4s cubic-bezier(0.16,1,0.3,1), border-color 0.2s; will-change:opacity, transform; }
+  /* scroll cue hidden on desktop, shown only in mobile media query */
+  .scroll-cue { display:none; }
+  .tile.entered { opacity:1; transform:translateY(0); will-change:auto; }
+  /* grid-projects is invisible to the desktop grid layout */
+  .grid-projects { display:contents; }
+  /* active tile when modal open */
+  .tile.active { box-shadow:inset 0 0 0 1.5px var(--accent); }
+
+  /* ══ ALL PROJECTS OVERLAY ══ */
+  #all-projects {
+    position:fixed; inset:0; z-index:500;
+    background:#0e0e0e;
+    display:flex; flex-direction:column;
+    opacity:0; visibility:hidden;
+    transition:opacity 0.45s ease, visibility 0.45s ease;
+    overflow:hidden;
+  }
+  #all-projects.open { opacity:1; visibility:visible; }
+
+  .ap-header {
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 40px; height:64px;
+    border-bottom:1px solid var(--border);
+    background:rgba(10,8,16,0.98);
+  }
+  .ap-title {
+    font-family:var(--mono); font-size:11px;
+    letter-spacing:0.16em; text-transform:uppercase;
+    color:var(--text-muted);
+  }
+  .ap-title span { color:var(--accent); margin-left:10px; }
+  .ap-close {
+    width:36px; height:36px;
+    background:transparent;
+    border:1px solid var(--border-hover);
+    color:var(--text-muted); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px;
+    transition:color 0.2s, border-color 0.2s;
+  }
+  .ap-close:hover { color:#fff; border-color:var(--accent); }
+
+  .ap-grid {
+    flex:1; overflow-y:auto;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    gap:1px;
+    background:var(--border);
+    padding:0;
+    scrollbar-width:thin;
+    scrollbar-color:rgba(108,71,255,0.3) transparent;
+  }
+  .ap-grid::-webkit-scrollbar { width:4px; }
+  .ap-grid::-webkit-scrollbar-thumb { background:rgba(108,71,255,0.3); }
+
+  .ap-card {
+    position:relative;
+    background:var(--bg);
+    padding:32px 36px;
+    cursor:pointer;
+    display:flex; flex-direction:column; justify-content:space-between;
+    min-height:200px;
+    transition:background 0.25s;
+    overflow:hidden;
+  }
+  .ap-card::before {
+    content:'';
+    position:absolute; inset:0;
+    background:rgba(255,255,255,0.03);
+    opacity:0; transition:opacity 0.3s;
+  }
+  .ap-card:hover::before { opacity:1; }
+  .ap-card:hover { background:#111; }
+
+  .ap-card-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:auto; position:relative; z-index:2; }
+  .ap-card-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.154; transition:opacity 0.3s ease; }
+  .ap-card:hover .ap-card-bg { opacity:0.33; }
+  .ap-card-title, .ap-card-desc, .ap-card-chips { position:relative; z-index:2; }
+  .ap-num { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
+  .ap-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.25s, transform 0.25s; }
+  .ap-card:hover .ap-tag { opacity:1; transform:translateY(0); }
+
+  .ap-card-title { font-size:18px; font-weight:500; line-height:1.3; color:var(--text-primary); margin:20px 0 10px; transition:color 0.2s; }
+  .ap-card:hover .ap-card-title { color:#fff; }
+  .ap-card-desc { font-size:12px; line-height:1.65; color:var(--text-muted); }
+
+  .ap-card-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; }
+  .ap-card-chip { font-family:var(--mono); font-size:9px; letter-spacing:0.06em; padding:3px 8px; border:1px solid rgba(108,71,255,0.25); color:rgba(108,71,255,0.7); background:rgba(108,71,255,0.05); }
+
+  .ap-card-arrow { position:absolute; bottom:28px; right:28px; font-size:16px; color:var(--accent); opacity:0; transform:translate(-4px,4px); transition:opacity 0.25s, transform 0.25s; }
+  .ap-card:hover .ap-card-arrow { opacity:1; transform:translate(0,0); }
+  .ap-card-accent { position:absolute; bottom:0; left:0; height:2px; width:0; background:var(--accent); transition:width 0.45s cubic-bezier(0.16,1,0.3,1); }
+  .ap-card:hover .ap-card-accent { width:100%; }
+
+  /* ══ MOBILE ══ */
+  @media (max-width:768px) {
+    /* scroll cue - only on mobile */
+    .scroll-cue {
+      display:flex;
+      position:absolute;
+      bottom:20px; right:20px;
+      z-index:6;
+      align-items:center; gap:8px;
+      font-family:var(--mono); font-size:10px;
+      letter-spacing:0.1em; text-transform:uppercase;
+      color:rgba(240,238,232,0.7);
+      opacity:1;
+      transition:opacity 0.4s ease;
+      pointer-events:none;
+    }
+    .scroll-cue.hidden { opacity:0; }
+    .scroll-cue-arrow {
+      display:inline-block;
+      animation:scrollbounce 1.6s ease-in-out infinite;
+      color:var(--accent);
+      font-size:13px;
+    }
+    @keyframes scrollbounce {
+      0%,100% { transform:translateY(0); opacity:0.6; }
+      50%     { transform:translateY(4px); opacity:1; }
+    }
+    .tile-bg,
+    .tile:hover .tile-bg,
+    .tile--hero .tile-bg,
+    .tile--hero:hover .tile-bg,
+    .tile:not(.vid-playing):hover .tile-bg { opacity:0.495 !important; transform:scale(1) !important; }
+    .tile--hero .tile-bg,
+    .tile--hero:hover .tile-bg { opacity:0.33 !important; }
+    /* reduce overlay so bg image shows through */
+    .tile-overlay,
+    .tile:hover .tile-overlay { opacity:0.3 !important; }
+    .tile--hero .tile-overlay,
+    .tile--hero:hover .tile-overlay { opacity:0.4 !important; }
+    /* hide canvas on mobile - no hover animations */
+    .tile-canvas { display:none !important; }
+
+    /* cursor */
+    body { cursor:auto; }
+    #cursor, #cursor-ring { display:none; }
+
+    /* header */
+    header { padding:0 16px; height:48px; }
+    nav a:not(.nav-cta):not(#allProjectsBtn) { display:none; }
+    #allProjectsBtn { font-size:10px; padding:6px 10px; }
+    .nav-cta { font-size:10px; padding:6px 10px; }
+
+    /* unlock scroll, kill fixed grid */
+    html, body { overflow-x:hidden; overflow-y:auto; height:auto; min-height:100%; }
+
+    .grid {
+      position:relative;
+      top:auto; left:auto; right:auto; bottom:auto;
+      display:block;
+      margin-top:48px;
+      height:auto;
+    }
+
+    /* hero - full screen, content centered vertically */
+    .tile--hero {
+      display:flex;
+      flex-direction:column;
+      min-height:calc(100svh - 48px);
+      border-right:none;
+      border-bottom:1px solid var(--border);
+      grid-column:unset;
+      grid-row:unset;
+    }
+    .tile--hero .tile-inner {
+      position:relative;
+      inset:auto;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-end;
+      padding:64px 28px 48px;
+      z-index:4;
+    }
+    .tile--hero canvas,
+    .tile--hero .tile-overlay,
+    .tile--hero .tile-pattern,
+    .tile--hero .tile-wash,
+    .tile--hero .tile-accent-bar { position:absolute; }
+
+    .tile-status { top:18px; right:16px; }
+    .hero-eyebrow { font-size:9px; margin-bottom:14px; }
+    .hero-name { font-size:clamp(40px,11vw,58px); margin-bottom:16px; }
+    .hero-sub { font-size:13px; line-height:1.65; max-width:100%; margin-bottom:32px; }
+    .hero-links { display:flex; flex-wrap:wrap; gap:10px; }
+    .hero-link { font-size:10px; padding:9px 16px; }
+
+    /* project tiles - 2-col grid block */
+    .grid-projects {
+      display:grid !important;
+      grid-template-columns:1fr 1fr;
+      grid-auto-rows:auto;
+    }
+    .tile--sm {
+      position:relative;
+      min-height:180px;
+      border-right:1px solid var(--border);
+      border-bottom:1px solid var(--border);
+      opacity:1 !important;
+      transform:none !important;
+    }
+    .tile--sm:nth-child(2n) { border-right:none; }
+    .tile--sm:last-child,
+    .tile--sm:nth-last-child(2):nth-child(odd) { border-bottom:none; }
+    .tile--sm .tile-inner { padding:18px 16px; }
+    .tile-title { font-size:12px; line-height:1.3; }
+    .tile-desc { display:none; }
+    .tile-index { font-size:9px; }
+    .tile-arrow { bottom:12px; right:14px; font-size:13px; }
+    .tile-accent-bar { height:2px; }
+
+    /* modal full screen */
+    .modal { top:0; width:100vw; border-left:none; }
+    .modal-body { padding:24px 20px 40px; }
+    .modal-title { font-size:20px; }
+    .modal-stats { gap:16px; flex-wrap:wrap; }
+    .modal-img { height:180px; }
+    .modal-desc { font-size:13px; }
+
+    /* all projects overlay */
+    .ap-header { padding:0 16px; height:52px; }
+    .ap-grid { grid-template-columns:1fr; }
+    .ap-card { padding:20px; min-height:140px; }
+    .ap-card-title { font-size:16px; }
+  }
+
+  @media (max-width:420px) {
+    .hero-name { font-size:clamp(36px,12vw,52px); }
+    .tile--sm { min-height:150px; }
+    .grid-projects { grid-template-columns:1fr; }
+    .tile--sm:nth-child(2n) { border-right:none; }
+    .tile--sm { border-right:none; }
+  }
+</style>
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3ZKH77NY9E"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-3ZKH77NY9E');
+</script>
+<!-- End Google Analytics 4 -->
+</head>
+<body>
+
+
+<!-- LOADER -->
+<div id="loader">
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  <div class="fog-layer"></div>
+  
+  <div class="loader-quote">
+    <span class="line-wrap"><span class="line">"Talk is cheap.</span></span>
+    <span class="line-wrap"><span class="line">Show me the code."</span></span>
+    <span class="line-wrap"><span class="line line-attr">Linus Torvalds</span></span>
+  </div>
+  <div class="loader-bar-wrap">
+    <div class="loader-bar" id="loaderBar"></div>
+  </div>
+  <div class="loader-pct" id="loaderPct">0%</div>
+</div>
+
+<header>
+  <a href="#" class="logo">Anas Farooqui</a>
+  <nav>
+    <a href="https://medium.com/@anasfarooqui373" target="_blank" rel="noopener">Writing</a>
+    <a href="https://github.com/ralegionc" target="_blank">GitHub</a>
+    <button id="allProjectsBtn" class="nav-cta" style="background:none;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:0.05em;border:1px solid var(--border-hover);color:var(--text-primary);padding:7px 16px;">All Work ↗</button>
+    <a href="https://www.linkedin.com/in/anas-farooqui-5617b1244/" target="_blank" rel="noopener" class="nav-cta">Contact ↗</a>
+  </nav>
+</header>
+
+<div class="grid">
+
+  <!-- HERO - WebGL Darcy flow solver -->
+  <div class="tile tile--hero">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.242;"></div>
+    <div class="tile-overlay" style="opacity:0.55;transition:opacity 0.45s ease;"></div>
+    <div class="tile-pattern"></div>
+    <div class="tile-wash"></div>
+    <div class="tile-inner">
+      <div class="tile-status"><span class="dot"></span>Available for work</div>
+      <div>
+        <div class="hero-eyebrow">Master of Applied Computer Science Student</div>
+        <h1 class="hero-name">Building<br>systems<br>that scale.</h1>
+        <p class="hero-sub">Computer Science engineer focused on AI/ML research, data infrastructure and backend systems. Over to the right(or below if you're on mobile) are some of my projects which you can see in more detail by clicking. Currently targeting internship roles.</p>
+        <div class="hero-links">
+          <a href="https://github.com/ralegionc" target="_blank" class="hero-link hero-link--solid">View GitHub ↗</a>
+          <a href="https://medium.com/@anasfarooqui373" target="_blank" rel="noopener" class="hero-link">Read Writing</a>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue" id="scrollCue">
+      <span class="scroll-cue-text">Scroll for projects</span>
+      <span class="scroll-cue-arrow">↓</span>
+    </div>
+    <div class="tile-accent-bar"></div>
+  </div>
+
+  <div class="grid-projects">
+
+  <!-- 01 Convergent Evolution -->
+  <div class="tile tile--sm" data-project="0" data-anim="fluid">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">01</span><span class="tile-tag">ML / Bioinformatics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Convergent Evolution<br>Detector</div>
+        <div class="tile-desc">Finds proteins in unrelated species that evolved the same job independently, using an AI protein model that ignores look-alikes that simply share a common ancestor.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 02 War Lethality -->
+  <div class="tile tile--sm" data-project="1" data-anim="bars">
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1580922110301-a666f6745565?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">02</span><span class="tile-tag">Data / Research</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">War Lethality<br>Analysis</div>
+        <div class="tile-desc">A data study of how deadly wars have become over 200 years, pinpointing the moments when the nature of conflict fundamentally shifted.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 03 Neural ODE -->
+  <div class="tile tile--sm" data-project="2" data-anim="wave">
+    <div class="tile-bg" id="odeTileBg"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">03</span><span class="tile-tag">ML / Physics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Predator-Prey Neural<br>ODE</div>
+        <div class="tile-desc">A neural network that learns the boom-and-bust cycle between predators and prey from 120 years of fur-trapping records, without being given the equations.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 04 Sleep Atlas -->
+  <div class="tile tile--sm" data-project="3" data-anim="scatter">
+    <div class="tile-bg" id="sleepTileBg"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">04</span><span class="tile-tag">ML / Ecology</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Sleep Atlas</div>
+        <div class="tile-desc">A cross-species look at why animals sleep so differently, comparing 42 species to find what really predicts how long and how deeply they sleep.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 05 Fluid SR -->
+  <div class="tile tile--sm" data-project="4" data-anim="matrix">
+    <div class="tile-bg" id="fluidTileBg"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">05</span><span class="tile-tag">ML / Physics</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Diffusion-Based Fluid<br>Super-Resolution</div>
+        <div class="tile-desc">An AI “enhance” button for physics: it takes a blurry, low-detail fluid simulation and fills in realistic fine detail.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+  <!-- 06 Heliostream -->
+  <div class="tile tile--sm" data-project="5" data-anim="wave">
+    <div class="tile-bg" id="helioTileBg"></div>
+    <canvas class="tile-canvas"></canvas>
+    <div class="tile-overlay"></div><div class="tile-wash"></div>
+    <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
+    <div class="tile-inner">
+      <div class="tile-top"><span class="tile-index">06</span><span class="tile-tag">Data Engineering</span></div>
+      <div class="tile-bottom">
+        <div class="tile-title">Heliostream</div>
+        <div class="tile-desc">A near-real-time solar-storm forecaster built on live NASA solar-wind data, and reports how confident it is in every prediction.</div>
+        <div class="tile-view-hint">View project</div>
+      </div>
+    </div>
+    <div class="tile-arrow">↗</div><div class="tile-accent-bar"></div>
+  </div>
+
+</div><!-- /grid-projects -->
+</div><!-- /grid -->
+
+<!-- ALL PROJECTS OVERLAY -->
+<div id="all-projects">
+  <div class="ap-header">
+    <div class="ap-title">All Work <span id="ap-count"></span></div>
+    <button class="ap-close" id="apClose">✕</button>
+  </div>
+  <div class="ap-grid" id="apGrid"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-backdrop" id="backdrop"></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+  <div class="modal-img-wrap">
+    <img class="modal-img" id="modalImg" src="" alt="">
+    <video class="modal-video" id="modalVideo" muted loop playsinline preload="none"></video>
+    <div class="modal-img-gradient"></div>
+  </div>
+  <div class="modal-body">
+    <div class="modal-tag" id="modalTag"></div>
+    <div class="modal-title" id="modalTitle"></div>
+    <div class="modal-links" id="modalLinks"></div>
+    <div class="modal-stats" id="modalStats"></div>
+    <div class="modal-desc" id="modalDesc"></div>
+    <div class="modal-chips" id="modalChips"></div>
+  </div>
+</div>
+
+<script>
+/* Heliostream media, inlined so the page is a single portable file */
+const FLUID_IMG = 'assets/fluidsr-tile.jpg';
+const FLUID_VID = 'assets/fluidsr-video.mp4';
+const SLEEP_IMG = 'assets/sleepatlas-tile.jpg';
+const SLEEP_VID = 'assets/sleepatlas-video.mp4';
+const ODE_IMG = 'assets/neuralode-tile.jpg';
+const ODE_VID = 'assets/neuralode-video.mp4';
+const HELIO_IMG = 'assets/heliostream-tile.jpg';
+const HELIO_VID = 'assets/heliostream-video.mp4';
+const DNA_VID = 'assets/dna.mp4';
+document.addEventListener('DOMContentLoaded', () => {
+  const paint = (id, uri) => {
+    const el = document.getElementById(id);
+    if (el) el.style.backgroundImage = `url(${uri})`;
+  };
+  paint('helioTileBg', HELIO_IMG);
+  paint('sleepTileBg', SLEEP_IMG);
+  paint('odeTileBg',   ODE_IMG);
+  paint('fluidTileBg', FLUID_IMG);
+});
+
+/* ════════════════════════════════════════
+   CANVAS ANIMATIONS - one per tile type
+   Each animator gets: ctx, W, H, t (seconds)
+   Returns a draw(t) closure.
+════════════════════════════════════════ */
+
+const ACCENT = '#6c47ff';
+const ACCENT2 = 'rgba(108,71,255,';
+
+const animators = {
+
+  /* Fluid: advecting dye particles */
+  fluid(ctx, W, H) {
+    const N = 70;
+    const pts = Array.from({length:N}, () => ({
+      x: Math.random()*W, y: Math.random()*H,
+      vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6,
+      life: Math.random(), maxLife: 0.6+Math.random()*0.4,
+      r: 1.5+Math.random()*3
+    }));
+    return function(t) {
+      ctx.fillStyle = 'rgba(10,8,20,0.18)';
+      ctx.fillRect(0,0,W,H);
+      pts.forEach(p => {
+        // curl-like velocity field
+        const nx = p.x/W, ny = p.y/H;
+        const angle = Math.sin(nx*4+t*0.4)*Math.cos(ny*3-t*0.3)*Math.PI*2;
+        p.vx += Math.cos(angle)*0.04; p.vy += Math.sin(angle)*0.04;
+        p.vx *= 0.96; p.vy *= 0.96;
+        p.x += p.vx; p.y += p.vy;
+        if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+        if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+        p.life += 0.004;
+        if(p.life>p.maxLife) { p.life=0; p.x=Math.random()*W; p.y=Math.random()*H; }
+        const a = Math.sin(p.life/p.maxLife*Math.PI)*0.7;
+        const hue = 240+Math.sin(p.x/W*3+t*0.2)*30;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle = `hsla(${hue},80%,65%,${a})`;
+        ctx.fill();
+      });
+    };
+  },
+
+  /* Grid: schema diff - two column tables with highlighted rows changing */
+  grid(ctx, W, H) {
+    const rows = 9, cols = 2;
+    const cw = W/cols, rh = H/rows;
+    let highlight = {row:0, progress:0};
+    const changed = new Set([2,5,7]);
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      const beat = t*0.6;
+      const curRow = Math.floor(beat % rows);
+      ctx.strokeStyle = 'rgba(108,71,255,0.15)';
+      ctx.lineWidth = 1;
+      for(let r=0;r<=rows;r++) { ctx.beginPath(); ctx.moveTo(0,r*rh); ctx.lineTo(W,r*rh); ctx.stroke(); }
+      for(let c=0;c<=cols;c++) { ctx.beginPath(); ctx.moveTo(c*cw,0); ctx.lineTo(c*cw,H); ctx.stroke(); }
+      for(let r=0;r<rows;r++) {
+        const isChanged = changed.has(r);
+        const isCurrent = r===curRow;
+        if(isCurrent) {
+          ctx.fillStyle = 'rgba(108,71,255,0.18)';
+          ctx.fillRect(0,r*rh,W,rh);
+        }
+        if(isChanged) {
+          const side = Math.floor(t*0.4+r)%2;
+          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.12)' : 'rgba(50,220,120,0.12)';
+          ctx.fillRect(side*cw+2,r*rh+2,cw-4,rh-4);
+          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.6)' : 'rgba(50,220,120,0.6)';
+          ctx.fillRect(side*cw+2,r*rh+2,3,rh-4);
+        }
+        // fake text bars
+        for(let c=0;c<cols;c++) {
+          const bw = (0.3+Math.sin(r*7.3+c*3.1)*0.2)*cw*0.7;
+          ctx.fillStyle = isCurrent ? 'rgba(200,190,255,0.5)' : 'rgba(180,170,255,0.15)';
+          ctx.fillRect(c*cw+14, r*rh+rh/2-3, bw, 5);
+        }
+      }
+    };
+  },
+
+  /* Wave: oscillating predator-prey curves */
+  wave(ctx, W, H) {
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      // grid
+      ctx.strokeStyle = 'rgba(108,71,255,0.08)';
+      ctx.lineWidth = 0.5;
+      for(let i=0;i<6;i++) { ctx.beginPath(); ctx.moveTo(0,i*H/5); ctx.lineTo(W,i*H/5); ctx.stroke(); }
+      const draw = (phase, color, amp) => {
+        ctx.beginPath();
+        for(let x=0;x<=W;x+=2) {
+          const fq = 2.5, u=x/W;
+          const y = H/2 - amp * Math.sin(u*Math.PI*fq - t*0.8 + phase)
+                       * Math.sin(u*Math.PI + phase*0.3)
+                       * (0.6 + 0.4*Math.sin(u*Math.PI*0.5));
+          x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+        }
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      };
+      draw(0, 'rgba(108,71,255,0.8)', H*0.22);
+      draw(Math.PI*0.7, 'rgba(50,210,130,0.6)', H*0.18);
+      // phase dot
+      const dotX = ((t*0.8*0.5/Math.PI) % 1)*W;
+      [[0,'rgba(108,71,255,1)'],[Math.PI*0.7,'rgba(50,210,130,1)']].forEach(([ph,col])=>{
+        const u=dotX/W, fq=2.5;
+        const dotY = H/2 - H*0.22*Math.sin(u*Math.PI*fq-t*0.8+ph)*Math.sin(u*Math.PI+ph*0.3)*(0.6+0.4*Math.sin(u*Math.PI*0.5));
+        ctx.beginPath(); ctx.arc(dotX,dotY,4,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
+      });
+    };
+  },
+
+  /* Bars: animated histogram - price inflation */
+  bars(ctx, W, H) {
+    const N = 17;
+    const seeds = Array.from({length:N},(_,i)=>0.3+Math.sin(i*2.3)*0.35+Math.cos(i*1.1)*0.2);
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      const bw = (W-N-2)/(N+1)*0.85, gap=(W-bw*N)/(N+1);
+      for(let i=0;i<N;i++) {
+        const base = seeds[i];
+        const h = (base + 0.12*Math.sin(t*0.5+i*0.8)) * H * 0.75;
+        const x = gap + i*(bw+gap);
+        const y = H-h-8;
+        const prog = (t*0.3+i/N)%1;
+        const alpha = 0.3 + 0.5*(0.5+0.5*Math.sin(prog*Math.PI*2));
+        const isHighlit = i===Math.floor(t*1.2)%N;
+        ctx.fillStyle = isHighlit ? `rgba(108,71,255,0.9)` : `rgba(108,71,255,${alpha})`;
+        ctx.fillRect(x,y,bw,h);
+        if(isHighlit) {
+          ctx.fillStyle='rgba(255,255,255,0.7)';
+          ctx.fillRect(x,y-2,bw,2);
+        }
+      }
+      // x axis
+      ctx.fillStyle='rgba(108,71,255,0.2)'; ctx.fillRect(0,H-8,W,1);
+    };
+  },
+
+  /* Scatter: monte carlo dots converging */
+  scatter(ctx, W, H) {
+    const N = 140;
+    const pts = Array.from({length:N},(_,i)=>({
+      x:Math.random()*W, y:Math.random()*H,
+      tx:Math.random()*W, ty:Math.random()*H,
+      phase:Math.random()*Math.PI*2,
+      col:Math.random()>0.5?0:1
+    }));
+    return function(t) {
+      ctx.fillStyle='rgba(10,8,20,0.25)'; ctx.fillRect(0,0,W,H);
+      const progress = 0.5+0.5*Math.sin(t*0.25);
+      pts.forEach(p=>{
+        const cx = p.x+(p.tx-p.x)*progress + Math.sin(t*0.3+p.phase)*8*(1-progress);
+        const cy = p.y+(p.ty-p.y)*progress + Math.cos(t*0.3+p.phase)*8*(1-progress);
+        const a = 0.3+0.5*progress;
+        ctx.beginPath(); ctx.arc(cx,cy,1.5,0,Math.PI*2);
+        ctx.fillStyle = p.col===0 ? `rgba(108,71,255,${a})` : `rgba(50,200,130,${a})`;
+        ctx.fill();
+      });
+      // two cluster centers
+      [[W*0.35,H*0.45],[W*0.65,H*0.55]].forEach(([cx,cy],i)=>{
+        ctx.beginPath(); ctx.arc(cx,cy,4+2*Math.sin(t+i),0,Math.PI*2);
+        ctx.fillStyle=i===0?'rgba(108,71,255,0.9)':'rgba(50,200,130,0.9)'; ctx.fill();
+        ctx.beginPath(); ctx.arc(cx,cy,14+4*Math.sin(t+i),0,Math.PI*2);
+        ctx.strokeStyle=i===0?'rgba(108,71,255,0.3)':'rgba(50,200,130,0.3)'; ctx.lineWidth=1; ctx.stroke();
+      });
+    };
+  },
+
+  /* Matrix: scrolling token columns - LLM eval */
+  matrix(ctx, W, H) {
+    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>{}[]|!?'.split('');
+    const cols = Math.floor(W/14);
+    const drops = Array.from({length:cols},()=>Math.random()*H/14|0);
+    const speeds = Array.from({length:cols},()=>0.3+Math.random()*0.7);
+    let last=0;
+    return function(t) {
+      if(t-last>0.05) {
+        ctx.fillStyle='rgba(10,8,20,0.18)'; ctx.fillRect(0,0,W,H);
+        ctx.font='bold 11px monospace';
+        for(let i=0;i<cols;i++) {
+          const ch=CHARS[Math.random()*CHARS.length|0];
+          const x=i*14+2, y=drops[i]*14;
+          const distFromTop=drops[i]/(H/14);
+          const a=0.1+0.7*(1-distFromTop);
+          ctx.fillStyle=`rgba(108,71,255,${a})`; ctx.fillText(ch,x,y);
+          // bright head
+          if(Math.random()>0.5){ctx.fillStyle='rgba(200,190,255,0.9)'; ctx.fillText(ch,x,y);}
+          drops[i]+=speeds[i];
+          if(drops[i]*14>H && Math.random()>0.9) drops[i]=0;
+        }
+        last=t;
+      }
+    };
+  },
+
+  /* Lines: flowing text lines - writing */
+  lines(ctx, W, H) {
+    const lineCount=12;
+    const lineData=Array.from({length:lineCount},(_,i)=>({
+      width:0.4+Math.random()*0.5,
+      speed:0.004+Math.random()*0.006,
+      y:(i+0.5)*(H/lineCount),
+      phase:Math.random()*Math.PI*2
+    }));
+    return function(t) {
+      ctx.clearRect(0,0,W,H);
+      lineData.forEach((l,i)=>{
+        const progress=(t*l.speed + l.phase/(Math.PI*2))%1;
+        const lineW=l.width*W;
+        const x=progress*W-lineW;
+        const a=0.15+0.35*Math.sin(progress*Math.PI);
+        ctx.fillStyle=`rgba(108,71,255,${a})`;
+        ctx.fillRect(x,l.y-2,lineW,3);
+        // cursor blink at end
+        if(progress>0.1&&progress<0.9){
+          const cx=x+lineW;
+          const ba=0.8*Math.sin(t*4+i);
+          ctx.fillStyle=`rgba(200,190,255,${Math.max(0,ba)})`;
+          ctx.fillRect(cx+2,l.y-6,2,12);
+        }
+      });
+    };
+  }
+};
+
+/* ── Bootstrap tiles ── */
+function initTiles() {
+  document.querySelectorAll('.tile[data-anim]').forEach(tile => {
+    const canvas = tile.querySelector('.tile-canvas');
+    const type = tile.dataset.anim;
+    const anim = animators[type];
+    if (!anim) return;
+
+    const rect = tile.getBoundingClientRect();
+    const W = Math.round(rect.width)  || tile.clientWidth  || 300;
+    const H = Math.round(rect.height) || tile.clientHeight || 200;
+    canvas.width  = W;
+    canvas.height = H;
+
+    const ctx = canvas.getContext('2d');
+    const draw = anim(ctx, W, H);
+
+    let rafId = null;
+    let startTime = null;
+    let elapsed = 0;
+    let lastDraw = 0;
+    const FRAME_MS = 33; // ~30fps is plenty for a hover accent; halves the work
+
+    function loop(ts) {
+      if (!startTime) startTime = ts - elapsed;
+      elapsed = ts - startTime;
+      if (ts - lastDraw >= FRAME_MS) { lastDraw = ts; draw(elapsed / 1000); }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    function start() {
+      if (rafId) return;
+      startTime = null; // will be set in loop using saved elapsed
+      rafId = requestAnimationFrame(loop);
+      tile.classList.add('vid-playing');
+    }
+
+    function stop() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      tile.classList.remove('vid-playing');
+    }
+
+    // Hover animations disabled for maximum smoothness - the static tile
+    // background image shows instead. (Hero has no data-anim, so nothing runs.)
+    void start; void stop;
+  });
+}
+
+// Wait for layout to settle before measuring tile dimensions
+if (document.readyState === 'complete') {
+  requestAnimationFrame(initTiles);
+} else {
+  window.addEventListener('load', () => requestAnimationFrame(initTiles));
+}
+
+/* ════════════════════════════════════════
+   LOADER - pure CSS fog + simultaneous reveal
+════════════════════════════════════════ */
+(function() {
+  const loader = document.getElementById('loader');
+  const bar    = document.getElementById('loaderBar');
+  const pct    = document.getElementById('loaderPct');
+  const lines  = document.querySelectorAll('.loader-quote .line');
+
+  /* All lines rise simultaneously - short delay so CSS transitions fire */
+  setTimeout(() => lines.forEach(l => l.classList.add('visible')), 120);
+
+  /* Progress bar - faster fill */
+  let progress = 0;
+  function stepBar() {
+    const speed = progress < 72 ? 2.6 : 0.6;
+    progress = Math.min(progress + speed, progress < 72 ? 72 : 96);
+    bar.style.width = progress + '%';
+    pct.textContent = Math.floor(progress) + '%';
+    if (progress < 96) requestAnimationFrame(stepBar);
+  }
+  requestAnimationFrame(stepBar);
+
+  /* Dismiss as soon as the page has loaded (min 600ms so the intro reads),
+     with a 2.5s hard cap in case 'load' never fires. */
+  const startedAt = performance.now();
+  const MIN_MS = 2200, CAP_MS = 3200;
+  let dismissed = false;
+  function dismiss() {
+    if (dismissed) return;
+    dismissed = true;
+    bar.style.width = '100%';
+    pct.textContent = '100%';
+    setTimeout(() => {
+      loader.classList.add('done');
+      setTimeout(staggerTilesIn, 200);
+      setTimeout(() => {
+        loader.remove();
+        window.dispatchEvent(new Event('loader-done'));
+      }, 700);
+    }, 200);
+  }
+  function maybeDismiss() {
+    const waited = performance.now() - startedAt;
+    if (waited < MIN_MS) setTimeout(dismiss, MIN_MS - waited);
+    else dismiss();
+  }
+  if (document.readyState === 'complete') maybeDismiss();
+  else window.addEventListener('load', maybeDismiss);
+  setTimeout(dismiss, CAP_MS);
+})();
+
+/* ════════════════════════════════════════
+   STAGGER TILE ENTRANCE
+════════════════════════════════════════ */
+function staggerTilesIn() {
+  const tiles = document.querySelectorAll('.tile');
+  // hero first, then row 1 left→right, then row 2 left→right
+  const order = [0, 1, 2, 3, 4, 5, 6, 7];
+  order.forEach((idx, i) => {
+    setTimeout(() => {
+      if (tiles[idx]) tiles[idx].classList.add('entered');
+    }, i * 45);
+  });
+}
+
+/* custom cursor removed - using native cursor for smooth tracking */
+
+/* ── Project data ── */
+const PROJECTS = [
+  {
+    tag:"ML / Bioinformatics",
+    title:"Convergent Evolution Detector",
+    img:"https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=1200&q=80",
+    video:DNA_VID,
+    stats:[{label:"Method",val:"ESM-2 + Gate"},{label:"AP (gated)",val:"~1.0"},{label:"AP (naive)",val:"~0.38"}],
+    desc:"Sometimes two species evolve the same ability completely independently, like night vision or echolocation. This project automatically finds the proteins behind those cases. It uses an AI model that “reads” protein sequences to measure how similar their function is, while filtering out proteins that only resemble each other because they share a common ancestor. That filtering step is the key: it lifts detection accuracy from about 38% to near-perfect on a benchmark of light-sensing proteins. A second mode traces exactly which mutations gave dolphins and bats their echolocation.",
+    chips:["ESM-2","Python","Biopython","HDBSCAN","UMAP","FastICA","UniProt REST"],
+    github:"https://github.com/ralegionc/Convergent-Evolution-Detector",
+    medium:"https://medium.com/@anasfarooqui373"
+  },
+  {
+    tag:"Data / Research",
+    title:"War Lethality Analysis",
+    img:"https://images.unsplash.com/photo-1525711857929-4272fb4a040f?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    stats:[{label:"Dataset",val:"200 years"},{label:"Method",val:"Regression + PELT"},{label:"Output",val:"Trend analysis"}],
+    desc:"This project digs through two centuries of war data to ask how and when conflicts became more or less deadly. Using statistical methods that automatically detect turning points, it pinpoints the moments when warfare fundamentally changed, such as the shift to industrialised, mechanised war, and separates those long-term trends from short-term noise.",
+    chips:["Python","Pandas","Statsmodels","ruptures","Matplotlib","NumPy"],
+    github:"https://github.com/ralegionc/War-Lethality-Analysis",
+    medium:"https://medium.com/@anasfarooqui373"
+  },
+  {
+    tag:"ML / Physics",
+    title:"Predator-Prey Neural ODE",
+    img:ODE_IMG,
+    video:ODE_VID,
+    stats:[{label:"Dataset",val:"120-year HBC"},{label:"Species",val:"Lynx & Hare"},{label:"Method",val:"Neural ODE"}],
+    desc:"Predator and prey populations rise and fall in linked cycles: when hares are plentiful, lynx thrive; then the hares crash, and the lynx follow. This project trains a neural network on 120 years of Hudson Bay fur-trading records and has it learn that cyclical relationship entirely on its own, without ever being handed the classic equations that describe it. It then checks the network’s self-discovered behaviour against the known mathematical model. The write-up was featured on the front page of Towards Data Science.",
+    chips:["torchdiffeq","PyTorch","SciPy","Matplotlib","NumPy"],
+    github:"https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation",
+    medium:"https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9"
+  },
+  {
+    tag:"ML / Ecology",
+    title:"Sleep Atlas",
+    img:SLEEP_IMG,
+    video:SLEEP_VID,
+    stats:[{label:"Species",val:"42"},{label:"Method",val:"Multi-regression"},{label:"Signals",val:"REM, NREM, total"}],
+    desc:"Why does a bat sleep twenty hours a day while an elephant gets by on two? This project compares sleep across 42 species, from shrews to elephants, to find what actually predicts how much and how deeply an animal sleeps: things like body size, brain size, metabolism, and how exposed it is to predators. Looking across many species at once reveals patterns and trade-offs that studying any single animal would miss.",
+    chips:["Python","Pandas","Scikit-learn","Statsmodels","Matplotlib","Seaborn"],
+    github:"https://github.com/ralegionc/Sleep-Atlas",
+    medium:"https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f"
+  },
+  {
+    tag:"ML / Physics",
+    title:"Diffusion-Based Fluid Super-Resolution",
+    img:FLUID_IMG,
+    video:FLUID_VID,
+    stats:[{label:"Model",val:"EDM + FNO"},{label:"Platform",val:"PhysicsNeMo"},{label:"Metric",val:"↓ RMSE vs bicubic"}],
+    desc:"Detailed fluid simulations (think swirling smoke or turbulent water) are expensive to compute at high resolution. This project trains an AI to take a very coarse, blocky simulation and reconstruct the fine swirls and detail that would normally need far more computing power, essentially a physics-aware “enhance” button. It combines two AI techniques so the result stays physically believable, and it consistently beats standard image-upscaling methods. Built on NVIDIA’s PhysicsNeMo framework.",
+    chips:["PyTorch","PhysicsNeMo","EDM","FNO","CUDA","NumPy","Matplotlib"],
+    github:"https://github.com/ralegionc/Diffusion-Based-Fluid-Super-Resolution",
+    medium:"https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f"
+  },
+  {
+    tag:"Data Engineering",
+    title:"Heliostream",
+    img:HELIO_IMG,
+    video:HELIO_VID,
+    stats:[{label:"Data",val:"NASA OMNI"},{label:"Model",val:"Physics-informed GRU"},{label:"Uncertainty",val:"Split-conformal"}],
+    desc:"Solar storms can disrupt satellites, GPS, and power grids. Heliostream forecasts them in near-real-time by reading live solar-wind measurements from NASA and predicting how strong the resulting geomagnetic storm will be. The model is guided by established space-physics equations, and every forecast comes with an honest confidence range rather than a single number. Under the hood it runs on a full professional data pipeline that streams, stores, transforms, and schedules the data, and it’s tested on real NASA records rather than simulated data.",
+    chips:["PyTorch","Kafka","DuckDB","dbt","Dagster","Conformal Prediction","NASA OMNI"],
+    github:"https://github.com/ralegionc/heliostream",
+    medium:"https://medium.com/@anasfarooqui373"
+  }
+];
+
+/* ── Modal ── */
+const modal=document.getElementById('modal'), backdrop=document.getElementById('backdrop');
+const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
+
+/* Set modal cover: video if the project has one, otherwise a still image */
+function setModalCover(p) {
+  const wrap  = document.querySelector('.modal-img-wrap');
+  const img   = document.getElementById('modalImg');
+  const video = document.getElementById('modalVideo');
+
+  video.pause();
+  video.removeAttribute('src');
+  video.load();
+
+  img.src = p.img;
+  img.alt = p.title;
+
+  if (p.video) {
+    wrap.classList.add('has-video');
+    video.poster = p.img;
+    video.src = p.video;
+    video.play().catch(() => {});
+  } else {
+    wrap.classList.remove('has-video');
+  }
+}
+
+function openModal(idx) {
+  // clear previous active
+  document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+  // mark source tile
+  const srcTile = document.querySelector(`.tile[data-project="${idx}"]`);
+  if (srcTile) srcTile.classList.add('active');
+
+  const p=PROJECTS[idx];
+  setModalCover(p);
+  document.getElementById('modalTag').textContent=p.tag;
+  document.getElementById('modalTitle').textContent=p.title;
+  document.getElementById('modalStats').innerHTML=p.stats.map(s=>`<div><div class="modal-stat-label">${s.label}</div><div class="modal-stat-val">${s.val}</div></div>`).join('');
+  document.getElementById('modalDesc').textContent=p.desc;
+  document.getElementById('modalChips').innerHTML=p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+  document.getElementById('modalLinks').innerHTML=`<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
+  modal.classList.add('open'); backdrop.classList.add('open');
+}
+function closeModal() {
+  modal.classList.remove('open'); backdrop.classList.remove('open');
+  const mv = document.getElementById('modalVideo');
+  if (mv) { mv.pause(); mv.currentTime = 0; }
+  document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+}
+document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click',()=>openModal(+t.dataset.project)));
+document.getElementById('modalClose').addEventListener('click',closeModal);
+backdrop.addEventListener('click',closeModal);
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') {
+    // close modal first if open, otherwise close all-projects
+    if(modal.classList.contains('open')) closeModal();
+    else closeAllProjects();
+  }
+});
+
+/* ════════════════════════════════════════
+   ALL PROJECTS OVERLAY
+════════════════════════════════════════ */
+const ALL_PROJECTS = [
+  { num:'01', tag:'ML / Bioinformatics', title:'Convergent Evolution Detector', img:'https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80', video:DNA_VID, desc:'Unsupervised detector for molecular convergent evolution using ESM-2 embeddings and a homology gate. Moves average precision from 0.38 to ~1.0 on rhodopsins and prestin orthologs.', chips:['ESM-2','Biopython','HDBSCAN','UMAP','UniProt'], github:'https://github.com/ralegionc/Convergent-Evolution-Detector', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'02', tag:'Data / Research', title:'War Lethality Analysis', img:'https://images.unsplash.com/photo-1580922110301-a666f6745565?w=800&q=80', desc:'Statistical analysis of conflict lethality across two centuries of warfare data using regression, PELT changepoint detection, and trend decomposition.', chips:['Python','Statsmodels','ruptures','Pandas'], github:'https://github.com/ralegionc/War-Lethality-Analysis', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'03', tag:'ML / Physics', title:'Predator-Prey Neural ODE', img:ODE_IMG, video:ODE_VID, desc:'Neural ODE trained on 120 years of Hudson Bay fur-trading records to learn continuous-time Lotka-Volterra dynamics from data alone.', chips:['torchdiffeq','PyTorch','SciPy'], github:'https://github.com/ralegionc/Predator-Prey-Neural-Ordinary-Differential-Equation', medium:'https://medium.com/@anasfarooqui373/teaching-a-neural-network-to-learn-predator-prey-dynamics-from-120-year-old-fur-trading-records-a59ef7c90847?source=friends_link&sk=9924d0418dab17b19fe8d6e3d6ba6ce9' },
+  { num:'04', tag:'ML / Ecology', title:'Sleep Atlas', img:SLEEP_IMG, video:SLEEP_VID, desc:'Cross-species regression across 42 species uncovering how brain mass, metabolism, and predation predict sleep duration and REM fraction.', chips:['Scikit-learn','Statsmodels','Pandas','Seaborn'], github:'https://github.com/ralegionc/Sleep-Atlas', medium:'https://medium.com/@anasfarooqui373/the-sleep-atlas-what-regression-models-across-42-species-reveal-about-why-animals-sleep-a7be904cafd3?source=friends_link&sk=4f7b07329f8997edbc992f75fa337f5f' },
+  { num:'05', tag:'ML / Physics', title:'Diffusion-Based Fluid Super-Resolution', img:FLUID_IMG, video:FLUID_VID, desc:'Reconstructing high-resolution fluid simulations from coarse 32x32 inputs using EDM diffusion with an FNO backbone on NVIDIA PhysicsNeMo.', chips:['PyTorch','PhysicsNeMo','EDM','FNO','CUDA'], github:'https://github.com/ralegionc/Diffusion-Based-Fluid-Super-Resolution', medium:'https://medium.com/@anasfarooqui373/trying-to-reconstruct-a-physics-simulation-from-almost-nothing-0243708f99b0?source=friends_link&sk=ffa0f2e328ae3630eec1f91b06b15a3f' },
+  { num:'06', tag:'ML / Bayesian', title:'Prime Atlas', img:'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&q=80', desc:'Hierarchical Bayesian aging-curve system across 12 sports and 18 positions using PyMC. Validated on 850 players with position-level hierarchy.', chips:['PyMC','DuckDB','FastAPI','ArviZ'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'07', tag:'Data Engineering', title:'Heliostream', img:HELIO_IMG, video:HELIO_VID, desc:'Physics-informed GRU nowcasting the Dst index from solar wind, with split-conformal uncertainty bands. Full Kafka to DuckDB to dbt to Dagster pipeline on real NASA OMNI data.', chips:['PyTorch','Kafka','DuckDB','dbt','Dagster','Conformal'], github:'https://github.com/ralegionc/heliostream', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'08', tag:'ML / Medical', title:'Brain Tumor MRI UQ', img:'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&q=80', desc:'Nine-module MRI pipeline with uncertainty quantification, OOD detection, Grad-CAM shortcut auditing, and conformal prediction sets.', chips:['PyTorch','MC Dropout','Conformal','Grad-CAM'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'09', tag:'ML / Recsys', title:'Movie Recommendation Engine', img:'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80', desc:'Two-tower neural model with collaborative filtering baselines, popularity-matched negative sampling, FastAPI + Redis serving, Docker.', chips:['PyTorch','FastAPI','Redis','Docker'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'10', tag:'Graph / Fraud', title:'Graph Fraud Pipeline', img:'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&q=80', desc:'Neo4j+GDS versus GraphFrames+Spark comparison on synthetic transaction networks with planted fraud structures.', chips:['Neo4j','Spark','GraphFrames','Python'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'11', tag:'ML / Bio', title:'Venom Protein Function Predictor', img:'https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=800&q=80', desc:'ESM-2 fine-tuning for multi-label toxin mechanism classification across venomous species.', chips:['ESM-2','PyTorch','HuggingFace'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'12', tag:'Simulation', title:'World Cup 2026 Simulator', img:'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80', desc:'Elo + Poisson Monte Carlo simulator with SHAP-based inferential model, backtested across 2006-2022 tournaments.', chips:['Python','Monte Carlo','SHAP','Elo'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'13', tag:'Data / Viz', title:'Price Revolution Visualizer', img:'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=800&q=80', desc:'D3.js dashboard analyzing 16th-century European inflation across 17 cities with Granger causality and PELT changepoints.', chips:['D3.js','Python','Statsmodels'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'14', tag:'Climate / ML', title:'El Nino / Wildfire Analysis', img:'https://images.unsplash.com/photo-1519074069444-1ba4ffadcbc8?w=800&q=80', desc:'Correlation r=0.72 between peak ONI and US wildfire acreage; logistic regression AUC=0.77 for high-fire seasons.', chips:['Python','Scikit-learn','Pandas','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'15', tag:'ML / Medical', title:'METABRIC Survival Analysis', img:'https://images.unsplash.com/photo-1583912267550-d6c2ac3196c0?w=800&q=80', desc:'Cox PH, Random Survival Forest, gradient boosted survival, and custom DeepSurv in PyTorch. RSF best discrimination (C=0.644).', chips:['PyTorch','lifelines','scikit-survival'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'16', tag:'Data / Justice', title:'Wrongful Conviction Epidemiology', img:'https://images.unsplash.com/photo-1589391886645-d51941baf7fb?w=800&q=80', desc:'Full-stack dashboard with force-directed network, Kaplan-Meier curves, choropleth, and Bayesian network structure learning.', chips:['D3.js','FastAPI','lifelines','pgmpy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'17', tag:'ML / Ecology', title:'Species Distribution Modeling', img:'https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=800&q=80', desc:'MaxEnt-proxy and ensemble SDMs for lion and cheetah reintroduction audit at Kuno NP with spatial block cross-validation and Boyce Index.', chips:['MaxEnt','GeoPandas','SHAP','GBIF'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'18', tag:'ML / Uncertainty', title:'EUQ Library', img:'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80', desc:'Epistemological Uncertainty Quantification: Python library with Monte Carlo perturbation logic showing ~9x wider bands than bootstrap alone.', chips:['Python','NumPy','SciPy'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+  { num:'19', tag:'Bioinformatics', title:'HGT Detector', img:'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=800&q=80', desc:'Horizontal gene transfer detection in animal genomes using codon usage bias features and a stacking ensemble with SMOTE-Tomek resampling.', chips:['Biopython','XGBoost','imblearn'], github:'https://github.com/ralegionc', medium:'https://medium.com/@anasfarooqui373' },
+];
+
+function buildApGrid() {
+  const grid = document.getElementById('apGrid');
+  const count = document.getElementById('ap-count');
+  count.textContent = ALL_PROJECTS.length;
+  grid.innerHTML = ALL_PROJECTS.map((p, i) => `
+    <div class="ap-card" data-ap="${i}">
+      <div class="ap-card-bg" style="background-image:url('${p.img}')"></div>
+      <div class="ap-card-top">
+        <span class="ap-num">${p.num}</span>
+        <span class="ap-tag">${p.tag}</span>
+      </div>
+      <div class="ap-card-title">${p.title}</div>
+      <div class="ap-card-desc">${p.desc}</div>
+      <div class="ap-card-chips">${p.chips.map(c=>`<span class="ap-card-chip">${c}</span>`).join('')}</div>
+      <div class="ap-card-arrow">↗</div>
+      <div class="ap-card-accent"></div>
+    </div>
+  `).join('');
+
+  // clicking a card opens the links in a mini-modal (reuse existing modal)
+  grid.querySelectorAll('.ap-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const p = ALL_PROJECTS[+card.dataset.ap];
+      const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+      const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
+      setModalCover(p);
+      document.getElementById('modalTag').textContent = p.tag;
+      document.getElementById('modalTitle').textContent = p.title;
+      document.getElementById('modalStats').innerHTML = '';
+      document.getElementById('modalDesc').textContent = p.desc;
+      document.getElementById('modalChips').innerHTML = p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
+      document.getElementById('modalLinks').innerHTML = `<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
+      document.getElementById('modal').classList.add('open');
+      document.getElementById('backdrop').classList.add('open');
+    });
+  });
+}
+
+function openAllProjects() {
+  if (!apBuilt) { buildApGrid(); apBuilt = true; }
+  document.getElementById('all-projects').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeAllProjects() {
+  document.getElementById('all-projects').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+let apBuilt = false;
+
+/* Scroll cue - fade out once the user scrolls on mobile */
+(function() {
+  const cue = document.getElementById('scrollCue');
+  if (!cue) return;
+  let hidden = false;
+  function onScroll() {
+    if (!hidden && window.scrollY > 40) {
+      cue.classList.add('hidden');
+      hidden = true;
+      window.removeEventListener('scroll', onScroll);
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+})();
+document.getElementById('allProjectsBtn').addEventListener('click', openAllProjects);
+document.getElementById('apClose').addEventListener('click', closeAllProjects);
+
+
+</script>
+</body>
+</html>
