@@ -251,7 +251,7 @@
   }
 
   /* ── CUSTOM CURSOR ── */
-  body { cursor:none; }
+  /* native cursor restored — custom JS cursor removed for performance */
   /* Position and size are driven entirely by transform in JS.
      left/top/width/height would force a layout pass every frame. */
   #cursor {
@@ -553,9 +553,6 @@
 </head>
 <body>
 
-<!-- CURSOR -->
-<div id="cursor"></div>
-<div id="cursor-ring"></div>
 
 <!-- LOADER -->
 <div id="loader">
@@ -1118,60 +1115,7 @@ function staggerTilesIn() {
   });
 }
 
-/* ════════════════════════════════════════
-   CUSTOM CURSOR
-════════════════════════════════════════ */
-(function() {
-  const dot  = document.getElementById('cursor');
-  const ring = document.getElementById('cursor-ring');
-
-  let mx = -100, my = -100, rx = -100, ry = -100;
-  let ringS = 1, ringT = 1, dotS = 1, dotT = 1;
-  let rafId = null;
-
-  const place = (el, x, y, s) =>
-    el.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(${s})`;
-
-  const wake = () => { if (!rafId) rafId = requestAnimationFrame(loop); };
-
-  function loop() {
-    rx += (mx - rx) * 0.28;
-    ry += (my - ry) * 0.28;
-    ringS += (ringT - ringS) * 0.2;
-    dotS  += (dotT - dotS)  * 0.2;
-
-    place(ring, rx, ry, ringS);
-    place(dot,  mx, my, dotS);
-
-    // Once the ring has caught up and the scales have settled, stop.
-    // No reason to burn a frame every 16ms while the mouse sits still.
-    const settled = Math.abs(mx - rx) < 0.1 && Math.abs(my - ry) < 0.1
-                 && Math.abs(ringT - ringS) < 0.005
-                 && Math.abs(dotT - dotS)  < 0.005;
-    rafId = settled ? null : requestAnimationFrame(loop);
-  }
-
-  document.addEventListener('mousemove', e => {
-    mx = e.clientX; my = e.clientY;
-    place(dot, mx, my, dotS);   // dot tracks instantly, no lag
-    wake();                     // ring catches up on the loop
-  }, { passive: true });
-
-  const target = (r, d) => { ringT = r; dotT = d; wake(); };
-
-  const HOVER = '.tile--sm, nav a, .hero-link, .modal-link, .modal-close, .nav-cta, #allProjectsBtn';
-  document.querySelectorAll(HOVER).forEach(el => {
-    el.addEventListener('mouseenter', () => {
-      document.body.classList.add('cursor-hover'); target(1.4, 1);
-    });
-    el.addEventListener('mouseleave', () => {
-      document.body.classList.remove('cursor-hover'); target(1, 1);
-    });
-  });
-
-  document.addEventListener('mousedown', () => target(ringT, 0.7));
-  document.addEventListener('mouseup',   () => target(ringT, 1));
-})();
+/* custom cursor removed — using native cursor for smooth tracking */
 
 /* ── Project data ── */
 const PROJECTS = [
