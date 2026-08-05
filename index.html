@@ -54,7 +54,7 @@
   .tile--hero:hover .tile-canvas { opacity:0.7; }
 
   .tile-overlay { position:absolute; inset:0; z-index:2; background:var(--bg); opacity:0.3; transition:opacity 0.45s ease; }
-  .tile:hover .tile-overlay { opacity:0.15; }
+  .tile:hover .tile-overlay { opacity:0.26; }
   .tile-wash { position:absolute; inset:0; z-index:3; background:rgba(255,255,255,0.04); opacity:0; transition:opacity 0.35s; }
   .tile:hover .tile-wash { opacity:1; }
 
@@ -63,10 +63,10 @@
   .tile-index { font-family:var(--mono); font-size:10px; color:var(--text-dim); letter-spacing:0.1em; }
   .tile-tag { font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); opacity:0; transform:translateY(-4px); transition:opacity 0.3s,transform 0.3s; }
   .tile:hover .tile-tag { opacity:1; transform:translateY(0); }
-  .tile-title { font-size:15px; font-weight:500; line-height:1.3; color:var(--text-primary); margin-bottom:8px; transition:color 0.2s; }
+  .tile-title { font-size:15px; font-weight:500; line-height:1.3; color:var(--text-primary); margin-bottom:8px; text-shadow:0 1px 12px rgba(0,0,0,0.85); transition:color 0.2s; }
   .tile:hover .tile-title { color:#fff; }
-  .tile-desc { font-size:12px; line-height:1.6; color:var(--text-muted); max-width:320px; opacity:0; transform:translateY(6px); transition:opacity 0.3s 0.04s,transform 0.3s 0.04s; }
-  .tile:hover .tile-desc { opacity:1; transform:translateY(0); }
+  .tile-desc { font-size:12px; line-height:1.6; color:rgba(240,238,232,0.8); max-width:320px; opacity:0; transform:translateY(6px); text-shadow:0 1px 10px rgba(0,0,0,0.9); transition:opacity 0.3s 0.04s,transform 0.3s 0.04s; }
+  .tile:hover .tile-desc { opacity:1; transform:translateY(0); color:rgba(246,244,239,0.96); }
   .tile-arrow { position:absolute; bottom:28px; right:32px; z-index:5; font-size:18px; color:var(--accent); opacity:0; transform:translate(-6px,6px); transition:opacity 0.3s,transform 0.3s; }
   .tile:hover .tile-arrow { opacity:1; transform:translate(0,0); }
   .tile-accent-bar { position:absolute; bottom:0; left:0; z-index:6; height:2px; width:0; background:var(--accent); transition:width 0.5s cubic-bezier(0.16,1,0.3,1); }
