@@ -1034,13 +1034,9 @@ function initTiles() {
       tile.classList.remove('vid-playing');
     }
 
-    // Hero always plays; all others only on hover
-    if (type === 'hero') {
-      start();
-    } else {
-      tile.addEventListener('mouseenter', start);
-      tile.addEventListener('mouseleave', stop);
-    }
+    // Hover animations disabled for maximum smoothness — the static tile
+    // background image shows instead. (Hero has no data-anim, so nothing runs.)
+    void start; void stop;
   });
 }
 
