@@ -778,7 +778,7 @@ const animators = {
 
   /* Fluid: advecting dye particles */
   fluid(ctx, W, H) {
-    const N = 120;
+    const N = 70;
     const pts = Array.from({length:N}, () => ({
       x: Math.random()*W, y: Math.random()*H,
       vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6,
@@ -907,7 +907,7 @@ const animators = {
 
   /* Scatter: monte carlo dots converging */
   scatter(ctx, W, H) {
-    const N = 280;
+    const N = 140;
     const pts = Array.from({length:N},(_,i)=>({
       x:Math.random()*W, y:Math.random()*H,
       tx:Math.random()*W, ty:Math.random()*H,
@@ -1012,11 +1012,13 @@ function initTiles() {
     let rafId = null;
     let startTime = null;
     let elapsed = 0;
+    let lastDraw = 0;
+    const FRAME_MS = 33; // ~30fps is plenty for a hover accent; halves the work
 
     function loop(ts) {
       if (!startTime) startTime = ts - elapsed;
       elapsed = ts - startTime;
-      draw(elapsed / 1000);
+      if (ts - lastDraw >= FRAME_MS) { lastDraw = ts; draw(elapsed / 1000); }
       rafId = requestAnimationFrame(loop);
     }
 
