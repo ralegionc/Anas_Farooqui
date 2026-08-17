@@ -200,11 +200,18 @@
     font-weight:400;
     line-height:2;
     letter-spacing:0.04em;
-    color:rgba(240,224,190,0.92);
+    /* A deeper, properly saturated gold rather than the old pale cream,
+       lit by a two-stage warm bloom: a wide soft halo for presence and a
+       tight one right on the glyphs so the letters read as glowing rather
+       than merely tinted. Full opacity, with a dark contact shadow to keep
+       it legible against the lit water behind. */
+    color:#e8ad3c;
     max-width:580px;
     text-align:center;
     padding:0 40px;
-    text-shadow:0 1px 14px rgba(255,190,90,0.35), 0 1px 1px rgba(0,0,0,0.6);
+    text-shadow:0 0 22px rgba(255,158,30,0.55),
+                0 0 7px  rgba(255,188,70,0.45),
+                0 1px 2px rgba(0,0,0,0.80);
   }
   .loader-quote .line-wrap {
     display:block;
@@ -754,7 +761,7 @@
 <script>
 /* Build stamp: lets you confirm which copy the browser actually loaded.
    If the console does not show this line, you are on a cached file. */
-console.log('%c intro build 10:17:50 / 6c7f97 ',
+console.log('%c intro build 17:20:07 / 0cc96e ',
   'background:#f0cd8a;color:#1a1108;font-weight:700;padding:2px 6px;border-radius:3px');
 
 /* Heliostream media, inlined so the page is a single portable file */
