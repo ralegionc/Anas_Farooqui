@@ -212,6 +212,14 @@
     text-shadow:0 0 22px rgba(255,158,30,0.55),
                 0 0 7px  rgba(255,188,70,0.45),
                 0 1px 2px rgba(0,0,0,0.80);
+    transition:text-shadow 0.5s ease;
+  }
+  /* Held for a beat as the last grains land, in step with the neck flare,
+     so the pour arrives at something instead of simply stopping. */
+  .loader-quote.flare {
+    text-shadow:0 0 48px rgba(255,168,40,0.90),
+                0 0 15px rgba(255,205,95,0.75),
+                0 1px 2px rgba(0,0,0,0.80);
   }
   .loader-quote .line-wrap {
     display:block;
@@ -265,6 +273,37 @@
     margin-top:10px;
   }
   .loader-quote .line-attr.visible { letter-spacing:0.03em; }
+
+  /* ── Dune intro ──
+     Bigger than the page's own quote on purpose: the letters have to be
+     large enough for a few thousand grains to describe, and this text only
+     ever exists over the intro, so it owes the layout below nothing.
+
+     Lifted out of dead centre so it sits up in the sky rather than across
+     the horizon. Everything downstream follows automatically: the glyph
+     sampler and the swarm both read getBoundingClientRect, which already
+     accounts for this transform.
+
+     JS drives opacity, blur and the ignition glow directly, so the
+     transitions and the word-rise the hourglass reveal depends on all have
+     to be off — and the overflow mask has to open, or the glow is clipped. */
+  .loader-quote.stellar {
+    font-size:clamp(24px,3.4vw,44px);
+    max-width:min(90vw,780px);
+    line-height:1.62;
+    transform:translateY(-18vh);
+  }
+  .loader-quote.stellar .line-attr { font-size:clamp(13px,1.15vw,17px); letter-spacing:0.03em; }
+  .loader-quote.stellar,
+  .loader-quote.stellar .line,
+  .loader-quote.stellar .w { transition:none !important; }
+  .loader-quote.stellar .line-wrap { overflow:visible; }
+  .loader-quote.stellar .line { opacity:0; letter-spacing:0.04em; }
+  .loader-quote.stellar .w { opacity:1; transform:none; filter:none; }
+
+  /* The sand is still blowing apart as the hand-off runs, so this path
+     fades faster than the hourglass one. */
+  #loader.swift { transition:opacity 0.55s ease; }
 
 
 
@@ -761,7 +800,7 @@
 <script>
 /* Build stamp: lets you confirm which copy the browser actually loaded.
    If the console does not show this line, you are on a cached file. */
-console.log('%c intro build 17:20:07 / 0cc96e ',
+console.log('%c intro build 18:33:05 / 994eac ',
   'background:#f0cd8a;color:#1a1108;font-weight:700;padding:2px 6px;border-radius:3px');
 
 /* Heliostream media, inlined so the page is a single portable file */
@@ -1127,7 +1166,720 @@ if (document.readyState === 'complete') {
   setTimeout(() => { introDone = true; tryDismiss(); }, 9000);
 })();
 
+/* ════════════════════════════════════════
+   INTRO — DUNES
+   A desert under a turning night sky, and the quote blown together out of
+   the sand.
+
+   The sky wheels about a celestial pole off the left edge and every star is
+   smeared along its own arc, so the field reads as a long exposure rather
+   than as points sliding sideways. Below it, three dune ridges: a far one
+   barely separating itself from the stars, a lit face burning orange
+   halfway back, and a near crest with light spilling along it.
+
+   The grains lift off that near crest, blow up into the frame and settle
+   into the shape of the quote. The letterforms are sampled from the real
+   DOM text, so the swarm converges onto exactly where the words will be; at
+   the moment it lands the text ignites, and when the hold is over the wind
+   takes the sand apart again.
+
+   Raw WebGL, no three.js: two programs and one points buffer. All of the
+   per-grain motion happens in the vertex shader, so a frame costs a handful
+   of uniform writes rather than a JS loop over every particle.
+
+   Set ENABLED to false to fall through to the hourglass scene below.
+════════════════════════════════════════ */
+(function initDuneIntro() {
+  const ENABLED = true;
+  if (!ENABLED) return;
+  window.__introTaken = true;
+
+  const canvas  = document.getElementById('intro-canvas');
+  const loader  = document.getElementById('loader');
+  const quote   = document.querySelector('.loader-quote');
+  const lineEls = Array.from(document.querySelectorAll('.loader-quote .line'));
+  const finish  = () => { if (window.__introComplete) window.__introComplete(); };
+
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Anything missing, refused or unwelcome and the quote is simply shown. */
+  function bail() {
+    window.__introDrawsQuote = false;
+    if (quote) quote.classList.remove('stellar');
+    if (window.__revealQuoteText) window.__revealQuoteText();
+    setTimeout(finish, 1600);
+  }
+  if (!canvas || !quote || !lineEls.length || reduced) { bail(); return; }
+
+  const gl = canvas.getContext('webgl', { alpha: false, antialias: true })
+          || canvas.getContext('experimental-webgl', { alpha: false });
+  if (!gl) { bail(); return; }
+
+  /* ── Geometry shared between JS and GLSL ──
+     Three ridges, far to near. `crest` is where the ridge tops out, in the
+     same aspect-corrected space the shader works in: -0.05 puts the skyline
+     55% of the way down the frame, so the sand fills the bottom ~43%.
+
+     Deliberately few, and at low frequency. The reference is two or three
+     long unbroken sweeps, not a busy skyline — most of its calm comes from
+     how little is happening along each ridge.
+
+     `relief` grows steeply toward the viewer. Distant dunes read flatter
+     because the eye is nearer their plane, and that difference is most of
+     what sells the depth.
+
+     The nearest ridge is needed in both places — the shader draws it, and
+     the seeding code has to put grains on it. Declaring the set once here
+     and generating the GLSL from the same numbers is the only way the sand
+     is guaranteed to lift off the sand rather than off thin air. */
+  const RIDGES = [
+    { crest: -0.070, relief: 0.022, f: 0.95, ph:  1.10 },
+    { crest: -0.110, relief: 0.030, f: 0.72, ph: -0.85 },
+    { crest: -0.160, relief: 0.042, f: 0.58, ph:  2.10 },
+    { crest: -0.220, relief: 0.058, f: 0.44, ph:  0.35 },
+    { crest: -0.300, relief: 0.080, f: 0.33, ph: -1.60 }    /* sand comes off this */
+  ];
+
+  /* A sine phase-warped by itself: it stretches the windward slope and
+     steepens the slip face, which is the asymmetry that stops a ridge line
+     reading as a wave. */
+  function duneWave(x, f, ph, skew) {
+    const s = x * f + ph;
+    return Math.sin(s + skew * Math.sin(s));
+  }
+  /* Weighted hard toward the fundamental. The harmonics are only there to
+     keep the sweep from being a bare sine; let them get loud and the ridge
+     starts to ripple, which is exactly what the reference does not do. */
+  function duneShape(r, x) {
+    return 0.80 * duneWave(x, r.f, r.ph, 0.55)
+         + 0.16 * duneWave(x, r.f * 2.1, r.ph * 1.7, 0.30)
+         + 0.04 * Math.sin(x * r.f * 4.1 + r.ph * 2.9);
+  }
+
+  /* The three components never peak at the same x, so the shape tops out
+     well short of 1 — by a different amount for every ridge. Assuming it
+     reaches 1 leaves each crest lower than asked for and, because the error
+     differs per ridge, quietly collapses the spacing between them. So solve
+     for the base numerically: find where this particular ridge actually
+     peaks and place it so that peak lands on `crest`.
+
+     Fitted over a fixed half-width rather than the live aspect, so the
+     skyline does not have to be regenerated on resize. On frames narrower
+     than this the crest can only come out lower, never higher, so the sand
+     never eats more of the screen than it was budgeted. */
+  const FIT_HALF_WIDTH = 1.0;
+  RIDGES.forEach(r => {
+    let m = -Infinity;
+    for (let i = 0; i <= 2000; i++) {
+      m = Math.max(m, duneShape(r, -FIT_HALF_WIDTH + 2 * FIT_HALF_WIDTH * i / 2000));
+    }
+    r.base = r.crest - r.relief * m;
+  });
+
+  function ridgeAt(r, x) { return r.base + r.relief * duneShape(r, x); }
+  const ridgeNear = x => ridgeAt(RIDGES[RIDGES.length - 1], x);
+
+  const RIDGE_GLSL = RIDGES.map((r, i) => `
+    float ridge${i}(float x) {
+      return ${r.base.toFixed(5)} + ${r.relief.toFixed(5)} * (
+          0.80 * duneWave(x, ${r.f.toFixed(3)}, ${r.ph.toFixed(3)}, 0.55)
+        + 0.16 * duneWave(x, ${(r.f * 2.1).toFixed(3)}, ${(r.ph * 1.7).toFixed(3)}, 0.30)
+        + 0.04 * sin(x * ${(r.f * 4.1).toFixed(3)} + ${(r.ph * 2.9).toFixed(3)}));
+    }`).join('');
+
+  /* The sky turns about a celestial pole rather than sliding, the way a
+     long night exposure does. The pole sits off the left edge, so nothing
+     on screen is a still point and stars sweep in arcs instead of tracking
+     in parallel. */
+  const POLE_X = -0.78, POLE_Y = 0.46, ROT_SPEED = 0.034;
+
+  const SCENE_GLSL = `
+    const vec2  POLE = vec2(${POLE_X.toFixed(3)}, ${POLE_Y.toFixed(3)});
+    const float ROT  = ${ROT_SPEED.toFixed(4)};
+
+    vec2 revolve(vec2 p, float t) {
+      float a = t * ROT, c = cos(a), s = sin(a);
+      vec2 r = p - POLE;
+      return POLE + vec2(r.x * c - r.y * s, r.x * s + r.y * c);
+    }
+
+    /* Mirrors duneWave() in the JS above; the two have to agree or the sand
+       would lift off a ridge the shader never drew. */
+    float duneWave(float x, float f, float ph, float skew) {
+      float s = x * f + ph;
+      return sin(s + skew * sin(s));
+    }
+    ${RIDGE_GLSL}`;
+
+  /* ── Background: the sky and the dunes ── */
+  const BG_VS = `
+    attribute vec2 aPos;
+    varying vec2 vUv;
+    void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+  const BG_FS = `
+    precision highp float;
+    varying vec2 vUv;
+    uniform vec2  uRes;
+    uniform float uTime, uAlpha;
+
+    /* The band stands almost upright and sits left of centre, the way the
+       reference has it climbing out of the dunes rather than lying across
+       the frame. bandSpace rotates by this angle and measures distance from
+       the spine along q.y, so an angle near a quarter turn makes that
+       distance depend almost entirely on x — which is a vertical band. */
+    const float GAL_ANG = 1.450;
+    const float GAL_OFF = -0.220;
+    const float GALAXY_AMT = 0.78;
+    /* How far a star is smeared along its arc. This is the shutter. Kept
+       short: the reference resolves stars as points, so this only has to be
+       long enough to read as movement, not as a trail photograph. */
+    const float TRAIL = 0.020;
+    ${SCENE_GLSL}
+
+    float hash21(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+    }
+
+    /* One layer of stars: cells with a random occupant, placed at a random
+       spot inside the cell so the field never looks gridded, each with its
+       own size, colour and twinkle rate. The cell distance is measured
+       anisotropically — squashed along the direction the sky is turning —
+       which is what turns each dot into a short arc for almost nothing. */
+    vec3 starLayer(vec2 sp, float scale, float thresh, float t, vec2 tdir, float tlen) {
+      vec2 g = sp * scale;
+      vec2 gid = floor(g);
+      float r = hash21(gid);
+      if (r < thresh) return vec3(0.0);
+      vec2 off = vec2(hash21(gid + 17.3), hash21(gid + 41.7));
+      vec2 dv = fract(g) - off;
+      float pa = dot(dv, tdir);
+      float pb = dot(dv, vec2(-tdir.y, tdir.x));
+      float d = length(vec2(pa / (1.0 + tlen * scale), pb));
+      float mag = (r - thresh) / max(1e-4, 1.0 - thresh);
+      float size = 0.035 + 0.11 * mag * mag;
+      float core = smoothstep(size, 0.0, d);
+      float glow = smoothstep(size * 5.0, 0.0, d) * 0.30;
+      float tw = 0.72 + 0.28 * sin(t * (1.1 + r * 3.4) + r * 60.0);
+      float ct = hash21(gid + 91.1);
+      /* A narrower spectral spread than a rich star field would have: at
+         this exposure almost everything resolves white or blue-white, and
+         only the brightest few show any colour at all. */
+      vec3 tint = ct < 0.55
+        ? mix(vec3(0.72, 0.83, 1.00), vec3(0.94, 0.97, 1.00), ct / 0.55)
+        : mix(vec3(1.00, 0.98, 0.94), vec3(1.00, 0.88, 0.74), (ct - 0.55) / 0.45);
+      return tint * (core + glow) * mag * tw;
+    }
+
+    float vnoise(vec2 p) {
+      vec2 i = floor(p), f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+      float a = hash21(i);
+      float b = hash21(i + vec2(1.0, 0.0));
+      float c = hash21(i + vec2(0.0, 1.0));
+      float d = hash21(i + vec2(1.0, 1.0));
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+    float fbm3(vec2 p) {
+      float v = 0.0, a = 0.5;
+      for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.07; a *= 0.5; }
+      return v;
+    }
+    float fbm4(vec2 p) {
+      float v = 0.0, a = 0.5;
+      for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+      return v;
+    }
+
+    vec2 bandSpace(vec2 uv) {
+      float ca = cos(GAL_ANG), sa = sin(GAL_ANG);
+      return vec2(uv.x * ca - uv.y * sa, uv.x * sa + uv.y * ca);
+    }
+
+    /* A broad cool halo of nebulosity with a hotter core on the spine and
+       dark dust lanes cut through both, domain-warped by its own noise so
+       the filaments curl instead of sitting in a grid. Kept faint here; the
+       density comes back out for the star field to crowd along. */
+    vec3 galaxy(vec2 uv, out float dens) {
+      vec2 q = bandSpace(uv);
+      float d = q.y - GAL_OFF;
+
+      float halo = exp(-(d * d) / (2.0 * 0.190 * 0.190));
+      float core = exp(-(d * d) / (2.0 * 0.110 * 0.110));
+
+      vec2 w = vec2(fbm3(q * 2.4 + 11.3), fbm3(q * 2.4 + 27.1));
+      vec2 pc = q * 3.2 + (w - 0.5) * 1.5;
+
+      float cloud = fbm4(pc);
+      float fine  = fbm3(pc * 2.4 + 5.1);
+
+      float dust = fbm3(q * 3.9 + 41.0);
+      float lane = mix(0.34, 1.04, smoothstep(0.33, 0.69, dust));
+
+      float warm = smoothstep(0.34, 0.86, cloud) * core;
+      float cool = smoothstep(0.22, 0.78, fine)  * halo;
+      float wash = smoothstep(0.10, 0.90, cloud) * halo;
+
+      /* Nearly neutral. Photographed against a blue sky this bright, the
+         band comes out a dusty grey-tan with only a hint of warmth in the
+         core — pushing saturation here is what makes a Milky Way look
+         painted on rather than exposed. */
+      vec3 col = vec3(0.0);
+      col += vec3(0.72, 0.66, 0.58) * warm * 0.54;
+      col += vec3(0.52, 0.58, 0.66) * cool * 0.42;
+      col += vec3(0.56, 0.58, 0.62) * wash * 0.26;
+      col *= lane;
+
+      dens = clamp((warm * 1.5 + cool + wash * 0.6) * lane, 0.0, 1.0);
+      return col;
+    }
+
+    vec3 skyCol(vec2 uv, float t) {
+      /* A lit blue sky, not a black one. This is the whole character of the
+         reference: a rich steel blue overhead washing out to a pale, almost
+         colourless band at the horizon, bright enough that the dunes read as
+         silhouettes cut out of it rather than as dark shapes on dark.
+         Measured from where the skyline actually tops out, so the gradient
+         and the ridge agree. */
+      float h = clamp((uv.y + 0.050) / 0.60, 0.0, 1.0);
+      vec3 col = mix(vec3(0.225, 0.300, 0.370), vec3(0.042, 0.100, 0.196), pow(h, 0.58));
+      /* Airglow banked along the horizon and pooled to one side, the way it
+         is in the reference. This is what lifts the far dunes away from the
+         near ones and most of why they read as distant rather than small. */
+      col += vec3(0.085, 0.110, 0.128)
+           * exp(-max(0.0, uv.y + 0.050) / 0.130)
+           * (0.55 + 0.45 * exp(-pow((uv.x + 0.45) / 0.70, 2.0)));
+
+      /* Every star turns about the pole, and is stretched along the arc it
+         is travelling. The tangent is perpendicular to the radius, and the
+         smear grows with distance from the pole exactly as the real arc
+         length does. */
+      vec2 rel = uv - POLE;
+      float rad = length(rel);
+      vec2 tdir = rad > 1e-4 ? vec2(-rel.y, rel.x) / rad : vec2(1.0, 0.0);
+      float tlen = rad * TRAIL;
+
+      vec2 sd = revolve(uv, t);
+
+      float gd;
+      col += galaxy(sd, gd) * GALAXY_AMT;
+
+      float dens = 0.62 + 0.38 * h;
+      col += starLayer(sd, 34.0,  0.972, t, tdir, tlen) * 1.55 * dens;
+      col += starLayer(sd, 82.0,  0.962, t, tdir, tlen) * 1.00 * dens;
+      col += starLayer(sd, 168.0, 0.950, t, tdir, tlen) * 0.62 * dens;
+      col += starLayer(sd, 310.0, 0.930, t, tdir, tlen) * 0.34 * dens;
+      /* Extra grains crowded into the band. */
+      col += starLayer(sd, 430.0, 0.922, t, tdir, tlen) * 0.28 * dens * gd;
+      return col;
+    }
+
+    /* One dune, and almost nothing happens on it. There is no light source
+       in this scene — only skyglow — so the whole of the modelling is a slow
+       fall-off away from the crest plus a thin cool rim where the sand
+       catches the sky. The rim is doing the real work: it is the only thing
+       separating one ridge from the one behind it.
+
+       Ripples are barely there. The reference resolves as smooth, and sand
+       texture at this distance would be invented detail. */
+    vec3 duneShade(vec2 uv, float crestY, vec3 body, float rim, float rimFall, float rippleAmt) {
+      float d = max(0.0, crestY - uv.y);
+      vec3 c = body * (1.0 - 0.50 * smoothstep(0.0, 0.30, d));
+      c += vec3(0.62, 0.72, 0.86) * rim * exp(-d / rimFall);
+      if (rippleAmt > 0.0) {
+        vec2 rp = vec2(uv.x / (0.26 + d * 2.2), d);
+        float rip = sin(rp.x * 20.0 + fbm3(rp * 3.2) * 3.0);
+        c *= 1.0 + rippleAmt * rip * smoothstep(0.004, 0.070, d);
+      }
+      return c;
+    }
+
+    void main() {
+      vec2 uv = vec2((vUv.x - 0.5) * (uRes.x / uRes.y), vUv.y - 0.5);
+      vec3 col = skyCol(uv, uTime);
+
+      /* A fixed edge width: WebGL 1 has no guaranteed derivatives, and the
+         ridges are shallow enough that a constant reads as clean. */
+      const float E = 0.0016;
+      float y0 = ridge0(uv.x), y1 = ridge1(uv.x), y2 = ridge2(uv.x);
+
+      /* Far to near. Each is painted over the one behind it, so the nearer
+         ridge occludes for free. The bodies darken hard with proximity —
+         the far ridge still carries a good deal of skyglow, the near one is
+         very nearly a hole cut in the frame. */
+      col = mix(col, duneShade(uv, y0, vec3(0.052, 0.066, 0.088), 0.050, 0.020, 0.0),
+                smoothstep(y0 + E, y0 - E, uv.y));
+      col = mix(col, duneShade(uv, y1, vec3(0.028, 0.034, 0.046), 0.055, 0.017, 0.03),
+                smoothstep(y1 + E, y1 - E, uv.y));
+
+      /* Nearest: the darkest mass in the frame. Its crest catches a little
+         more sky than the body does, and that thin edge is the only reason
+         its shape is legible at all. */
+      vec3 nr = duneShade(uv, y2, vec3(0.013, 0.016, 0.022), 0.048, 0.015, 0.05);
+      /* A little grain so the slope is never a flat gradient. */
+      nr *= 0.95 + 0.05 * fbm3(uv * 30.0);
+      col = mix(col, nr, smoothstep(y2 + E, y2 - E, uv.y));
+
+      gl_FragColor = vec4(col * uAlpha, 1.0);
+    }`;
+
+  /* ── Foreground: the sand that forms the words ── */
+  const ST_VS = `
+    precision highp float;
+    attribute vec2 aStart;
+    attribute vec2 aTarget;
+    attribute vec4 aMeta;      /* delay, seed, size, unused */
+    uniform float uForm, uDisperse, uTime, uPx, uAspect;
+    varying float vSeed, vArrive;
+
+    void main() {
+      float delay = aMeta.x, seed = aMeta.y, sz = aMeta.z;
+      float u = clamp((uForm - delay) / max(1e-3, 1.0 - delay), 0.0, 1.0);
+      float e = u * u * (3.0 - 2.0 * u);
+
+      /* Loose on the crest before it is drawn up: carried downwind with a
+         slow lift, so the grains read as sand already blowing rather than
+         as something waiting in formation. */
+      vec2 a = aStart + vec2(uTime * 0.038 + sin(uTime * 0.45 + seed * 39.0) * 0.020,
+                             uTime * 0.011 + sin(uTime * 0.33 + seed * 27.0) * 0.013);
+      vec2 b = aTarget;
+
+      /* A curved approach rather than a straight slide: each grain swings
+         through its own control point, so the swarm gathers the way blown
+         sand does instead of a grid snapping shut. */
+      vec2 perp = vec2(-(b.y - a.y), b.x - a.x);
+      vec2 mid = (a + b) * 0.5 + perp * (seed - 0.5) * 0.55;
+      vec2 pos = mix(mix(a, mid, e), mix(mid, b, e), e);
+
+      /* Taken apart downwind rather than scattered evenly, and each grain
+         shrinks as it goes, so the words come undone the way sand does. */
+      float ang = seed * 43.0;
+      vec2 wind = vec2(0.90, 0.26) + vec2(cos(ang), sin(ang)) * 0.55;
+      pos += wind * uDisperse * (0.05 + 0.20 * fract(seed * 13.0));
+
+      gl_Position = vec4(pos, 0.0, 1.0);
+      gl_PointSize = uPx * sz * (1.0 + 0.75 * e) * (1.0 - 0.45 * uDisperse);
+      vSeed = seed;
+      vArrive = e;
+    }`;
+
+  const ST_FS = `
+    precision mediump float;
+    varying float vSeed, vArrive;
+    uniform float uAlpha, uFlash;
+
+    void main() {
+      float r = length(gl_PointCoord - 0.5) * 2.0;
+      float a = smoothstep(1.0, 0.0, r);
+      a *= a;
+
+      /* Skylit sand: cool and nearly colourless while it is still loose,
+         because there is no warm light anywhere in this scene for it to
+         catch. */
+      vec3 tint = mix(vec3(0.60, 0.71, 0.88), vec3(0.90, 0.93, 0.98), vSeed);
+      /* It warms only as it arrives, so the grains carry the gold in with
+         them and the formed word and the lit word end the same colour. */
+      tint = mix(tint, vec3(1.00, 0.80, 0.38), vArrive * 0.85);
+
+      float b = (0.28 + 0.85 * vArrive) * (1.0 + 3.0 * uFlash);
+      gl_FragColor = vec4(tint * a * b * uAlpha, a * uAlpha);
+    }`;
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null;
+  }
+  function link(vsSrc, fsSrc) {
+    const vs = compile(gl.VERTEX_SHADER, vsSrc);
+    const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
+    if (!vs || !fs) return null;
+    const p = gl.createProgram();
+    gl.attachShader(p, vs);
+    gl.attachShader(p, fs);
+    gl.linkProgram(p);
+    return gl.getProgramParameter(p, gl.LINK_STATUS) ? p : null;
+  }
+
+  const bgProg = link(BG_VS, BG_FS);
+  const stProg = link(ST_VS, ST_FS);
+  if (!bgProg || !stProg) { bail(); return; }
+
+  /* One oversized triangle covers the viewport with three vertices and no
+     seam down the diagonal. */
+  const bgBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+
+  const bgLoc = {
+    pos:   gl.getAttribLocation(bgProg, 'aPos'),
+    res:   gl.getUniformLocation(bgProg, 'uRes'),
+    time:  gl.getUniformLocation(bgProg, 'uTime'),
+    alpha: gl.getUniformLocation(bgProg, 'uAlpha')
+  };
+  const stLoc = {
+    start:  gl.getAttribLocation(stProg, 'aStart'),
+    target: gl.getAttribLocation(stProg, 'aTarget'),
+    meta:   gl.getAttribLocation(stProg, 'aMeta'),
+    form:   gl.getUniformLocation(stProg, 'uForm'),
+    disp:   gl.getUniformLocation(stProg, 'uDisperse'),
+    time:   gl.getUniformLocation(stProg, 'uTime'),
+    px:     gl.getUniformLocation(stProg, 'uPx'),
+    aspect: gl.getUniformLocation(stProg, 'uAspect'),
+    alpha:  gl.getUniformLocation(stProg, 'uAlpha'),
+    flash:  gl.getUniformLocation(stProg, 'uFlash')
+  };
+
+  const startBuf  = gl.createBuffer();
+  const targetBuf = gl.createBuffer();
+  const metaBuf   = gl.createBuffer();
+
+  /* Fewer grains on a phone: the count is the only thing here that scales
+     with screen area rather than with the text. */
+  const N = window.innerWidth < 700 ? 4000 : 8000;
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+
+  window.__introDrawsQuote = true;
+  quote.classList.add('stellar');
+  if (loader) loader.classList.add('swift');
+  lineEls.forEach(el => { el.style.opacity = '0'; });
+
+  /* ── Sampling the letterforms ──
+     The words are drawn once into an offscreen 2-D canvas using the very
+     same computed font, size and tracking the live elements carry, at the
+     very same place on screen. Every lit pixel becomes a candidate landing
+     site. Nothing is hard-coded about the quote: re-word it, re-style it or
+     translate it and the swarm follows. */
+  function sampleGlyphs() {
+    const W = window.innerWidth, H = window.innerHeight;
+    const cv = document.createElement('canvas');
+    cv.width  = Math.max(2, Math.floor(W * DPR));
+    cv.height = Math.max(2, Math.floor(H * DPR));
+    const c = cv.getContext('2d', { willReadFrequently: true });
+    c.scale(DPR, DPR);
+    c.fillStyle = '#fff';
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+
+    const bands = [];
+    lineEls.forEach((el, idx) => {
+      const cs = getComputedStyle(el);
+      c.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+      /* Not supported everywhere; the swarm is a little wider than the text
+         without it, which the dispersal hides. */
+      try { c.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing; } catch (e) {}
+      const wrap = (el.parentNode && el.parentNode.getBoundingClientRect)
+        ? el.parentNode.getBoundingClientRect()
+        : el.getBoundingClientRect();
+      const midY = (wrap.top + wrap.bottom) / 2;
+      c.fillText(el.textContent, wrap.left + wrap.width / 2, midY);
+      bands.push({ idx: idx, top: wrap.top, bottom: wrap.bottom });
+    });
+
+    const img = c.getImageData(0, 0, cv.width, cv.height).data;
+    const step = Math.max(1, Math.round(DPR));
+    const xs = [], ys = [], li = [];
+    for (let y = 0; y < cv.height; y += step) {
+      for (let x = 0; x < cv.width; x += step) {
+        if (img[(y * cv.width + x) * 4 + 3] < 110) continue;
+        const px = x / DPR, py = y / DPR;
+        let line = 0;
+        for (let k = 0; k < bands.length; k++) {
+          if (py >= bands[k].top && py <= bands[k].bottom) { line = bands[k].idx; break; }
+        }
+        xs.push(px); ys.push(py); li.push(line);
+      }
+    }
+    return { xs: xs, ys: ys, li: li, W: W, H: H };
+  }
+
+  /* Seeds a grain on the near dune. The lift is biased hard toward zero, so
+     most of the swarm starts sitting on the sand and only a few are already
+     airborne — grains come off the crest rather than out of the sky. */
+  function duneStart(aspect) {
+    const ux = (Math.random() * 2 - 1) * aspect * 0.58;
+    const uy = ridgeNear(ux) + Math.pow(Math.random(), 3.0) * 0.22
+             + (Math.random() - 0.5) * 0.014;
+    return [ux / aspect * 2, uy * 2];
+  }
+
+  let count = 0;
+  function buildStars() {
+    const g = sampleGlyphs();
+    const aspect = g.W / g.H;
+    if (!g.xs.length) { count = 0; return; }
+
+    count = N;
+    const start  = new Float32Array(count * 2);
+    const target = new Float32Array(count * 2);
+    const meta   = new Float32Array(count * 4);
+
+    /* Lines are called in top-down, so the quote assembles in reading order
+       and the attribution is never the first thing to resolve. */
+    const LINE_LEAD = [0.00, 0.10, 0.20];
+
+    for (let i = 0; i < count; i++) {
+      const j = Math.floor(Math.random() * g.xs.length);
+      /* Jitter inside the sampled pixel so the swarm is not visibly a grid
+         even where the glyph mask is coarse. */
+      const px = g.xs[j] + (Math.random() - 0.5) * 1.6;
+      const py = g.ys[j] + (Math.random() - 0.5) * 1.6;
+      target[i * 2]     = (px / g.W) * 2 - 1;
+      target[i * 2 + 1] = 1 - (py / g.H) * 2;
+
+      const s = duneStart(aspect);
+      start[i * 2] = s[0];
+      start[i * 2 + 1] = s[1];
+
+      const lead = LINE_LEAD[g.li[j]] || 0;
+      meta[i * 4]     = Math.min(0.72, lead + Math.random() * 0.34);
+      meta[i * 4 + 1] = Math.random();
+      meta[i * 4 + 2] = 0.60 + Math.random() * 1.00;
+      meta[i * 4 + 3] = 0;
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, startBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, start, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, targetBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, target, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, metaBuf);
+    gl.bufferData(gl.ARRAY_BUFFER, meta, gl.STATIC_DRAW);
+  }
+
+  function resize() {
+    canvas.width  = Math.max(2, Math.floor(window.innerWidth  * DPR));
+    canvas.height = Math.max(2, Math.floor(window.innerHeight * DPR));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    /* The landing sites are screen positions, so they have to be resampled
+       or the words would form where the text used to be. */
+    buildStars();
+  }
+
+  /* ── Timeline ──
+     T_HOLD is the beat the whole thing is built around: the swarm has
+     landed, the quote is lit, and nothing moves except the sky turning
+     behind it. Everything else is paced to arrive at that pause and to
+     leave it unhurried. */
+  const T_RISE = 650, T_FORM = 2100, T_IGNITE = 420, T_HOLD = 1500, T_OUT = 1150;
+  const T1 = T_RISE, T2 = T1 + T_FORM, T3 = T2 + T_IGNITE, T4 = T3 + T_HOLD;
+
+  const GLOW      = '0 0 26px rgba(255,158,30,0.60), 0 0 8px rgba(255,188,70,0.50), 0 1px 2px rgba(0,0,0,0.80)';
+  const GLOW_ATTR = '0 1px 10px rgba(255,190,90,0.30), 0 1px 1px rgba(0,0,0,0.55)';
+
+  /* Driving text-shadow from JS overrides whatever the stylesheet set, so
+     each line has to carry its own resting glow back. The attribution's is
+     deliberately lighter than the quote's — see .line-attr. */
+  function paintQuote(vis, flash) {
+    for (let i = 0; i < lineEls.length; i++) {
+      const el = lineEls[i];
+      const rest = el.classList.contains('line-attr') ? GLOW_ATTR : GLOW;
+      el.style.opacity = vis.toFixed(3);
+      el.style.filter = vis < 0.999 ? 'blur(' + ((1 - vis) * 5).toFixed(2) + 'px)' : 'none';
+      el.style.textShadow = flash > 0.01
+        ? '0 0 ' + (30 + 44 * flash).toFixed(0) + 'px rgba(255,186,70,' + (0.55 + 0.4 * flash).toFixed(2) + '), ' + rest
+        : rest;
+    }
+  }
+
+  function build() {
+    /* resize() sizes the drawing buffer and samples the glyphs, so it is
+       the whole of setup as well as the resize handler. Calling buildStars()
+       separately here would read back a full-viewport bitmap twice before
+       the first frame. */
+    resize();
+    if (!count) { bail(); return; }
+    window.addEventListener('resize', resize);
+
+    gl.disable(gl.DEPTH_TEST);
+    const t0 = performance.now();
+    let outStart = 0;
+
+    function frame(now) {
+      const t = now - t0;
+      let bgA = 1, form = 0, disp = 0, flash = 0, vis = 0, stA = 1;
+
+      if (t < T1) {
+        bgA = t / T1; stA = bgA;
+
+      } else if (t < T2) {
+        form = (t - T1) / T_FORM;
+
+      } else if (t < T3) {
+        /* Ignition. The sand stays exactly where it landed — only the text
+           comes up underneath it. */
+        const u = (t - T2) / T_IGNITE;
+        form = 1; vis = u; flash = Math.sin(u * Math.PI);
+
+      } else if (t < T4 || !outStart) {
+        /* Hold: the formation is kept intact and the quote sits lit inside
+           it. The grains are eased back so the crisp text carries the line
+           and they read as glitter on the letters rather than competing
+           with them. The exit waits on the page behind actually being
+           ready, so a slow load cannot strand the frame mid-dissolve. */
+        form = 1; vis = 1; disp = 0;
+        stA = 1 - 0.35 * Math.min(1, (t - T3) / 400);
+        if (t >= T4 && document.readyState === 'complete') { outStart = t; finish(); }
+
+      } else {
+        const u = (t - outStart) / T_OUT;
+        if (u >= 1) { window.removeEventListener('resize', resize); return; }
+        form = 1; vis = 1;
+        /* Eased, so the wind takes it gently at first rather than the sand
+           letting go the instant the hold ends. */
+        disp = u * u * 0.85;
+        bgA = 1 - u * u;
+        stA = 0.65 * (1 - u * u);
+      }
+
+      paintQuote(vis, flash);
+
+      const ts = t * 0.001;
+      gl.useProgram(bgProg);
+      gl.disable(gl.BLEND);
+      gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
+      gl.enableVertexAttribArray(bgLoc.pos);
+      gl.vertexAttribPointer(bgLoc.pos, 2, gl.FLOAT, false, 0, 0);
+      gl.uniform2f(bgLoc.res, canvas.width, canvas.height);
+      gl.uniform1f(bgLoc.time, ts);
+      gl.uniform1f(bgLoc.alpha, bgA);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      gl.useProgram(stProg);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
+      gl.bindBuffer(gl.ARRAY_BUFFER, startBuf);
+      gl.enableVertexAttribArray(stLoc.start);
+      gl.vertexAttribPointer(stLoc.start, 2, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, targetBuf);
+      gl.enableVertexAttribArray(stLoc.target);
+      gl.vertexAttribPointer(stLoc.target, 2, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, metaBuf);
+      gl.enableVertexAttribArray(stLoc.meta);
+      gl.vertexAttribPointer(stLoc.meta, 4, gl.FLOAT, false, 0, 0);
+      gl.uniform1f(stLoc.form, form);
+      gl.uniform1f(stLoc.disp, disp);
+      gl.uniform1f(stLoc.time, ts);
+      gl.uniform1f(stLoc.px, 1.6 * DPR);
+      gl.uniform1f(stLoc.aspect, canvas.width / canvas.height);
+      gl.uniform1f(stLoc.alpha, stA);
+      gl.uniform1f(stLoc.flash, flash);
+      gl.drawArrays(gl.POINTS, 0, count);
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* Cinzel has to be resolved before the glyphs are sampled, or the swarm
+     would form the shape of the fallback face and the text would ignite in
+     a different one. */
+  const fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  Promise.race([fonts, new Promise(r => setTimeout(r, 1200))]).then(build);
+})();
+
 (function initIntro() {
+  if (window.__introTaken) return;   /* the stellar intro above has it */
   const canvas = document.getElementById('intro-canvas');
   const loader = document.getElementById('loader');
   const finish = () => { if (window.__introComplete) window.__introComplete(); };
@@ -1332,6 +2084,10 @@ if (document.readyState === 'complete') {
     const pileTopY = botY + (neckY - botY) * 0.34;
     const PILE_H   = pileTopY - botY;
     const PILE_R0  = wallW * 0.86;
+    /* How much of the heap's radius survives into depth. The mound is a
+       cone of revolution, squashed toward the camera so its near face does
+       not swing out past the glass. */
+    const PILE_DEPTH = 0.45;
     const targets  = new Float32Array(N * 3);
     for (let i = 0; i < N; i++) {
       const j = i * 3;
@@ -1343,9 +2099,14 @@ if (document.readyState === 'complete') {
       const rmax = Math.min(PILE_R0 * (1 - xh), profileW(s) * 0.92);
       const a  = Math.random() * Math.PI * 2;
       const rr = Math.sqrt(Math.random()) * Math.max(rmax, 0.001);
+      /* z takes the same polar angle as x, so grains wrap right around the
+         cone instead of sitting in a fan three units deep. The lambert term
+         further down is computed against a cone's normal and only pays off
+         if the grains are actually on one: this is what gives the heap a
+         lit face and a shaded one. */
       targets[j]   = cx + Math.cos(a) * rr;
       targets[j+1] = y;
-      targets[j+2] = (Math.random() - 0.5) * 3.0;
+      targets[j+2] = Math.sin(a) * rr * PILE_DEPTH;
     }
 
     const lp = [], lc = [], lbase = [], lxs = [];
@@ -1386,6 +2147,9 @@ if (document.readyState === 'complete') {
       return pts;
     }
     pushPolyline(capArc(topY, profileW(1), (topY - neckY) * 0.028));
+    /* The base, bowing the other way. Without it the lower bulb is open and
+       the heap reads as sitting on nothing. */
+    pushPolyline(capArc(botY, profileW(1), -(neckY - botY) * 0.028));
 
 
     const lgeo = new THREE.BufferGeometry();
@@ -1497,13 +2261,72 @@ if (document.readyState === 'complete') {
     }
     const SPRITE = softSprite();
 
+    /* ── Grain colour ──
+       Three things go into it. A per-grain hue between pale straw and deep
+       amber, so the heap is not one flat gold. A lambert term against the
+       cone's own surface normal, which is what gives the mound a lit face
+       and a shaded one instead of reading as a flat wedge of light. And a
+       darkening toward the base, standing in for the light not reaching
+       down into the pile where it meets the floor. */
     const col = new Float32Array(N * 3);
-    const SAND = [1.00, 0.80, 0.30];
+    const hueR = new Float32Array(N), hueG = new Float32Array(N), hueB = new Float32Array(N);
+    const shade = new Float32Array(N);
+    /* Light from up and to the left, slightly toward the camera. */
+    const LX = -0.50, LY = 0.79, LZ = 0.35;
+    const LL = Math.hypot(LX, LY, LZ);
+    const lx = LX / LL, ly = LY / LL, lz = LZ / LL;
+
     for (let i = 0; i < N; i++) {
-      const j = i * 3, v = 0.27 + Math.random() * 0.16;
-      col[j] = SAND[0] * v; col[j+1] = SAND[1] * v; col[j+2] = SAND[2] * v;
+      const j = i * 3;
+      /* Straw (h=1) through amber (h=0). */
+      const h = Math.random();
+      hueR[i] = 1.00;
+      hueG[i] = 0.62 + 0.30 * h;
+      hueB[i] = 0.14 + 0.44 * h;
+
+      const dx = targets[j] - cx, dz = targets[j+2];
+      const rr = Math.hypot(dx, dz) || 1e-4;
+      /* Outward normal of a cone of height PILE_H and base PILE_R0. */
+      let nx = (dx / rr) * PILE_H, ny = PILE_R0, nz = (dz / rr) * PILE_H;
+      const nl = Math.hypot(nx, ny, nz) || 1;
+      nx /= nl; ny /= nl; nz /= nl;
+      const lam = Math.max(0, nx * lx + ny * ly + nz * lz);
+
+      const hf = Math.min(1, Math.max(0, (targets[j+1] - botY) / PILE_H));
+      const ao = 0.52 + 0.48 * Math.min(1, hf / 0.55);
+
+      shade[i] = (0.26 + Math.random() * 0.13) * (0.46 + 0.92 * lam) * ao;
+      col[j]   = hueR[i] * shade[i];
+      col[j+1] = hueG[i] * shade[i];
+      col[j+2] = hueB[i] * shade[i];
     }
     const colBase = Float32Array.from(col);
+
+    /* ── Glints ──
+       A small subset of grains catch a sharp specular flash. Only these
+       are touched per frame, so it costs a few hundred writes rather than
+       re-colouring every grain. */
+    const GLINTS = Math.round(N * 0.055);
+    const glIdx = new Uint32Array(GLINTS);
+    const glPh  = new Float32Array(GLINTS), glSp = new Float32Array(GLINTS);
+    for (let k = 0; k < GLINTS; k++) {
+      glIdx[k] = Math.floor(Math.random() * N);
+      glPh[k]  = Math.random() * Math.PI * 2;
+      glSp[k]  = 0.0022 + Math.random() * 0.0042;
+    }
+    function updateGrainGlints(t) {
+      for (let k = 0; k < GLINTS; k++) {
+        const i = glIdx[k], j = i * 3;
+        const s = Math.sin(t * glSp[k] + glPh[k]);
+        const flash = s > 0 ? Math.pow(s, 26) : 0;
+        const b = 1 + 5.2 * flash;
+        /* Flashes run white-hot, so the hue is washed out at the peak. */
+        const w = 0.55 * flash;
+        col[j]   = colBase[j]   * b;
+        col[j+1] = (colBase[j+1] * b) + shade[i] * w * 0.8;
+        col[j+2] = (colBase[j+2] * b) + shade[i] * w * 1.5;
+      }
+    }
 
     /* ── Grain sizes ──
        PointsMaterial has one size for the whole draw, so the grains are
@@ -1542,8 +2365,12 @@ if (document.readyState === 'complete') {
     }
     /* Stand-ins so the rest of the code keeps treating the grains as one
        object: one buffer to write, one opacity to set. */
-    const geo = { attributes: { position: { array: posArr,
-      set needsUpdate(v) { for (const g of grainGeos) g.attributes.position.needsUpdate = v; } } } };
+    const geo = { attributes: {
+      position: { array: posArr,
+        set needsUpdate(v) { for (const g of grainGeos) g.attributes.position.needsUpdate = v; } },
+      color: { array: col,
+        set needsUpdate(v) { for (const g of grainGeos) g.attributes.color.needsUpdate = v; } }
+    } };
     const mat = { set opacity(v) { for (const m of grainMats) m.opacity = v; } };
 
     /* ── Stragglers: a thin trickle that outlasts the pour ── */
@@ -1652,6 +2479,16 @@ if (document.readyState === 'complete') {
       uniform float uTime, uAlpha, uAspect, uS;
       uniform float uCx, uNeckY, uTopY, uBotY, uWallW, uNeckHW, uHorizon;
 
+      /* Overall strength of the galaxy. Turn this down to pull the sky
+         back behind the hourglass, up to push it forward.
+         The angle and offset are chosen so the band's spine sweeps the
+         visible sky strip diagonally rather than clipping one corner of
+         it: only about a third of the screen sits above the horizon, so a
+         steep band would leave most of itself off-frame. */
+      const float GALAXY_AMT = 1.7;
+      const float GAL_ANG = 0.20;
+      const float GAL_OFF = 0.333;
+
       float profileW(float s) {
         s = clamp(s, 0.0, 1.0);
         float KNEE = 0.14, CURVE = 0.65;
@@ -1701,20 +2538,161 @@ if (document.readyState === 'complete') {
         float core = smoothstep(size, 0.0, d);
         float glow = smoothstep(size * 5.0, 0.0, d) * 0.30;
         float tw = 0.62 + 0.38 * sin(t * (1.1 + r * 3.4) + r * 60.0);
-        vec3 tint = mix(vec3(0.70, 0.80, 1.0), vec3(1.0, 0.90, 0.74), hash21(gid + 91.1));
+        /* Wider spectral spread than a simple warm/cool blend: real fields
+           carry hard blue and orange stars, not just off-white ones. */
+        float ct = hash21(gid + 91.1);
+        vec3 tint = ct < 0.45
+          ? mix(vec3(0.52, 0.70, 1.00), vec3(0.86, 0.92, 1.00), ct / 0.45)
+          : mix(vec3(1.00, 0.95, 0.86), vec3(1.00, 0.72, 0.46), (ct - 0.45) / 0.55);
         return tint * (core + glow) * mag * tw;
       }
 
-      /* Night sky: gradient from a faint glow at the horizon up to deep
-         space, with three star layers of different density. */
+      /* Smoothly interpolated value noise, and two fbm depths. The cheaper
+         three-octave version is used everywhere the extra detail would not
+         survive, which keeps the per-pixel cost of the galaxy sane. */
+      float vnoise(vec2 p) {
+        vec2 i = floor(p), f = fract(p);
+        f = f * f * (3.0 - 2.0 * f);
+        float a = hash21(i);
+        float b = hash21(i + vec2(1.0, 0.0));
+        float c = hash21(i + vec2(0.0, 1.0));
+        float d = hash21(i + vec2(1.0, 1.0));
+        return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+      }
+      float fbm3(vec2 p) {
+        float v = 0.0, a = 0.5;
+        for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.07; a *= 0.5; }
+        return v;
+      }
+      float fbm4(vec2 p) {
+        float v = 0.0, a = 0.5;
+        for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+        return v;
+      }
+
+      /* Band axis, shared by the full galaxy and the cheap version the sea
+         reflects. Returns the signed distance from the band's centre line. */
+      vec2 bandSpace(vec2 uv) {
+        float ca = cos(GAL_ANG), sa = sin(GAL_ANG);
+        return vec2(uv.x * ca - uv.y * sa, uv.x * sa + uv.y * ca);
+      }
+      float bandAxis(vec2 uv) {
+        return bandSpace(uv).y - GAL_OFF;
+      }
+
+      /* ── The galaxy ──
+         Built the way the real thing photographs: a broad cool halo of
+         nebulosity, a hotter salmon core concentrated on the band's spine,
+         and dark dust lanes cut through both. The cloud coordinates are
+         domain-warped by their own noise, which is what stops it looking
+         like filtered static and gives it drifting filament structure.
+         The density comes back out for the star field to crowd along. */
+      vec3 galaxy(vec2 uv, out float dens) {
+        vec2 q = bandSpace(uv);
+        float d = q.y - GAL_OFF;
+
+        float halo = exp(-(d * d) / (2.0 * 0.150 * 0.150));
+        float core = exp(-(d * d) / (2.0 * 0.088 * 0.088));
+
+        /* Domain warp: the clouds are sampled through a displacement made
+           of noise, so filaments curl instead of sitting in a grid. */
+        vec2 w = vec2(fbm3(q * 2.4 + 11.3), fbm3(q * 2.4 + 27.1));
+        vec2 pc = q * 3.2 + (w - 0.5) * 1.5;
+
+        float cloud = fbm4(pc);
+        float fine  = fbm3(pc * 2.4 + 5.1);
+
+        /* Dust: sharp dark filaments that multiply everything down. The
+           lane along the spine is what splits the band in two. */
+        float dust = fbm3(q * 3.9 + 41.0);
+        float lane = mix(0.20, 1.06, smoothstep(0.33, 0.69, dust));
+        lane *= 1.0 - 0.55 * exp(-(d * d) / (2.0 * 0.019 * 0.019));
+
+        float warm = smoothstep(0.34, 0.86, cloud) * core;
+        float cool = smoothstep(0.22, 0.78, fine)  * halo;
+        float wash = smoothstep(0.10, 0.90, cloud) * halo;
+
+        vec3 col = vec3(0.0);
+        col += vec3(0.88, 0.45, 0.35) * warm * 0.76;   /* salmon core   */
+        col += vec3(0.24, 0.33, 0.74) * cool * 0.46;   /* blue halo     */
+        col += vec3(0.42, 0.30, 0.54) * wash * 0.20;   /* violet bridge */
+        col *= lane;
+
+        dens = clamp((warm * 1.5 + cool + wash * 0.6) * lane, 0.0, 1.0);
+        return col;
+      }
+
+      /* A much cheaper stand-in for the reflection, where the sea's own
+         chop destroys any fine structure anyway. */
+      float galaxyDensCheap(vec2 uv) {
+        float d = bandAxis(uv);
+        float env = exp(-(d * d) / (2.0 * 0.150 * 0.150));
+        return env * (0.30 + 0.80 * fbm3(bandSpace(uv) * 3.0 + 7.0));
+      }
+
+      /* The three star layers on their own, so the sea can reflect the
+         same sky the camera sees. */
+      vec3 starsAt(vec2 uv, float t, float dens, float mw) {
+        vec3 s = vec3(0.0);
+        s += starLayer(uv, 38.0,  0.982, t) * 1.7 * dens;
+        s += starLayer(uv, 96.0,  0.976, t) * 0.95 * dens;
+        s += starLayer(uv, 215.0, 0.968, t) * 0.45 * dens;
+        /* Extra fine grains crowded into the galactic band. */
+        s += starLayer(uv, 330.0, 0.940, t) * 0.42 * dens * mw;
+        return s;
+      }
+
+      /* ── The moon ──
+         Where it sits, in the same screen space the sky is drawn in. Pushed
+         clear of the glass on wide viewports and pulled back inside the
+         frame on narrow ones, so it is never hidden behind the vessel nor
+         cropped off the edge. main() takes the sea's light direction from
+         here, so the glitter road always leads back to the disc casting it. */
+      vec2 moonUV() {
+        float vhw = uWallW * uS;
+        float mx = -min(max(uAspect * 0.19, vhw * 1.45), uAspect * 0.40);
+        return vec2(mx, uHorizon + 0.115);
+      }
+
+      /* Limb-darkened, with maria broken into the face so it is not a flat
+         white circle. The halo is kept deliberately tight: the disc sits far
+         above the bloom threshold, so the wide glow comes from the bloom
+         pass rather than being painted here. Faded toward the horizon so it
+         does not end in a hard seam where the sky stops being drawn. */
+      vec3 moon(vec2 uv) {
+        vec2 d = uv - moonUV();
+        float r = length(d);
+        float R = 0.030;
+
+        float lim  = sqrt(max(0.0, 1.0 - (r / R) * (r / R)));
+        float face = (0.80 + 0.20 * lim) * (0.86 + 0.26 * fbm4(d * 62.0));
+        float disc = smoothstep(R, R * 0.90, r);
+        float halo = exp(-r / 0.040) * 0.30 + exp(-r / 0.13) * 0.05;
+        halo *= smoothstep(uHorizon - 0.01, uHorizon + 0.09, uv.y);
+
+        return vec3(1.00, 0.965, 0.905) * (disc * face * 1.55 + halo);
+      }
+
+      /* Night sky: a deep gradient, the galaxy, and the star field crowded
+         along the band the way it thickens toward the galactic plane. */
       vec3 skyCol(vec2 uv, float t) {
         float hh = clamp((uv.y - uHorizon) / max(1e-3, 0.52 - uHorizon), 0.0, 1.0);
-        vec3 col = mix(vec3(0.045, 0.058, 0.105), vec3(0.003, 0.005, 0.016), pow(hh, 0.65));
+        vec3 col = mix(vec3(0.040, 0.052, 0.098), vec3(0.002, 0.004, 0.014), pow(hh, 0.65));
         col += vec3(0.05, 0.06, 0.10) * pow(1.0 - hh, 6.0);
         float dens = 0.55 + 0.45 * hh;
-        col += starLayer(uv, 38.0,  0.982, t) * 1.7 * dens;
-        col += starLayer(uv, 96.0,  0.976, t) * 0.95 * dens;
-        col += starLayer(uv, 215.0, 0.968, t) * 0.45 * dens;
+        /* Faded out near the horizon so the band does not sit on the sea. */
+        float fade = smoothstep(uHorizon + 0.005, uHorizon + 0.085, uv.y);
+        /* Stars and nebulosity creep as one, so the sky is a slow exposure
+           rather than a still with twinkle painted over it. The horizon fade
+           and the moon stay put: the fade is tied to the sea, and the moon
+           is tied to the glitter road. */
+        vec2 sd = uv + vec2(t * 0.0018, t * 0.0004);
+        float gd;
+        vec3 neb = galaxy(sd, gd);
+        gd *= fade;
+        col += neb * fade * GALAXY_AMT;
+        col += starsAt(sd, t, dens, gd);
+        col += moon(uv);
         return col;
       }
 
@@ -1752,7 +2730,10 @@ if (document.readyState === 'complete') {
         float choppy;
         vec3 n = oceanSurface(pos.xz, uTime, tHit, choppy);
         vec3 v = -rd;
-        vec3 l = normalize(vec3(0.0, 0.28, -1.0));
+        /* Straight at the moon, so the glitter road runs back to the disc
+           instead of to an empty patch of sky. */
+        vec2 mp = moonUV();
+        vec3 l = normalize(vec3(mp.x, mp.y - uHorizon, -1.0));
         vec3 hv = normalize(l + v);
 
         /* Two specular lobes: a tight one for the sun's own reflection and
@@ -1772,9 +2753,34 @@ if (document.readyState === 'complete') {
         vec3 deep = vec3(0.006, 0.026, 0.062);
         vec3 col = mix(deep, sky, fres);
 
+        /* ── Reflected sky ──
+           The reflected ray is converted back into the same screen space
+           the sky is drawn in, so the sea carries the actual star field
+           rather than a flat gradient. Because the ray is bent by the wave
+           normal, the reflection breaks up and scatters on its own. Only
+           the coarser layers are used: the fine ones alias into noise once
+           the surface is perturbing every pixel. */
+        if (refl.z < -1e-3 && refl.y > 0.0) {
+          float k = -1.0 / refl.z;
+          vec2 ruv = vec2(refl.x * k, uHorizon + refl.y * k);
+          float rmw = galaxyDensCheap(ruv);
+          vec3 rstars = starLayer(ruv, 38.0, 0.982, uTime) * 1.7
+                      + starLayer(ruv, 96.0, 0.976, uTime) * 0.62;
+          /* The band's colour bleeds onto the water too, warm on the
+             spine and blue off it, but far too softly to resolve detail. */
+          rstars += mix(vec3(0.26, 0.32, 0.62), vec3(0.62, 0.36, 0.34),
+                        smoothstep(0.35, 0.95, rmw)) * rmw * 0.115;
+          /* Fades with distance and as the surface roughens, so the near
+             water glitters and the far water stays calm. */
+          float clarity = exp(-tHit * 0.016) * (1.0 - clamp(choppy * 0.9, 0.0, 0.75));
+          col += rstars * fres * clarity * 0.85;
+        }
+
         /* A hint of scatter through the steeper wave faces. */
         col += vec3(0.02, 0.09, 0.10) * clamp(choppy * 1.6, 0.0, 1.0) * 0.5;
-        col += vec3(1.0, 0.88, 0.66) * spec;
+        /* Cool, because it is moonlight now rather than a low sun. All the
+           warmth in the frame belongs to the sand and the quote. */
+        col += vec3(0.86, 0.92, 1.00) * spec;
 
         float haze = exp(-tHit * 0.019);
         col = mix(vec3(0.012, 0.026, 0.055), col, 0.18 + 0.82 * haze);
@@ -1833,12 +2839,144 @@ if (document.readyState === 'complete') {
     }
     fitVignette();
 
+    /* ══ Bloom ══
+       The scene is thin additive lines and points on black, which is
+       exactly the case where light should spill. r128 ships no
+       postprocessing addons, so this is a hand-rolled four-pass chain:
+       render to a target, cut everything below a threshold, blur that at
+       quarter resolution in two separable passes, then add it back over
+       the original. Quarter-res keeps the cost of the blur small and makes
+       the result softer, which is what is wanted anyway. */
+    const BLOOM_DIV = 4;
+    const rtOpts = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+                     format: THREE.RGBAFormat, depthBuffer: true, stencilBuffer: false };
+    const rtOptsFlat = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
+                         format: THREE.RGBAFormat, depthBuffer: false, stencilBuffer: false };
+    let rtScene, rtA, rtB;
+
+    const fsScene = new THREE.Scene();
+    const fsCam   = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const fsQuad  = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null);
+    fsQuad.frustumCulled = false;
+    fsScene.add(fsQuad);
+
+    const FS_VS = `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`;
+
+    /* Soft-knee threshold, so bright things ramp into the bloom instead of
+       popping in the moment they cross the line. */
+    const brightMat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: null }, uThresh: { value: 0.40 }, uKnee: { value: 0.26 } },
+      vertexShader: FS_VS,
+      fragmentShader: `
+        precision highp float;
+        varying vec2 vUv;
+        uniform sampler2D uTex;
+        uniform float uThresh, uKnee;
+        void main() {
+          vec3 c = texture2D(uTex, vUv).rgb;
+          float l = max(c.r, max(c.g, c.b));
+          float w = smoothstep(uThresh, uThresh + uKnee, l);
+          gl_FragColor = vec4(c * w, 1.0);
+        }`,
+      depthTest: false, depthWrite: false
+    });
+
+    /* Nine-tap gaussian, run once horizontally and once vertically. */
+    const blurMat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: null }, uDir: { value: new THREE.Vector2() } },
+      vertexShader: FS_VS,
+      fragmentShader: `
+        precision highp float;
+        varying vec2 vUv;
+        uniform sampler2D uTex;
+        uniform vec2 uDir;
+        void main() {
+          vec3 s = texture2D(uTex, vUv).rgb * 0.2270270270;
+          s += texture2D(uTex, vUv + uDir * 1.3846153846).rgb * 0.3162162162;
+          s += texture2D(uTex, vUv - uDir * 1.3846153846).rgb * 0.3162162162;
+          s += texture2D(uTex, vUv + uDir * 3.2307692308).rgb * 0.0702702703;
+          s += texture2D(uTex, vUv - uDir * 3.2307692308).rgb * 0.0702702703;
+          gl_FragColor = vec4(s, 1.0);
+        }`,
+      depthTest: false, depthWrite: false
+    });
+
+    const compMat = new THREE.ShaderMaterial({
+      uniforms: { uTex: { value: null }, uBloom: { value: null }, uAmt: { value: 0.60 } },
+      vertexShader: FS_VS,
+      fragmentShader: `
+        precision highp float;
+        varying vec2 vUv;
+        uniform sampler2D uTex, uBloom;
+        uniform float uAmt;
+        void main() {
+          vec4 base = texture2D(uTex, vUv);
+          vec3 bl = texture2D(uBloom, vUv).rgb;
+          gl_FragColor = vec4(base.rgb + bl * uAmt, base.a);
+        }`,
+      depthTest: false, depthWrite: false
+    });
+
+    function sizeTargets() {
+      const w = Math.max(2, Math.floor(window.innerWidth  * renderer.getPixelRatio()));
+      const h = Math.max(2, Math.floor(window.innerHeight * renderer.getPixelRatio()));
+      const bw = Math.max(2, Math.floor(w / BLOOM_DIV));
+      const bh = Math.max(2, Math.floor(h / BLOOM_DIV));
+      if (rtScene) { rtScene.dispose(); rtA.dispose(); rtB.dispose(); }
+      rtScene = new THREE.WebGLRenderTarget(w, h, rtOpts);
+      rtA = new THREE.WebGLRenderTarget(bw, bh, rtOptsFlat);
+      rtB = new THREE.WebGLRenderTarget(bw, bh, rtOptsFlat);
+    }
+    sizeTargets();
+
+    function fsPass(material, target) {
+      fsQuad.material = material;
+      renderer.setRenderTarget(target);
+      renderer.clear();
+      renderer.render(fsScene, fsCam);
+    }
+
+    /* Falls back to a plain direct render if anything about the target
+       chain is unavailable, so the intro can never be lost to bloom. */
+    let bloomOk = true;
+    function renderScene() {
+      if (!bloomOk) { renderer.setRenderTarget(null); renderer.render(scene, camera); return; }
+      try {
+        renderer.setRenderTarget(rtScene);
+        renderer.clear();
+        renderer.render(scene, camera);
+
+        brightMat.uniforms.uTex.value = rtScene.texture;
+        fsPass(brightMat, rtA);
+
+        blurMat.uniforms.uTex.value = rtA.texture;
+        blurMat.uniforms.uDir.value.set(1 / rtA.width, 0);
+        fsPass(blurMat, rtB);
+
+        blurMat.uniforms.uTex.value = rtB.texture;
+        blurMat.uniforms.uDir.value.set(0, 1 / rtA.height);
+        fsPass(blurMat, rtA);
+
+        compMat.uniforms.uTex.value = rtScene.texture;
+        compMat.uniforms.uBloom.value = rtA.texture;
+        renderer.setRenderTarget(null);
+        fsPass(compMat, null);
+      } catch (e) {
+        bloomOk = false;
+        renderer.setRenderTarget(null);
+        renderer.render(scene, camera);
+      }
+    }
+
     function onResize() {
       renderer.setSize(window.innerWidth, window.innerHeight);
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       fitVignette();
       fitOcean();
+      sizeTargets();
     }
     window.addEventListener('resize', onResize);
 
@@ -1858,6 +2996,7 @@ if (document.readyState === 'complete') {
        is well underway before any text shows. */
     const LINE_AT = [0.40, 0.62, 0.84];
     let nextLine = 0;
+    let flared = false;
 
 
     function grainAt(i, raw, p) {
@@ -1910,6 +3049,7 @@ if (document.readyState === 'complete') {
       updateGlint(t);
       updateStragglers(t);
       updateOcean(t);
+      updateGrainGlints(t);
 
       if (t < T_POUR) {
         const raw = t / T_POUR;
@@ -1948,11 +3088,22 @@ if (document.readyState === 'complete') {
           p[j+1] = targets[j+1] + jig * ((i % 5) - 2) * 0.22;
           p[j+2] = targets[j+2];
         }
+        /* The last grains have landed. The neck blooms once and the halo
+           widens with it, and the quote's own glow is pushed in step, so
+           the two ends of the frame resolve on the same beat. */
+        if (!flared) {
+          flared = true;
+          const q = document.querySelector('.loader-quote');
+          if (q) { q.classList.add('flare'); setTimeout(() => q.classList.remove('flare'), 620); }
+        }
+        const fl = Math.sin(Math.min(1, u * 1.6) * Math.PI);
+        neckGlow.scale.setScalar(1 + 2.4 * fl);
+
         mat.opacity = 0.95;
         updateBulk(1);
         bkMat.opacity = 0.9 * (1 - u);
         lmat.opacity = 1.0 * (1 - u * 0.45);
-        ngMat.opacity = 0.18 * (1 - u);
+        ngMat.opacity = 0.18 * (1 - u) + 0.80 * fl;
         sgMat.opacity = 0.34 * (1 - u * 0.35);
         setOcean(1);
 
@@ -1982,7 +3133,8 @@ if (document.readyState === 'complete') {
       }
 
       geo.attributes.position.needsUpdate = true;
-      renderer.render(scene, camera);
+      geo.attributes.color.needsUpdate = true;
+      renderScene();
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
