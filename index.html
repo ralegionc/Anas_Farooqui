@@ -141,6 +141,12 @@
   }
   #loader.done { opacity:0; pointer-events:none; }
 
+  #intro-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; display:block; pointer-events:none; }
+  #loader.space .fog-layer { display:none; }
+
+
+
+
   /* Fog layers - pure CSS, no canvas */
   .fog-layer {
     position:absolute;
@@ -188,17 +194,17 @@
   }
 
   .loader-quote {
-    position:relative; z-index:2;
+    position:relative; z-index:5;
     font-family:'Cinzel', serif;
-    font-size:clamp(16px,1.8vw,26px);
+    font-size:clamp(14px,1.5vw,21px);
     font-weight:400;
     line-height:2;
     letter-spacing:0.04em;
-    color:rgba(255,253,248,0.96);
+    color:rgba(26,17,8,0.94);
     max-width:580px;
     text-align:center;
     padding:0 40px;
-    text-shadow:0 0 60px rgba(255,255,255,0.08), 0 2px 24px rgba(0,0,0,0.6);
+    text-shadow:0 1px 0 rgba(255,224,150,0.70), 0 -1px 1px rgba(0,0,0,0.5);
   }
   .loader-quote .line-wrap {
     display:block;
@@ -213,42 +219,35 @@
                 transform 0.8s cubic-bezier(0.16,1,0.3,1),
                 filter 0.8s ease;
   }
+  .loader-quote.fill { will-change: clip-path; }
+  .loader-quote.fill .line {
+    opacity:1;
+    transform:none;
+    filter:blur(0);
+    transition:none;
+  }
+  .loader-quote.merge .line {
+    transform:none;
+    filter:blur(0);
+    transition:opacity 0.5s ease;
+  }
   .loader-quote .line.visible {
     opacity:1;
     transform:translateY(0);
     filter:blur(0);
   }
-  .loader-quote .line.attr {
+  .loader-quote .line-attr {
     font-family:'Space Mono', monospace;
-    font-size:10px;
-    font-weight:400;
-    letter-spacing:0.28em;
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.16em;
     text-transform:uppercase;
-    color:rgba(210,195,160,0.7);
-    text-shadow:none;
-    margin-top:2px;
+    color:rgba(12,7,2,0.96);
+    text-shadow:0 1px 0 rgba(255,226,152,0.75), 0 -1px 1px rgba(0,0,0,0.5);
+    margin-top:9px;
   }
 
-  .loader-bar-wrap {
-    position:relative; z-index:2;
-    margin-top:56px;
-    width:140px; height:1px;
-    background:rgba(255,255,255,0.04);
-    overflow:hidden;
-  }
-  .loader-bar {
-    position:absolute; top:0; left:0; height:100%;
-    width:0; background:var(--accent);
-    box-shadow:none;
-    transition:width 0.06s linear;
-  }
-  .loader-pct {
-    position:relative; z-index:2;
-    margin-top:14px;
-    font-family:var(--mono);
-    font-size:10px; letter-spacing:0.14em;
-    color:rgba(240,238,232,0.2);
-  }
+
 
   /* ── CUSTOM CURSOR ── */
   /* native cursor restored - custom JS cursor removed for performance */
@@ -559,16 +558,13 @@
   <div class="fog-layer"></div>
   <div class="fog-layer"></div>
   <div class="fog-layer"></div>
+  <canvas id="intro-canvas"></canvas>
   
   <div class="loader-quote">
     <span class="line-wrap"><span class="line">"Talk is cheap.</span></span>
     <span class="line-wrap"><span class="line">Show me the code."</span></span>
     <span class="line-wrap"><span class="line line-attr">Linus Torvalds</span></span>
   </div>
-  <div class="loader-bar-wrap">
-    <div class="loader-bar" id="loaderBar"></div>
-  </div>
-  <div class="loader-pct" id="loaderPct">0%</div>
 </div>
 
 <header>
@@ -744,6 +740,11 @@
 </div>
 
 <script>
+/* Build stamp: lets you confirm which copy the browser actually loaded.
+   If the console does not show this line, you are on a cached file. */
+console.log('%c intro build 23:58:49 / 0a740d ',
+  'background:#f0cd8a;color:#1a1108;font-weight:700;padding:2px 6px;border-radius:3px');
+
 /* Heliostream media, inlined so the page is a single portable file */
 const FLUID_IMG = 'assets/fluidsr-tile.jpg';
 const FLUID_VID = 'assets/fluidsr-video.mp4';
@@ -1048,55 +1049,823 @@ if (document.readyState === 'complete') {
 }
 
 /* ════════════════════════════════════════
-   LOADER - pure CSS fog + simultaneous reveal
+   LOADER + HOURGLASS INTRO
+   Sand drains from a cone that empties bottom-first, squeezes through a
+   glowing neck, and accumulates from the floor up until the drift has
+   built the quote. Stragglers keep trickling as it hands off to type.
 ════════════════════════════════════════ */
 (function() {
   const loader = document.getElementById('loader');
-  const bar    = document.getElementById('loaderBar');
-  const pct    = document.getElementById('loaderPct');
+  const quote  = document.querySelector('.loader-quote');
   const lines  = document.querySelectorAll('.loader-quote .line');
 
-  /* All lines rise simultaneously - short delay so CSS transitions fire */
-  setTimeout(() => lines.forEach(l => l.classList.add('visible')), 120);
+  window.__revealQuoteText = () => lines.forEach(l => l.classList.add('visible'));
+  /* The reveal edge is a liquid surface: two ripples of different
+     wavelength travelling in opposite directions, calming as the level
+     rises so it settles flat rather than sloshing forever. */
+  window.__setQuoteFill = (frac, t) => {
+    if (!quote) return;
+    quote.classList.add('fill');
+    lines.forEach(l => l.classList.add('visible'));
+    const f = Math.max(0, Math.min(1, frac));
+    const top = (1 - f) * 100;
+    const amp = 9.5 * (1 - f * 0.55);
+    const pts = [];
+    const SEG = 30;
+    for (let i = 0; i <= SEG; i++) {
+      const u = i / SEG;
+      const y = top
+        + Math.sin(u * Math.PI * 2.1 + t * 0.0034) * amp
+        + Math.sin(u * Math.PI * 4.7 - t * 0.0056) * amp * 0.42;
+      pts.push((u * 100).toFixed(2) + '% ' + y.toFixed(2) + '%');
+    }
+    pts.push('100% 140%', '0% 140%');
+    const poly = 'polygon(' + pts.join(',') + ')';
+    quote.style.clipPath = poly;
+    quote.style.webkitClipPath = poly;
+  };
+  window.__mergeQuoteText = () => {
+    if (quote) quote.classList.add('merge');
+    lines.forEach(l => l.classList.add('visible'));
+  };
+  setTimeout(() => { if (!window.__introDrawsQuote) window.__revealQuoteText(); }, 120);
 
-  /* Progress bar - faster fill */
-  let progress = 0;
-  function stepBar() {
-    const speed = progress < 72 ? 2.6 : 0.6;
-    progress = Math.min(progress + speed, progress < 72 ? 72 : 96);
-    bar.style.width = progress + '%';
-    pct.textContent = Math.floor(progress) + '%';
-    if (progress < 96) requestAnimationFrame(stepBar);
-  }
-  requestAnimationFrame(stepBar);
+  let pageLoaded = document.readyState === 'complete';
+  let introDone  = false;
+  let dismissed  = false;
 
-  /* Dismiss as soon as the page has loaded (min 600ms so the intro reads),
-     with a 2.5s hard cap in case 'load' never fires. */
-  const startedAt = performance.now();
-  const MIN_MS = 2200, CAP_MS = 3200;
-  let dismissed = false;
   function dismiss() {
     if (dismissed) return;
     dismissed = true;
-    bar.style.width = '100%';
-    pct.textContent = '100%';
     setTimeout(() => {
       loader.classList.add('done');
       setTimeout(staggerTilesIn, 200);
       setTimeout(() => {
         loader.remove();
         window.dispatchEvent(new Event('loader-done'));
-      }, 700);
-    }, 200);
+      }, 1000);
+    }, 150);
   }
-  function maybeDismiss() {
-    const waited = performance.now() - startedAt;
-    if (waited < MIN_MS) setTimeout(dismiss, MIN_MS - waited);
-    else dismiss();
+  function tryDismiss() { if (pageLoaded && introDone) dismiss(); }
+  window.__introComplete = () => { introDone = true; tryDismiss(); };
+
+  if (document.readyState === 'complete') pageLoaded = true;
+  else window.addEventListener('load', () => { pageLoaded = true; tryDismiss(); });
+
+  setTimeout(() => { introDone = true; tryDismiss(); }, 9000);
+})();
+
+(function initIntro() {
+  const canvas = document.getElementById('intro-canvas');
+  const loader = document.getElementById('loader');
+  const finish = () => { if (window.__introComplete) window.__introComplete(); };
+  if (!canvas) { finish(); return; }
+
+  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced) { setTimeout(finish, 2200); return; }
+
+  window.__introDrawsQuote = true;
+  if (loader) loader.classList.add('space');
+
+  function bail() {
+    window.__introDrawsQuote = false;
+    if (loader) loader.classList.remove('space');
+    if (window.__revealQuoteText) window.__revealQuoteText();
+    setTimeout(finish, 1800);
   }
-  if (document.readyState === 'complete') maybeDismiss();
-  else window.addEventListener('load', maybeDismiss);
-  setTimeout(dismiss, CAP_MS);
+
+  const s = document.createElement('script');
+  s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+  s.async = true;
+  s.onload = () => {
+    const fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+    Promise.race([fonts, new Promise(r => setTimeout(r, 1500))]).then(build);
+  };
+  s.onerror = bail;
+  document.head.appendChild(s);
+
+  function drawLS(g, text, cx, cy, ls) {
+    if (!ls) { g.fillText(text, cx, cy); return; }
+    const chars = Array.from(text);
+    let total = 0;
+    for (const ch of chars) total += g.measureText(ch).width + ls;
+    total -= ls;
+    let x = cx - total / 2;
+    for (const ch of chars) {
+      const w = g.measureText(ch).width;
+      g.fillText(ch, x + w / 2, cy);
+      x += w + ls;
+    }
+  }
+
+  function sampleQuote(unitsPerPixel) {
+    const wraps = Array.from(document.querySelectorAll('.loader-quote .line-wrap'));
+    if (!wraps.length) return null;
+    const SS = 3;
+    const rects = wraps.map(w => w.getBoundingClientRect());
+    const minX = Math.min.apply(null, rects.map(r => r.left));
+    const maxX = Math.max.apply(null, rects.map(r => r.right));
+    const minY = Math.min.apply(null, rects.map(r => r.top));
+    const maxY = Math.max.apply(null, rects.map(r => r.bottom));
+    const W = Math.max(8, Math.ceil((maxX - minX) * SS));
+    const H = Math.max(8, Math.ceil((maxY - minY) * SS));
+    if (W > 6000 || H > 4000) return null;
+
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const g = c.getContext('2d');
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    wraps.forEach((w, i) => {
+      const line = w.querySelector('.line');
+      if (!line) return;
+      const cs = getComputedStyle(line);
+      let text = line.textContent.trim();
+      if (cs.textTransform === 'uppercase') text = text.toUpperCase();
+      g.font = `${cs.fontStyle} ${cs.fontWeight} ${parseFloat(cs.fontSize) * SS}px ${cs.fontFamily}`;
+      let ls = parseFloat(cs.letterSpacing);
+      if (!isFinite(ls)) ls = 0;
+      const r = rects[i];
+      drawLS(g, text, (r.left + r.width / 2 - minX) * SS, (r.top + r.height / 2 - minY) * SS, ls * SS);
+    });
+
+    const d = g.getImageData(0, 0, W, H).data;
+
+    /* Ink bounds, so the slab hugs the words rather than the full-width
+       block the line wrappers occupy. */
+    let iL = W, iR = 0, iT = H, iB = 0;
+    for (let y = 0; y < H; y++) {
+      for (let x = 0; x < W; x++) {
+        if (d[(y * W + x) * 4 + 3] > 120) {
+          if (x < iL) iL = x; if (x > iR) iR = x;
+          if (y < iT) iT = y; if (y > iB) iB = y;
+        }
+      }
+    }
+    if (iR <= iL || iB <= iT) return null;
+
+    const padX = 26 * SS, padY = 16 * SS;
+    iL = Math.max(0, iL - padX); iR = Math.min(W, iR + padX);
+    iT = Math.max(0, iT - padY); iB = Math.min(H, iB + padY);
+
+    const k = unitsPerPixel / SS;
+    const offX = ((minX + maxX) / 2 - window.innerWidth / 2) * unitsPerPixel;
+    const offY = -((minY + maxY) / 2 - window.innerHeight / 2) * unitsPerPixel;
+
+    /* A dense fill of the slab. This is the body of sand the quote is
+       carved into, so it wants to read as a solid surface. */
+    const STEP = 1.7 * SS;
+    const pts = [];
+    for (let y = iT; y <= iB; y += STEP) {
+      for (let x = iL; x <= iR; x += STEP) {
+        pts.push(
+          (x - W/2 + (Math.random() - 0.5) * STEP) * k + offX,
+          -(y - H/2 + (Math.random() - 0.5) * STEP) * k + offY,
+          (Math.random() - 0.5) * 1.0
+        );
+      }
+    }
+    if (!pts.length) return null;
+    return { targets: new Float32Array(pts), offX: offX, offY: offY };
+  }
+
+  function radialTex(THREE, stops) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 256;
+    const gg = cv.getContext('2d');
+    const grd = gg.createRadialGradient(128, 128, 0, 128, 128, 128);
+    for (const st of stops) grd.addColorStop(st[0], st[1]);
+    gg.fillStyle = grd; gg.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(cv);
+    t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
+    return t;
+  }
+
+  function build() {
+    const THREE = window.THREE;
+    if (!THREE) { bail(); return; }
+
+    let renderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+    } catch (e) { bail(); return; }
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+    const Z_END = 100, Z_START = 112;
+    camera.position.z = Z_START;
+    scene.add(camera);
+    const vFov = camera.fov * Math.PI / 180;
+    const tanHalf = Math.tan(vFov / 2);
+    const unitsPerPixel = (2 * Z_END * tanHalf) / window.innerHeight;
+
+    const sampled = sampleQuote(unitsPerPixel);
+    if (!sampled) { bail(); return; }
+    const targets = sampled.targets;
+    const N = targets.length / 3;
+
+    let tMinX = Infinity, tMaxX = -Infinity, tMinY = Infinity, tMaxY = -Infinity;
+    for (let i = 0; i < N; i++) {
+      const x = targets[i*3], y = targets[i*3+1];
+      if (x < tMinX) tMinX = x; if (x > tMaxX) tMaxX = x;
+      if (y < tMinY) tMinY = y; if (y > tMaxY) tMaxY = y;
+    }
+    const halfW = (tMaxX - tMinX) / 2, halfH = (tMaxY - tMinY) / 2;
+    const cx = sampled.offX;
+
+    const viewH  = 2 * Z_END * tanHalf;
+    const viewW  = viewH * (window.innerWidth / window.innerHeight);
+    /* The waist sits exactly on the horizon: upper chamber in the sky,
+       lower chamber in the sea. Sky is the narrower band. */
+    const HORIZON_Y = viewH * 0.19;
+    const neckY  = HORIZON_Y;
+    const botY   = Math.max(tMinY - (halfH * 1.4 + 8), -viewH * 0.44);
+    const topY   = Math.min(neckY + (neckY - botY) * 0.55, viewH * 0.46);
+    const wallW  = Math.min(Math.max(halfW * 2.8, 20), viewW * 0.34);
+    const neckHW = wallW * 0.052;
+    const span   = Math.max(1e-3, topY - botY);
+
+    /* ── Vessel: curved bulbs meeting at a waist, subdivided so a
+       highlight can travel along the glass ── */
+    function profileW(sRaw) {
+      const s = Math.max(0, Math.min(1, sRaw));
+      /* Straight-sided chambers with a pinched waist:
+             |        vertical wall
+              \       wall sweeping in
+              /       wall sweeping out
+             |        vertical wall
+         The sweep is gently curved rather than a dead-straight cone, and
+         eases into the vertical wall so the join is not a razor corner. */
+      const K = 1.00, KNEE = 0.14, CURVE = 0.65;
+      /* K = 1 means the sweep runs the whole chamber, so there is no
+         upright section at all. Guarded because t would divide by zero. */
+      if (K < 1 && s >= K) {
+        /* The upright wall is not dead straight either: it bows out a
+           little through the middle of the chamber and eases back in
+           toward the cap. Slope is zero where it meets the sweep, so the
+           two sections join without a kink. */
+        const t = (s - K) / (1 - K);
+        const bow = Math.sin(Math.PI * t);
+        return wallW * (1 + 0.015 * bow * bow - 0.10 * t * t);
+      }
+      const u = s / K;
+      const sweep = q => q + (q * q * (3 - 2 * q) - q) * CURVE;
+      let e;
+      if (u <= 1 - KNEE) {
+        e = sweep(u);
+      } else {
+        const a = sweep(1 - KNEE);
+        const q = (u - (1 - KNEE)) / KNEE;
+        e = a + (1 - a) * (1 - (1 - q) * (1 - q));
+      }
+      return neckHW + (wallW - neckHW) * e;
+    }
+
+    const lp = [], lc = [], lbase = [], lxs = [];
+    function pushPolyline(pts) {
+      for (let k = 0; k < pts.length - 1; k++) {
+        const pair = [pts[k], pts[k + 1]];
+        for (let e = 0; e < 2; e++) {
+          const px = pair[e][0], py = pair[e][1];
+          lp.push(cx + px, py, -6);
+          lxs.push(px);
+          const f = 1 - Math.min(1, Math.abs(py - neckY) / (span * 0.62));
+          const b = 0.20 + 0.80 * f;
+          lbase.push(b);
+          lc.push(0.55 * b, 0.42 * b, 1.0 * b);
+        }
+      }
+    }
+
+    const PN = 60;
+    const upR = [], upL = [], loR = [], loL = [];
+    for (let k = 0; k <= PN; k++) {
+      const s = k / PN;
+      const w = profileW(s);
+      const yU = neckY + s * (topY - neckY);
+      const yL = neckY - s * (neckY - botY);
+      upR.push([w, yU]); upL.push([-w, yU]);
+      loR.push([w, yL]); loL.push([-w, yL]);
+    }
+    pushPolyline(upR); pushPolyline(upL);
+    pushPolyline(loR); pushPolyline(loL);
+
+    function capArc(y, w, bulge) {
+      const pts = [];
+      for (let k = 0; k <= 26; k++) {
+        const u = k / 26, x = -w + 2 * w * u;
+        pts.push([x, y + bulge * (1 - (x / w) * (x / w))]);
+      }
+      return pts;
+    }
+    pushPolyline(capArc(topY, profileW(1), (topY - neckY) * 0.028));
+
+
+    const lgeo = new THREE.BufferGeometry();
+    lgeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(lp), 3));
+    lgeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(lc), 3));
+    const lmat = new THREE.LineBasicMaterial({
+      vertexColors: true, transparent: true, opacity: 0,
+      depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.LineSegments(lgeo, lmat));
+
+    const GLINT_W = wallW * 0.16;
+    function updateGlint(t) {
+      const arr = lgeo.attributes.color.array;
+      const sweep = ((t * 0.00019) % 1);
+      const gx = -wallW * 1.5 + sweep * wallW * 3.0;
+      for (let v = 0; v < lbase.length; v++) {
+        const d = (lxs[v] - gx) / GLINT_W;
+        const b = lbase[v] * (1 + 2.1 * Math.exp(-d * d));
+        arr[v*3] = 0.62 * b; arr[v*3+1] = 0.50 * b; arr[v*3+2] = 1.0 * b;
+      }
+      lgeo.attributes.color.needsUpdate = true;
+    }
+
+    /* ── Neck glow ── */
+    const ngMat = new THREE.MeshBasicMaterial({
+      map: radialTex(THREE, [[0, 'rgba(255,216,120,0.95)'], [0.35, 'rgba(255,176,60,0.32)'], [1, 'rgba(0,0,0,0)']]),
+      transparent: true, opacity: 0, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending
+    });
+    const neckGlow = new THREE.Mesh(new THREE.PlaneGeometry(neckHW * 11, neckHW * 11), ngMat);
+    neckGlow.position.set(cx, neckY, -4);
+    scene.add(neckGlow);
+
+    /* ── Grains: leave lowest-text-first, and sit in the cone in that order
+       so the reservoir visibly drains from the bottom up ── */
+    const order = new Uint32Array(N);
+    for (let i = 0; i < N; i++) order[i] = i;
+    Array.prototype.sort.call(order, (a, b) => targets[a*3+1] - targets[b*3+1]);
+
+    const delay = new Float32Array(N);
+    const resX = new Float32Array(N), resY = new Float32Array(N);
+    const spread = new Float32Array(N), zJit = new Float32Array(N);
+    const SPAN_D = 0.70, FALL = 0.26;
+    for (let rank = 0; rank < N; rank++) {
+      const i = order[rank];
+      delay[i] = (rank / N) * SPAN_D + Math.random() * 0.04;
+      spread[i] = (Math.random() - 0.5) * neckHW * 0.85;
+      zJit[i] = (Math.random() - 0.5) * 5;
+    }
+
+    const dOrder = new Uint32Array(N);
+    for (let i = 0; i < N; i++) dOrder[i] = i;
+    Array.prototype.sort.call(dOrder, (a, b) => delay[a] - delay[b]);
+    const chamberH = (topY - neckY) * 0.88;
+    for (let rank = 0; rank < N; rank++) {
+      const i = dOrder[rank];
+      const yy = neckY + 4 + (rank / N) * chamberH;
+      const hf = Math.min(1, (yy - neckY) / Math.max(1e-3, topY - neckY));
+      const rmax = profileW(hf) * 0.90;
+      const a = Math.random() * Math.PI * 2;
+      const rr = Math.sqrt(Math.random()) * rmax;
+      resX[i] = cx + Math.cos(a) * rr;
+      resY[i] = yy + (Math.random() - 0.5) * chamberH * 0.03;
+    }
+
+    function softSprite() {
+      const cv = document.createElement('canvas');
+      cv.width = cv.height = 64;
+      const gg = cv.getContext('2d');
+      const grd = gg.createRadialGradient(32, 32, 0, 32, 32, 32);
+      grd.addColorStop(0.0, 'rgba(255,255,255,1)');
+      grd.addColorStop(0.35, 'rgba(255,255,255,0.42)');
+      grd.addColorStop(1.0, 'rgba(255,255,255,0)');
+      gg.fillStyle = grd; gg.fillRect(0, 0, 64, 64);
+      const tex = new THREE.Texture(cv); tex.needsUpdate = true; return tex;
+    }
+    const SPRITE = softSprite();
+
+    const col = new Float32Array(N * 3);
+    const SAND = [1.00, 0.80, 0.30];
+    for (let i = 0; i < N; i++) {
+      const j = i * 3, v = 0.27 + Math.random() * 0.16;
+      col[j] = SAND[0] * v; col[j+1] = SAND[1] * v; col[j+2] = SAND[2] * v;
+    }
+    const colBase = Float32Array.from(col);
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({
+      size: unitsPerPixel * 2.15, map: SPRITE, vertexColors: true,
+      sizeAttenuation: true, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Points(geo, mat));
+
+    /* ── Stragglers: a thin trickle that outlasts the pour ── */
+    const SG = 150;
+    const sgPh = new Float32Array(SG), sgSpd = new Float32Array(SG), sgX = new Float32Array(SG);
+    for (let i = 0; i < SG; i++) {
+      sgPh[i] = Math.random();
+      sgSpd[i] = 0.00030 + Math.random() * 0.00028;
+      sgX[i] = cx + (Math.random() - 0.5) * neckHW * 1.5;
+    }
+    const sgGeo = new THREE.BufferGeometry();
+    sgGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SG * 3), 3));
+    const sgMat = new THREE.PointsMaterial({
+      size: unitsPerPixel * 2.6, map: SPRITE, color: 0xffc247,
+      sizeAttenuation: true, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Points(sgGeo, sgMat));
+    const sgFall = neckY - botY + 6;
+    function updateStragglers(t) {
+      const a = sgGeo.attributes.position.array;
+      for (let i = 0; i < SG; i++) {
+        const u = (t * sgSpd[i] + sgPh[i]) % 1;
+        a[i*3]   = sgX[i] + Math.sin(u * 6.0 + sgPh[i] * 9) * neckHW * 0.35;
+        a[i*3+1] = neckY - u * sgFall;
+        a[i*3+2] = -2;
+      }
+      sgGeo.attributes.position.needsUpdate = true;
+    }
+
+    const VESSEL_Z_REF = -6;
+
+    /* ── Bulk sand: the body of the charge. These grains never form the
+       text, they just fill the upper chamber and thicken the stream, then
+       fade out before they reach the words. ── */
+    const BULK = 10500;
+    const bkRX = new Float32Array(BULK), bkRY = new Float32Array(BULK);
+    const bkDl = new Float32Array(BULK), bkSp = new Float32Array(BULK);
+    const bkZ  = new Float32Array(BULK), bkLm = new Float32Array(BULK);
+    const bkFall = botY + (neckY - botY) * 0.12;
+    for (let i = 0; i < BULK; i++) {
+      const rank = i / BULK;
+      const yy = neckY + 2 + rank * (topY - neckY) * 0.96;
+      const hf = Math.min(1, (yy - neckY) / Math.max(1e-3, topY - neckY));
+      const rmax = profileW(hf) * 0.94;
+      const a = Math.random() * Math.PI * 2;
+      const rr = Math.sqrt(Math.random()) * rmax;
+      bkRX[i] = cx + Math.cos(a) * rr;
+      bkRY[i] = yy + (Math.random() - 0.5) * 2.0;
+      bkDl[i] = Math.min(0.97, rank * 0.86 + Math.random() * 0.10);
+      bkSp[i] = (Math.random() - 0.5) * neckHW * 1.5;
+      bkZ[i]  = (Math.random() - 0.5) * 6;
+      bkLm[i] = 0.37 + Math.random() * 0.36;
+    }
+    const bkGeo = new THREE.BufferGeometry();
+    bkGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(BULK * 3), 3));
+    bkGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(BULK * 3), 3));
+    const bkMat = new THREE.PointsMaterial({
+      size: unitsPerPixel * 2.3, map: SPRITE, vertexColors: true,
+      sizeAttenuation: true, transparent: true, opacity: 0,
+      depthWrite: false, blending: THREE.AdditiveBlending
+    });
+    scene.add(new THREE.Points(bkGeo, bkMat));
+
+    function updateBulk(raw) {
+      const p = bkGeo.attributes.position.array;
+      const k = bkGeo.attributes.color.array;
+      for (let i = 0; i < BULK; i++) {
+        const j = i * 3, d = bkDl[i];
+        let y;
+        if (raw < d) {
+          const e = d > 0 ? Math.pow(raw / d, 2) : 1;
+          p[j]   = bkRX[i] + (cx + bkSp[i] - bkRX[i]) * e;
+          y      = bkRY[i] + (neckY - bkRY[i]) * e;
+        } else {
+          const u = Math.min(1, (raw - d) / (1 - d));
+          p[j]   = cx + bkSp[i];
+          y      = neckY + (bkFall - neckY) * (u * u);
+        }
+        p[j+1] = y;
+        p[j+2] = bkZ[i];
+        /* Full brightness up in the charge, gone by the time it reaches
+           the text so it never muddies the words. */
+        const f = Math.min(1, Math.max(0, (y - tMaxY) / Math.max(1e-3, neckY - tMaxY)));
+        const b = bkLm[i] * f;
+        k[j] = 1.00 * b; k[j+1] = 0.78 * b; k[j+2] = 0.26 * b;
+      }
+      bkGeo.attributes.position.needsUpdate = true;
+      bkGeo.attributes.color.needsUpdate = true;
+    }
+
+    /* ── Ocean: a lit water surface rather than contour lines. A
+       full-screen quad casts a ray per pixel onto a water plane, sums
+       directional waves for the surface normal, and shades it with
+       fresnel plus a sun specular, which is what produces glitter. ── */
+    const OCEAN_VS = `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`;
+
+    const OCEAN_FS = `
+      precision highp float;
+      varying vec2 vUv;
+      uniform float uTime, uAlpha, uAspect, uS;
+      uniform float uCx, uNeckY, uTopY, uBotY, uWallW, uNeckHW, uHorizon;
+
+      float profileW(float s) {
+        s = clamp(s, 0.0, 1.0);
+        float KNEE = 0.14, CURVE = 0.65;
+        float u = s;
+        float a = 1.0 - KNEE;
+        float e;
+        if (u <= a) {
+          e = u + (u * u * (3.0 - 2.0 * u) - u) * CURVE;
+        } else {
+          float sa = a + (a * a * (3.0 - 2.0 * a) - a) * CURVE;
+          float q = (u - a) / KNEE;
+          e = sa + (1.0 - sa) * (1.0 - (1.0 - q) * (1.0 - q));
+        }
+        return uNeckHW + (uWallW - uNeckHW) * e;
+      }
+
+      float vesselMask(float vx, float vy) {
+        if (vy > uTopY || vy < uBotY) return 1.0;
+        float s = vy >= uNeckY
+          ? (vy - uNeckY) / max(1e-3, uTopY - uNeckY)
+          : (uNeckY - vy) / max(1e-3, uNeckY - uBotY);
+        float w = profileW(s);
+        float rr = abs(vx - uCx) / max(1e-3, w);
+        return mix(0.13, 1.0, smoothstep(0.92, 1.10, rr));
+      }
+
+      /* Six wave trains at rising frequency. Each octave is faded out with
+         distance once it is too fine to resolve, which stops the horizon
+         boiling, and each one warps the sample point for the next so the
+         crests sharpen instead of staying sinusoidal. */
+      float hash21(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
+      }
+
+      /* One layer of stars: cells with a random occupant, placed at a
+         random spot inside the cell so the field never looks gridded,
+         each with its own size, colour and twinkle rate. */
+      vec3 starLayer(vec2 sp, float scale, float thresh, float t) {
+        vec2 g = sp * scale;
+        vec2 gid = floor(g);
+        float r = hash21(gid);
+        if (r < thresh) return vec3(0.0);
+        vec2 off = vec2(hash21(gid + 17.3), hash21(gid + 41.7));
+        float d = length(fract(g) - off);
+        float mag = (r - thresh) / max(1e-4, 1.0 - thresh);
+        float size = 0.035 + 0.11 * mag * mag;
+        float core = smoothstep(size, 0.0, d);
+        float glow = smoothstep(size * 5.0, 0.0, d) * 0.30;
+        float tw = 0.62 + 0.38 * sin(t * (1.1 + r * 3.4) + r * 60.0);
+        vec3 tint = mix(vec3(0.70, 0.80, 1.0), vec3(1.0, 0.90, 0.74), hash21(gid + 91.1));
+        return tint * (core + glow) * mag * tw;
+      }
+
+      /* Night sky: gradient from a faint glow at the horizon up to deep
+         space, with three star layers of different density. */
+      vec3 skyCol(vec2 uv, float t) {
+        float hh = clamp((uv.y - uHorizon) / max(1e-3, 0.52 - uHorizon), 0.0, 1.0);
+        vec3 col = mix(vec3(0.045, 0.058, 0.105), vec3(0.003, 0.005, 0.016), pow(hh, 0.65));
+        col += vec3(0.05, 0.06, 0.10) * pow(1.0 - hh, 6.0);
+        float dens = 0.55 + 0.45 * hh;
+        col += starLayer(uv, 38.0,  0.982, t) * 1.7 * dens;
+        col += starLayer(uv, 96.0,  0.976, t) * 0.95 * dens;
+        col += starLayer(uv, 215.0, 0.968, t) * 0.45 * dens;
+        return col;
+      }
+
+      vec3 oceanSurface(vec2 p, float t, float dist, out float choppy) {
+        vec2 slope = vec2(0.0);
+        vec2 warp  = vec2(0.0);
+        float amp = 0.20, freq = 0.24, spd = 0.85, ang = 0.6;
+        choppy = 0.0;
+        for (int i = 0; i < 6; i++) {
+          vec2 dir = vec2(cos(ang), sin(ang));
+          float att = exp(-freq * dist * 0.011);
+          float ph = dot(p + warp, dir) * freq + t * spd;
+          float sn = sin(ph), cs = cos(ph);
+          slope += dir * (amp * freq * cs) * att;
+          warp  -= dir * (amp * 0.60 * sn) * att;
+          choppy += amp * freq * abs(cs) * att;
+          amp *= 0.58; freq *= 1.92; spd *= 1.17; ang += 2.4;
+        }
+        return normalize(vec3(-slope.x, 1.0, -slope.y));
+      }
+
+      void main() {
+        vec2 uv = vec2((vUv.x - 0.5) * uAspect, vUv.y - 0.5);
+
+        vec3 ro = vec3(0.0, 3.0, 0.0);
+        vec3 rd = normalize(vec3(uv.x, uv.y - uHorizon, -1.0));
+        if (rd.y > -0.0015) {
+          gl_FragColor = vec4(skyCol(uv, uTime) * uAlpha, 1.0);
+          return;
+        }
+
+        float tHit = -ro.y / rd.y;
+        vec3 pos = ro + rd * tHit;
+
+        float choppy;
+        vec3 n = oceanSurface(pos.xz, uTime, tHit, choppy);
+        vec3 v = -rd;
+        vec3 l = normalize(vec3(0.0, 0.28, -1.0));
+        vec3 hv = normalize(l + v);
+
+        /* Two specular lobes: a tight one for the sun's own reflection and
+           a broad one for the surrounding sheen. Together they read as
+           glitter rather than a single hotspot. */
+        float ndh = max(dot(n, hv), 0.0);
+        float spec = pow(ndh, 480.0) * 2.1 + pow(ndh, 64.0) * 0.16;
+        spec *= exp(-tHit * 0.010);
+
+        /* Sky reflected off the surface, brighter as the reflection grazes
+           toward the horizon. */
+        float fres = 0.02 + 0.98 * pow(1.0 - max(dot(n, v), 0.0), 5.0);
+        vec3 refl = reflect(rd, n);
+        float skyT = clamp(refl.y * 3.2, 0.0, 1.0);
+        vec3 sky = mix(vec3(0.11, 0.18, 0.32), vec3(0.02, 0.05, 0.13), skyT);
+
+        vec3 deep = vec3(0.006, 0.026, 0.062);
+        vec3 col = mix(deep, sky, fres);
+
+        /* A hint of scatter through the steeper wave faces. */
+        col += vec3(0.02, 0.09, 0.10) * clamp(choppy * 1.6, 0.0, 1.0) * 0.5;
+        col += vec3(1.0, 0.88, 0.66) * spec;
+
+        float haze = exp(-tHit * 0.019);
+        col = mix(vec3(0.012, 0.026, 0.055), col, 0.18 + 0.82 * haze);
+
+        float m = vesselMask(uv.x / uS, uv.y / uS);
+        gl_FragColor = vec4(col * m * uAlpha, 1.0);
+      }`;
+
+    const OQD = 60;
+    const oceanMat = new THREE.ShaderMaterial({
+      vertexShader: OCEAN_VS,
+      fragmentShader: OCEAN_FS,
+      uniforms: {
+        uTime:   { value: 0 },
+        uAlpha:  { value: 0 },
+        uAspect: { value: window.innerWidth / window.innerHeight },
+        uS:      { value: 1 / (2 * (Z_END - VESSEL_Z_REF) * tanHalf) },
+        uCx:     { value: cx },
+        uNeckY:  { value: neckY },
+        uTopY:   { value: topY },
+        uBotY:   { value: botY },
+        uWallW:  { value: wallW },
+        uNeckHW: { value: neckHW },
+        uHorizon:{ value: HORIZON_Y / (2 * (Z_END - VESSEL_Z_REF) * tanHalf) }
+      },
+      transparent: true, depthWrite: false, depthTest: false,
+      blending: THREE.AdditiveBlending
+    });
+    const oceanQuad = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), oceanMat);
+    oceanQuad.position.z = -OQD;
+    oceanQuad.renderOrder = -10;
+    camera.add(oceanQuad);
+
+    function fitOcean() {
+      const h = 2 * OQD * tanHalf * 1.04;
+      oceanQuad.scale.set(h * (window.innerWidth / window.innerHeight), h, 1);
+      oceanMat.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
+    }
+    fitOcean();
+
+    function updateOcean(t) { oceanMat.uniforms.uTime.value = t * 0.001; }
+    function setOcean(v)    { oceanMat.uniforms.uAlpha.value = v; }
+
+    /* ── Vignette, rides the camera so it always frames the shot ── */
+    const vgMat = new THREE.MeshBasicMaterial({
+      map: radialTex(THREE, [[0, 'rgba(0,0,0,0)'], [0.68, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,0.52)']]),
+      transparent: true, opacity: 0.95, depthWrite: false, depthTest: false
+    });
+    const vignette = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), vgMat);
+    vignette.position.z = -18;
+    vignette.renderOrder = 999;
+    camera.add(vignette);
+    function fitVignette() {
+      const h = 2 * 18 * tanHalf * 1.06;
+      vignette.scale.set(h * (window.innerWidth / window.innerHeight), h, 1);
+    }
+    fitVignette();
+
+    function onResize() {
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      fitVignette();
+      fitOcean();
+    }
+    window.addEventListener('resize', onResize);
+
+    const T_POUR = 2700, T_SETTLE = 450, T_MERGE = 700, T_TAIL = 650;
+    const TOTAL = T_POUR + T_SETTLE + T_MERGE + T_TAIL;
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+    const WARM = [0.96, 0.82, 0.56];
+
+    const t0 = performance.now();
+    let done = false, merged = false;
+
+
+    function grainAt(i, raw, p) {
+      const j = i * 3, d = delay[i];
+      if (raw < d) {
+        const pre = d > 0 ? raw / d : 1;
+        const e = pre * pre;
+        p[j]   = resX[i] + (cx + spread[i] - resX[i]) * e;
+        p[j+1] = resY[i] + (neckY - resY[i]) * e;
+        p[j+2] = zJit[i];
+      } else {
+        const u = (raw - d) / FALL;
+        const uc = u >= 1 ? 1 : u;
+        /* Vertical drop accelerates; lateral drift is held back hard so the
+           stream stays a narrow column and only spreads onto the pile. */
+        const xu = uc * uc * uc * Math.sqrt(uc);
+        const x0 = cx + spread[i];
+        p[j]   = x0      + (targets[j]   - x0)      * xu;
+        p[j+1] = neckY   + (targets[j+1] - neckY)   * (uc * uc);
+        p[j+2] = zJit[i] + (targets[j+2] - zJit[i]) * xu;
+      }
+    }
+
+    function frame(now) {
+      const t = now - t0;
+      const p = geo.attributes.position.array;
+      const zp = Math.min(1, t / (T_POUR + T_SETTLE));
+      camera.position.z = Z_END + (Z_START - Z_END) * (1 - easeInOut(zp));
+
+      updateGlint(t);
+      updateStragglers(t);
+      updateOcean(t);
+
+      if (t < T_POUR) {
+        const raw = t / T_POUR;
+        for (let i = 0; i < N; i++) grainAt(i, raw, p);
+        updateBulk(raw);
+        bkMat.opacity = Math.min(0.9, t / 450);
+
+        /* The fill line rises with the landings. Real type is revealed
+           below it, and each grain fades as the line passes its resting
+           place, so the sand becomes the letters instead of being swapped
+           for them. */
+        const span = Math.max(1e-3, tMaxY - tMinY);
+        const fillFrac = Math.min(1, Math.max(0, (raw - 0.20) / 0.76));
+        const fillY = tMinY + span * fillFrac;
+        const band = span * 0.16;
+        if (window.__setQuoteFill) window.__setQuoteFill(fillFrac, t);
+        /* The sand is the slab now, so grains keep their colour once they
+           arrive. Nothing fades: the quote is carved into this surface,
+           not made of it. */
+        void band;
+        mat.opacity = Math.min(0.95, t / 450);
+        lmat.opacity = Math.min(1.0, t / 900);
+        /* Neck flares while sand is actually squeezing through. */
+        const flow = Math.sin(Math.min(1, raw / 0.9) * Math.PI);
+        ngMat.opacity = flow * (0.42 + 0.12 * Math.sin(t * 0.017));
+        sgMat.opacity = 0.55 * flow;
+        setOcean(Math.min(1, t / 1500));
+
+      } else if (t < T_POUR + T_SETTLE) {
+        const u = (t - T_POUR) / T_SETTLE;
+        const jig = Math.sin(u * Math.PI * 4) * (1 - u) * 0.35;
+        for (let i = 0; i < N; i++) {
+          const j = i * 3;
+          p[j]   = targets[j]   + jig * (i % 3 - 1) * 0.4;
+          p[j+1] = targets[j+1] + jig * ((i % 5) - 2) * 0.22;
+          p[j+2] = targets[j+2];
+        }
+        if (window.__setQuoteFill) window.__setQuoteFill(1, t);
+        mat.opacity = 0.95;
+        updateBulk(1);
+        bkMat.opacity = 0.9 * (1 - u);
+        lmat.opacity = 1.0 * (1 - u * 0.45);
+        ngMat.opacity = 0.18 * (1 - u);
+        sgMat.opacity = 0.34 * (1 - u * 0.35);
+        setOcean(1);
+
+      } else if (t < T_POUR + T_SETTLE + T_MERGE) {
+        if (!merged) { merged = true; if (window.__setQuoteFill) window.__setQuoteFill(1, t); }
+        const u = (t - T_POUR - T_SETTLE) / T_MERGE;
+        for (let i = 0; i < N * 3; i++) p[i] = targets[i];
+        mat.opacity = 0.95;
+        bkMat.opacity = 0;
+        lmat.opacity = 0.55 * (1 - u);
+        ngMat.opacity = 0;
+        sgMat.opacity = 0.26 * (1 - u);
+        setOcean(1 - u * 0.35);
+
+      } else if (t < TOTAL) {
+        const u = (t - T_POUR - T_SETTLE - T_MERGE) / T_TAIL;
+        mat.opacity = 0.95 * (1 - u); lmat.opacity = 0; ngMat.opacity = 0; sgMat.opacity = 0; bkMat.opacity = 0;
+        setOcean(0.65 * (1 - u));
+
+      } else {
+        if (!done) { done = true; window.removeEventListener('resize', onResize); finish(); }
+        return;
+      }
+
+      geo.attributes.position.needsUpdate = true;
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
 })();
 
 /* ════════════════════════════════════════
