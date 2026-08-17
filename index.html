@@ -274,35 +274,36 @@
   }
   .loader-quote .line-attr.visible { letter-spacing:0.03em; }
 
-  /* ── Dune intro ──
+  /* ── Murmuration intro ──
      Bigger than the page's own quote on purpose: the letters have to be
-     large enough for a few thousand grains to describe, and this text only
-     ever exists over the intro, so it owes the layout below nothing.
+     large enough for a thousand birds to describe, and this text only ever
+     exists over the intro, so it owes the layout below nothing.
 
-     Lifted out of dead centre so it sits up in the sky rather than across
-     the horizon. Everything downstream follows automatically: the glyph
-     sampler and the swarm both read getBoundingClientRect, which already
-     accounts for this transform.
+     Sat near the middle of the frame rather than up in the sky — the flock
+     needs open air on all four sides to wheel through, so the words cannot
+     be pushed against an edge. Everything downstream follows automatically:
+     the glyph sampler reads getBoundingClientRect, which already accounts
+     for this transform.
 
      JS drives opacity, blur and the ignition glow directly, so the
      transitions and the word-rise the hourglass reveal depends on all have
      to be off — and the overflow mask has to open, or the glow is clipped. */
-  .loader-quote.stellar {
+  .loader-quote.flock {
     font-size:clamp(24px,3.4vw,44px);
     max-width:min(90vw,780px);
     line-height:1.62;
-    transform:translateY(-18vh);
+    transform:translateY(-6vh);
   }
-  .loader-quote.stellar .line-attr { font-size:clamp(13px,1.15vw,17px); letter-spacing:0.03em; }
-  .loader-quote.stellar,
-  .loader-quote.stellar .line,
-  .loader-quote.stellar .w { transition:none !important; }
-  .loader-quote.stellar .line-wrap { overflow:visible; }
-  .loader-quote.stellar .line { opacity:0; letter-spacing:0.04em; }
-  .loader-quote.stellar .w { opacity:1; transform:none; filter:none; }
+  .loader-quote.flock .line-attr { font-size:clamp(13px,1.15vw,17px); letter-spacing:0.03em; }
+  .loader-quote.flock,
+  .loader-quote.flock .line,
+  .loader-quote.flock .w { transition:none !important; }
+  .loader-quote.flock .line-wrap { overflow:visible; }
+  .loader-quote.flock .line { opacity:0; letter-spacing:0.04em; }
+  .loader-quote.flock .w { opacity:1; transform:none; filter:none; }
 
-  /* The sand is still blowing apart as the hand-off runs, so this path
-     fades faster than the hourglass one. */
+  /* The flock is still scattering as the hand-off runs, so this path fades
+     faster than the hourglass one. */
   #loader.swift { transition:opacity 0.55s ease; }
 
 
@@ -562,8 +563,13 @@
       min-height:180px;
       border-right:1px solid var(--border);
       border-bottom:1px solid var(--border);
-      opacity:1 !important;
-      transform:none !important;
+      /* These used to be pinned to opacity:1 !important / transform:none,
+         which switched the entrance off at this breakpoint entirely. It is
+         back on, because this is the only width where it does anything —
+         the grid is unpinned here and the lower tiles are genuinely below
+         the fold, so they now animate when they are scrolled to rather
+         than on a timer while off screen. Put the two !important lines
+         back to disable it again. */
     }
     .tile--sm:nth-child(2n) { border-right:none; }
     .tile--sm:last-child,
@@ -665,7 +671,7 @@
   <div class="grid-projects">
 
   <!-- 01 Convergent Evolution -->
-  <div class="tile tile--sm" data-project="0" data-anim="fluid">
+  <div class="tile tile--sm" data-project="0" data-anim="converge">
     <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=800&q=80')"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -682,7 +688,7 @@
   </div>
 
   <!-- 02 War Lethality -->
-  <div class="tile tile--sm" data-project="1" data-anim="bars">
+  <div class="tile tile--sm" data-project="1" data-anim="heavytail">
     <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1580922110301-a666f6745565?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -699,7 +705,7 @@
   </div>
 
   <!-- 03 Neural ODE -->
-  <div class="tile tile--sm" data-project="2" data-anim="wave">
+  <div class="tile tile--sm" data-project="2" data-anim="predprey">
     <div class="tile-bg" id="odeTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -716,7 +722,7 @@
   </div>
 
   <!-- 04 Sleep Atlas -->
-  <div class="tile tile--sm" data-project="3" data-anim="scatter">
+  <div class="tile tile--sm" data-project="3" data-anim="hypnogram">
     <div class="tile-bg" id="sleepTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -733,7 +739,7 @@
   </div>
 
   <!-- 05 Fluid SR -->
-  <div class="tile tile--sm" data-project="4" data-anim="matrix">
+  <div class="tile tile--sm" data-project="4" data-anim="denoise">
     <div class="tile-bg" id="fluidTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -750,7 +756,7 @@
   </div>
 
   <!-- 06 Heliostream -->
-  <div class="tile tile--sm" data-project="5" data-anim="wave">
+  <div class="tile tile--sm" data-project="5" data-anim="stream">
     <div class="tile-bg" id="helioTileBg"></div>
     <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
@@ -833,249 +839,305 @@ document.addEventListener('DOMContentLoaded', () => {
 const ACCENT = '#6c47ff';
 const ACCENT2 = 'rgba(108,71,255,';
 
+/* Each animator gets a 2-D context and the size it is drawing into, and
+   returns a draw(t) closure where t is seconds since the preview started.
+
+   These are not decorations. Each one shows the shape of the result the
+   project actually produces, so hovering a tile tells you what the work
+   does before you have read a word of the description. Where a choice came
+   up between looking good and being honest about the output, honest won. */
 const animators = {
 
-  /* Fluid: advecting dye particles */
-  fluid(ctx, W, H) {
-    const N = 70;
-    const pts = Array.from({length:N}, () => ({
-      x: Math.random()*W, y: Math.random()*H,
-      vx: (Math.random()-0.5)*0.6, vy: (Math.random()-0.5)*0.6,
-      life: Math.random(), maxLife: 0.6+Math.random()*0.4,
-      r: 1.5+Math.random()*3
+  /* Convergent evolution: two lineages that are unrelated at the sequence
+     level drifting into the same regions of embedding space. Colour is the
+     lineage, position is the embedding — so the point of the project is the
+     fact that the colours end up mixed inside every cluster. */
+  converge(ctx, W, H) {
+    const K = 3;
+    const centres = Array.from({ length: K }, (_, i) => ({
+      x: W * (0.24 + 0.26 * i) + (i % 2 ? W * 0.06 : 0),
+      y: H * (i === 1 ? 0.62 : 0.38)
     }));
-    return function(t) {
-      ctx.fillStyle = 'rgba(10,8,20,0.18)';
-      ctx.fillRect(0,0,W,H);
-      pts.forEach(p => {
-        // curl-like velocity field
-        const nx = p.x/W, ny = p.y/H;
-        const angle = Math.sin(nx*4+t*0.4)*Math.cos(ny*3-t*0.3)*Math.PI*2;
-        p.vx += Math.cos(angle)*0.04; p.vy += Math.sin(angle)*0.04;
-        p.vx *= 0.96; p.vy *= 0.96;
-        p.x += p.vx; p.y += p.vy;
-        if(p.x<0)p.x=W; if(p.x>W)p.x=0;
-        if(p.y<0)p.y=H; if(p.y>H)p.y=0;
-        p.life += 0.004;
-        if(p.life>p.maxLife) { p.life=0; p.x=Math.random()*W; p.y=Math.random()*H; }
-        const a = Math.sin(p.life/p.maxLife*Math.PI)*0.7;
-        const hue = 240+Math.sin(p.x/W*3+t*0.2)*30;
-        ctx.beginPath();
-        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
-        ctx.fillStyle = `hsla(${hue},80%,65%,${a})`;
-        ctx.fill();
-      });
-    };
-  },
-
-  /* Grid: schema diff - two column tables with highlighted rows changing */
-  grid(ctx, W, H) {
-    const rows = 9, cols = 2;
-    const cw = W/cols, rh = H/rows;
-    let highlight = {row:0, progress:0};
-    const changed = new Set([2,5,7]);
-    return function(t) {
-      ctx.clearRect(0,0,W,H);
-      const beat = t*0.6;
-      const curRow = Math.floor(beat % rows);
-      ctx.strokeStyle = 'rgba(108,71,255,0.15)';
-      ctx.lineWidth = 1;
-      for(let r=0;r<=rows;r++) { ctx.beginPath(); ctx.moveTo(0,r*rh); ctx.lineTo(W,r*rh); ctx.stroke(); }
-      for(let c=0;c<=cols;c++) { ctx.beginPath(); ctx.moveTo(c*cw,0); ctx.lineTo(c*cw,H); ctx.stroke(); }
-      for(let r=0;r<rows;r++) {
-        const isChanged = changed.has(r);
-        const isCurrent = r===curRow;
-        if(isCurrent) {
-          ctx.fillStyle = 'rgba(108,71,255,0.18)';
-          ctx.fillRect(0,r*rh,W,rh);
-        }
-        if(isChanged) {
-          const side = Math.floor(t*0.4+r)%2;
-          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.12)' : 'rgba(50,220,120,0.12)';
-          ctx.fillRect(side*cw+2,r*rh+2,cw-4,rh-4);
-          ctx.fillStyle = side===0 ? 'rgba(255,80,80,0.6)' : 'rgba(50,220,120,0.6)';
-          ctx.fillRect(side*cw+2,r*rh+2,3,rh-4);
-        }
-        // fake text bars
-        for(let c=0;c<cols;c++) {
-          const bw = (0.3+Math.sin(r*7.3+c*3.1)*0.2)*cw*0.7;
-          ctx.fillStyle = isCurrent ? 'rgba(200,190,255,0.5)' : 'rgba(180,170,255,0.15)';
-          ctx.fillRect(c*cw+14, r*rh+rh/2-3, bw, 5);
-        }
-      }
-    };
-  },
-
-  /* Wave: oscillating predator-prey curves */
-  wave(ctx, W, H) {
-    return function(t) {
-      ctx.clearRect(0,0,W,H);
-      // grid
-      ctx.strokeStyle = 'rgba(108,71,255,0.08)';
-      ctx.lineWidth = 0.5;
-      for(let i=0;i<6;i++) { ctx.beginPath(); ctx.moveTo(0,i*H/5); ctx.lineTo(W,i*H/5); ctx.stroke(); }
-      const draw = (phase, color, amp) => {
-        ctx.beginPath();
-        for(let x=0;x<=W;x+=2) {
-          const fq = 2.5, u=x/W;
-          const y = H/2 - amp * Math.sin(u*Math.PI*fq - t*0.8 + phase)
-                       * Math.sin(u*Math.PI + phase*0.3)
-                       * (0.6 + 0.4*Math.sin(u*Math.PI*0.5));
-          x===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
-        }
-        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    const N = 78;
+    const pts = Array.from({ length: N }, () => {
+      const k = Math.random() * K | 0;
+      return {
+        x: Math.random() * W, y: Math.random() * H,
+        tx: centres[k].x, ty: centres[k].y,
+        /* Two lineages, assigned independently of the cluster: that
+           independence is the whole claim being made. */
+        lin: Math.random() < 0.5,
+        r: 1.2 + Math.random() * 1.9,
+        jx: (Math.random() - 0.5) * W * 0.15,
+        jy: (Math.random() - 0.5) * H * 0.20,
+        lag: Math.random() * 0.35
       };
-      draw(0, 'rgba(108,71,255,0.8)', H*0.22);
-      draw(Math.PI*0.7, 'rgba(50,210,130,0.6)', H*0.18);
-      // phase dot
-      const dotX = ((t*0.8*0.5/Math.PI) % 1)*W;
-      [[0,'rgba(108,71,255,1)'],[Math.PI*0.7,'rgba(50,210,130,1)']].forEach(([ph,col])=>{
-        const u=dotX/W, fq=2.5;
-        const dotY = H/2 - H*0.22*Math.sin(u*Math.PI*fq-t*0.8+ph)*Math.sin(u*Math.PI+ph*0.3)*(0.6+0.4*Math.sin(u*Math.PI*0.5));
-        ctx.beginPath(); ctx.arc(dotX,dotY,4,0,Math.PI*2); ctx.fillStyle=col; ctx.fill();
-      });
-    };
-  },
-
-  /* Bars: animated histogram - price inflation */
-  bars(ctx, W, H) {
-    const N = 17;
-    const seeds = Array.from({length:N},(_,i)=>0.3+Math.sin(i*2.3)*0.35+Math.cos(i*1.1)*0.2);
-    return function(t) {
-      ctx.clearRect(0,0,W,H);
-      const bw = (W-N-2)/(N+1)*0.85, gap=(W-bw*N)/(N+1);
-      for(let i=0;i<N;i++) {
-        const base = seeds[i];
-        const h = (base + 0.12*Math.sin(t*0.5+i*0.8)) * H * 0.75;
-        const x = gap + i*(bw+gap);
-        const y = H-h-8;
-        const prog = (t*0.3+i/N)%1;
-        const alpha = 0.3 + 0.5*(0.5+0.5*Math.sin(prog*Math.PI*2));
-        const isHighlit = i===Math.floor(t*1.2)%N;
-        ctx.fillStyle = isHighlit ? `rgba(108,71,255,0.9)` : `rgba(108,71,255,${alpha})`;
-        ctx.fillRect(x,y,bw,h);
-        if(isHighlit) {
-          ctx.fillStyle='rgba(255,255,255,0.7)';
-          ctx.fillRect(x,y-2,bw,2);
-        }
-      }
-      // x axis
-      ctx.fillStyle='rgba(108,71,255,0.2)'; ctx.fillRect(0,H-8,W,1);
-    };
-  },
-
-  /* Scatter: monte carlo dots converging */
-  scatter(ctx, W, H) {
-    const N = 140;
-    const pts = Array.from({length:N},(_,i)=>({
-      x:Math.random()*W, y:Math.random()*H,
-      tx:Math.random()*W, ty:Math.random()*H,
-      phase:Math.random()*Math.PI*2,
-      col:Math.random()>0.5?0:1
-    }));
-    return function(t) {
-      ctx.fillStyle='rgba(10,8,20,0.25)'; ctx.fillRect(0,0,W,H);
-      const progress = 0.5+0.5*Math.sin(t*0.25);
-      pts.forEach(p=>{
-        const cx = p.x+(p.tx-p.x)*progress + Math.sin(t*0.3+p.phase)*8*(1-progress);
-        const cy = p.y+(p.ty-p.y)*progress + Math.cos(t*0.3+p.phase)*8*(1-progress);
-        const a = 0.3+0.5*progress;
-        ctx.beginPath(); ctx.arc(cx,cy,1.5,0,Math.PI*2);
-        ctx.fillStyle = p.col===0 ? `rgba(108,71,255,${a})` : `rgba(50,200,130,${a})`;
+    });
+    return function (t) {
+      ctx.fillStyle = 'rgba(10,8,20,0.30)';
+      ctx.fillRect(0, 0, W, H);
+      /* One settling pass, then hold, then re-scatter and do it again. */
+      const cycle = (t * 0.30) % 1;
+      const u = Math.min(1, Math.max(0, (cycle - 0.06) / 0.55));
+      const e = u * u * (3 - 2 * u);
+      pts.forEach(p => {
+        const pe = Math.min(1, Math.max(0, (e - p.lag) / (1 - p.lag)));
+        const x = p.x + (p.tx + p.jx - p.x) * pe;
+        const y = p.y + (p.ty + p.jy - p.y) * pe;
+        ctx.beginPath();
+        ctx.arc(x, y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.lin
+          ? `rgba(140,110,255,${0.35 + 0.5 * pe})`
+          : `rgba(90,220,190,${0.30 + 0.5 * pe})`;
         ctx.fill();
       });
-      // two cluster centers
-      [[W*0.35,H*0.45],[W*0.65,H*0.55]].forEach(([cx,cy],i)=>{
-        ctx.beginPath(); ctx.arc(cx,cy,4+2*Math.sin(t+i),0,Math.PI*2);
-        ctx.fillStyle=i===0?'rgba(108,71,255,0.9)':'rgba(50,200,130,0.9)'; ctx.fill();
-        ctx.beginPath(); ctx.arc(cx,cy,14+4*Math.sin(t+i),0,Math.PI*2);
-        ctx.strokeStyle=i===0?'rgba(108,71,255,0.3)':'rgba(50,200,130,0.3)'; ctx.lineWidth=1; ctx.stroke();
-      });
     };
   },
 
-  /* Matrix: scrolling token columns - LLM eval */
-  matrix(ctx, W, H) {
-    const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789<>{}[]|!?'.split('');
-    const cols = Math.floor(W/14);
-    const drops = Array.from({length:cols},()=>Math.random()*H/14|0);
-    const speeds = Array.from({length:cols},()=>0.3+Math.random()*0.7);
-    let last=0;
-    return function(t) {
-      if(t-last>0.05) {
-        ctx.fillStyle='rgba(10,8,20,0.18)'; ctx.fillRect(0,0,W,H);
-        ctx.font='bold 11px monospace';
-        for(let i=0;i<cols;i++) {
-          const ch=CHARS[Math.random()*CHARS.length|0];
-          const x=i*14+2, y=drops[i]*14;
-          const distFromTop=drops[i]/(H/14);
-          const a=0.1+0.7*(1-distFromTop);
-          ctx.fillStyle=`rgba(108,71,255,${a})`; ctx.fillText(ch,x,y);
-          // bright head
-          if(Math.random()>0.5){ctx.fillStyle='rgba(200,190,255,0.9)'; ctx.fillText(ch,x,y);}
-          drops[i]+=speeds[i];
-          if(drops[i]*14>H && Math.random()>0.9) drops[i]=0;
+  /* War lethality: the distribution is the finding. Conflict deaths are
+     famously heavy-tailed — most events are small and a few are
+     catastrophic — so the bars are drawn on a log count axis and the tail
+     is left long and thin rather than tidied away. */
+  heavytail(ctx, W, H) {
+    const N = 26;
+    const pad = 6;
+    const bw = (W - pad * 2) / N;
+    /* p(x) ~ x^-alpha, sampled once so the shape is stable frame to frame. */
+    const target = Array.from({ length: N }, (_, i) =>
+      Math.pow(i + 1, -1.15) * (0.86 + 0.28 * Math.sin(i * 12.9))
+    );
+    const max = Math.max.apply(null, target);
+    return function (t) {
+      ctx.clearRect(0, 0, W, H);
+      const grow = Math.min(1, (t * 0.55) % 2.6);
+      for (let i = 0; i < N; i++) {
+        const g = Math.min(1, Math.max(0, grow * 1.5 - i / N * 0.5));
+        const h = (target[i] / max) * (H - 26) * g;
+        const x = pad + i * bw;
+        const a = 0.22 + 0.55 * (1 - i / N);
+        ctx.fillStyle = `rgba(108,71,255,${a})`;
+        ctx.fillRect(x, H - 12 - h, Math.max(1, bw - 1.6), h);
+        /* The few extreme events, marked — they carry most of the deaths
+           and almost none of the count. */
+        if (i > N - 7 && h > 1) {
+          ctx.fillStyle = `rgba(255,120,90,${0.55 * g})`;
+          ctx.fillRect(x, H - 12 - h - 2, Math.max(1, bw - 1.6), 2);
         }
-        last=t;
+      }
+      ctx.fillStyle = 'rgba(108,71,255,0.30)';
+      ctx.fillRect(pad, H - 12, W - pad * 2, 1);
+    };
+  },
+
+  /* Predator-prey: the signature of Lotka-Volterra is that predators peak
+     after prey, never with them. Two traces are drawn with that lag intact,
+     and the dashed one is the network's fit running slightly behind the
+     truth — which is what learning these dynamics actually looks like. */
+  predprey(ctx, W, H) {
+    const pad = 8;
+    const prey = x => 0.5 + 0.34 * Math.sin(x * Math.PI * 2);
+    const pred = x => 0.5 + 0.28 * Math.sin(x * Math.PI * 2 - Math.PI * 0.55);
+    return function (t) {
+      ctx.clearRect(0, 0, W, H);
+      const scroll = t * 0.14;
+      const trace = (fn, col, dash, lag) => {
+        ctx.beginPath();
+        ctx.setLineDash(dash);
+        for (let px = 0; px <= W - pad * 2; px += 2) {
+          const x = px / (W - pad * 2);
+          const v = fn(x * 1.8 + scroll - lag);
+          const py = pad + (1 - v) * (H - pad * 2);
+          px === 0 ? ctx.moveTo(pad + px, py) : ctx.lineTo(pad + px, py);
+        }
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.setLineDash([]);
+      };
+      trace(prey, 'rgba(90,220,190,0.85)', [], 0);
+      trace(pred, 'rgba(160,120,255,0.85)', [], 0);
+      /* The learned fit, trailing the truth by a little. */
+      trace(prey, 'rgba(255,255,255,0.34)', [3, 3], 0.035);
+    };
+  },
+
+  /* Sleep atlas: a hypnogram. Stages step down into deep sleep early in the
+     night and give way to longer REM bouts toward morning, which is the one
+     pattern anybody who has seen sleep data recognises on sight. */
+  hypnogram(ctx, W, H) {
+    const STAGES = 5;              /* wake, REM, N1, N2, N3 */
+    const pad = 8;
+    const rowH = (H - pad * 2) / STAGES;
+    const N = 46;
+    const seq = Array.from({ length: N }, (_, i) => {
+      const night = i / N;
+      /* Deep early, REM late. */
+      const deepPull = Math.max(0, 1 - night * 1.7);
+      const r = Math.random();
+      if (r < 0.06) return 0;
+      if (r < 0.10 + night * 0.34) return 1;
+      return Math.min(4, 2 + Math.round(deepPull * 2 * (0.5 + Math.random())));
+    });
+    return function (t) {
+      ctx.clearRect(0, 0, W, H);
+      for (let s = 0; s < STAGES; s++) {
+        ctx.fillStyle = 'rgba(108,71,255,0.08)';
+        ctx.fillRect(pad, pad + s * rowH + rowH * 0.5, W - pad * 2, 1);
+      }
+      const shown = Math.min(N, Math.floor(((t * 7) % (N + 14))));
+      const cw = (W - pad * 2) / N;
+      ctx.beginPath();
+      for (let i = 0; i < shown; i++) {
+        const y = pad + seq[i] * rowH + rowH * 0.5;
+        const x0 = pad + i * cw, x1 = x0 + cw;
+        if (i === 0) ctx.moveTo(x0, y); else ctx.lineTo(x0, y);
+        ctx.lineTo(x1, y);
+      }
+      ctx.strokeStyle = 'rgba(150,120,255,0.9)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      /* REM bouts called out, since their drift later into the night is the
+         thing the atlas is for. */
+      for (let i = 0; i < shown; i++) {
+        if (seq[i] !== 1) continue;
+        ctx.fillStyle = 'rgba(90,220,190,0.55)';
+        ctx.fillRect(pad + i * cw, pad + rowH + rowH * 0.5 - 2, cw, 4);
       }
     };
   },
 
-  /* Lines: flowing text lines - writing */
-  lines(ctx, W, H) {
-    const lineCount=12;
-    const lineData=Array.from({length:lineCount},(_,i)=>({
-      width:0.4+Math.random()*0.5,
-      speed:0.004+Math.random()*0.006,
-      y:(i+0.5)*(H/lineCount),
-      phase:Math.random()*Math.PI*2
-    }));
-    return function(t) {
-      ctx.clearRect(0,0,W,H);
-      lineData.forEach((l,i)=>{
-        const progress=(t*l.speed + l.phase/(Math.PI*2))%1;
-        const lineW=l.width*W;
-        const x=progress*W-lineW;
-        const a=0.15+0.35*Math.sin(progress*Math.PI);
-        ctx.fillStyle=`rgba(108,71,255,${a})`;
-        ctx.fillRect(x,l.y-2,lineW,3);
-        // cursor blink at end
-        if(progress>0.1&&progress<0.9){
-          const cx=x+lineW;
-          const ba=0.8*Math.sin(t*4+i);
-          ctx.fillStyle=`rgba(200,190,255,${Math.max(0,ba)})`;
-          ctx.fillRect(cx+2,l.y-6,2,12);
+  /* Diffusion-based fluid: a sampler running in reverse. The field starts as
+     noise and resolves into a smooth vortex, coarse structure first and fine
+     grain last, which is the order a real sampler settles an image in.
+     Drawn on a coarse cell grid so the whole thing is a few hundred fills. */
+  denoise(ctx, W, H) {
+    const C = 13;
+    const cw = W / C, ch = H / C;
+    const seedA = Array.from({ length: C * C }, () => Math.random());
+    return function (t) {
+      const cycle = (t * 0.36) % 1;
+      /* Held clean for a beat at the end of each pass. */
+      const sg = Math.pow(Math.max(0, 1 - cycle / 0.78), 1.4);
+      ctx.clearRect(0, 0, W, H);
+      for (let j = 0; j < C; j++) {
+        for (let i = 0; i < C; i++) {
+          const x = (i + 0.5) / C - 0.5, y = (j + 0.5) / C - 0.5;
+          /* The signal being resolved: a rotating vortex. */
+          const r = Math.sqrt(x * x + y * y) + 1e-3;
+          const ang = Math.atan2(y, x) + t * 0.5 - r * 5.0;
+          const sig = 0.5 + 0.5 * Math.sin(ang * 2);
+          const noise = seedA[j * C + i] * 0.5
+            + 0.5 * (Math.sin((i * 12.9 + j * 78.2) * (1 + Math.floor(t * 9))) * 0.5 + 0.5);
+          const v = sig * (1 - sg) + noise * sg;
+          const a = 0.10 + 0.62 * v * (1 - r * 0.9);
+          ctx.fillStyle = `rgba(${90 + v * 110 | 0},${70 + v * 90 | 0},255,${Math.max(0, a)})`;
+          ctx.fillRect(i * cw, j * ch, cw + 1, ch + 1);
         }
+      }
+    };
+  },
+
+  /* Heliostream: a live feed. The window scrolls right to left, solar events
+     spike above a quiet baseline, and the shaded band is the forecast
+     interval widening the further ahead it has to reach. */
+  stream(ctx, W, H) {
+    const pad = 6;
+    const spikes = Array.from({ length: 9 }, (_, i) => ({
+      at: i * 1.7 + Math.random() * 1.2,
+      amp: 0.25 + Math.random() * 0.55
+    }));
+    const val = x => {
+      let v = 0.30 + 0.05 * Math.sin(x * 5.1) + 0.035 * Math.sin(x * 13.7);
+      spikes.forEach(s => {
+        const d = x - s.at;
+        if (d > 0 && d < 0.9) v += s.amp * Math.exp(-d * 5.5) * Math.min(1, d * 14);
       });
+      return Math.min(1, v);
+    };
+    return function (t) {
+      ctx.clearRect(0, 0, W, H);
+      const head = t * 0.55;
+      const span = 3.2;
+      const iw = W - pad * 2;
+      /* Forecast band on the newest third, opening as it looks further out. */
+      ctx.beginPath();
+      for (let px = 0; px <= iw; px += 3) {
+        const x = head - span + (px / iw) * span;
+        const ahead = Math.max(0, (px / iw - 0.66) / 0.34);
+        ctx.lineTo(pad + px, pad + (1 - Math.min(1, val(x) + ahead * 0.22)) * (H - pad * 2));
+      }
+      for (let px = iw; px >= 0; px -= 3) {
+        const x = head - span + (px / iw) * span;
+        const ahead = Math.max(0, (px / iw - 0.66) / 0.34);
+        ctx.lineTo(pad + px, pad + (1 - Math.max(0, val(x) - ahead * 0.22)) * (H - pad * 2));
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(108,71,255,0.16)';
+      ctx.fill();
+
+      ctx.beginPath();
+      for (let px = 0; px <= iw; px += 2) {
+        const x = head - span + (px / iw) * span;
+        const py = pad + (1 - val(x)) * (H - pad * 2);
+        px === 0 ? ctx.moveTo(pad + px, py) : ctx.lineTo(pad + px, py);
+      }
+      ctx.strokeStyle = 'rgba(160,130,255,0.92)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      /* The live head. */
+      const hy = pad + (1 - val(head)) * (H - pad * 2);
+      ctx.beginPath();
+      ctx.arc(pad + iw, hy, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(215,205,255,0.95)';
+      ctx.fill();
     };
   }
 };
 
-/* ── Bootstrap tiles ── */
+/* ── Bootstrap tiles ──
+   Previews are built on first hover, not at load: six particle systems and
+   noise tables constructed up front would be paid for by every visitor,
+   including the ones who never hover anything.
+
+   Only one preview ever runs, and only while the pointer is on it. That,
+   plus rendering at reduced internal resolution and stopping dead when the
+   tab is hidden, is what makes this affordable — an earlier version of this
+   file had the whole thing switched off for smoothness. */
 function initTiles() {
+  const canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
+  const reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!canHover || reduced) return;
+
+  /* Half-resolution buffers, scaled up by CSS. At the size these sit on
+     screen, and under a tile wash and an overlay, the difference is not
+     visible; the fill rate saved is four to one. */
+  const SCALE = 0.5;
+  const FRAME_MS = 33;          /* ~30fps: plenty for a hover accent */
+  let active = null;            /* only one preview at a time */
+
   document.querySelectorAll('.tile[data-anim]').forEach(tile => {
     const canvas = tile.querySelector('.tile-canvas');
-    const type = tile.dataset.anim;
-    const anim = animators[type];
-    if (!anim) return;
+    const anim = animators[tile.dataset.anim];
+    if (!canvas || !anim) return;
 
-    const rect = tile.getBoundingClientRect();
-    const W = Math.round(rect.width)  || tile.clientWidth  || 300;
-    const H = Math.round(rect.height) || tile.clientHeight || 200;
-    canvas.width  = W;
-    canvas.height = H;
+    let draw = null, rafId = null, startTime = null, elapsed = 0, lastDraw = 0;
 
-    const ctx = canvas.getContext('2d');
-    const draw = anim(ctx, W, H);
-
-    let rafId = null;
-    let startTime = null;
-    let elapsed = 0;
-    let lastDraw = 0;
-    const FRAME_MS = 33; // ~30fps is plenty for a hover accent; halves the work
+    function build() {
+      const rect = tile.getBoundingClientRect();
+      const W = Math.max(1, Math.round((rect.width || tile.clientWidth || 300) * SCALE));
+      const H = Math.max(1, Math.round((rect.height || tile.clientHeight || 200) * SCALE));
+      if (canvas.width !== W || canvas.height !== H) {
+        canvas.width = W;
+        canvas.height = H;
+        draw = null;
+      }
+      if (!draw) draw = anim(canvas.getContext('2d'), W, H);
+    }
 
     function loop(ts) {
-      if (!startTime) startTime = ts - elapsed;
+      if (startTime === null) startTime = ts - elapsed;
       elapsed = ts - startTime;
       if (ts - lastDraw >= FRAME_MS) { lastDraw = ts; draw(elapsed / 1000); }
       rafId = requestAnimationFrame(loop);
@@ -1083,19 +1145,29 @@ function initTiles() {
 
     function start() {
       if (rafId) return;
-      startTime = null; // will be set in loop using saved elapsed
+      if (active && active !== stop) active();
+      active = stop;
+      build();
+      /* elapsed is kept across hovers, so a preview resumes where it left
+         off instead of snapping back to its first frame. */
+      startTime = null;
       rafId = requestAnimationFrame(loop);
       tile.classList.add('vid-playing');
     }
 
     function stop() {
       if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (active === stop) active = null;
       tile.classList.remove('vid-playing');
     }
 
-    // Hover animations disabled for maximum smoothness - the static tile
-    // background image shows instead. (Hero has no data-anim, so nothing runs.)
-    void start; void stop;
+    tile.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') start(); });
+    tile.addEventListener('pointerleave', stop);
+    /* A tile can lose the pointer without a leave event — the modal opening
+       over it, or the window losing focus mid-hover. */
+    tile.addEventListener('pointercancel', stop);
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) stop(); });
   });
 }
 
@@ -1167,29 +1239,25 @@ if (document.readyState === 'complete') {
 })();
 
 /* ════════════════════════════════════════
-   INTRO — DUNES
-   A desert under a turning night sky, and the quote blown together out of
-   the sand.
+   INTRO — MURMURATION
+   A flock of starlings wheeling at dusk. For a moment it tightens into the
+   shape of the quote, holds just long enough to read, then breaks and goes
+   back to flying.
 
-   The sky wheels about a celestial pole off the left edge and every star is
-   smeared along its own arc, so the field reads as a long exposure rather
-   than as points sliding sideways. Below it, three dune ridges: a far one
-   barely separating itself from the stars, a lit face burning orange
-   halfway back, and a near crest with light spilling along it.
+   The formation is not keyframed. Every bird runs the three rules a real
+   boid runs — separation, alignment, cohesion — and the words appear
+   because each bird is also given somewhere to be. The flocking is turned
+   down as they gather and back up as they leave, so the shape assembles and
+   comes apart the way a flock actually does, and it never plays out the
+   same way twice.
 
-   The grains lift off that near crest, blow up into the frame and settle
-   into the shape of the quote. The letterforms are sampled from the real
-   DOM text, so the swarm converges onto exactly where the words will be; at
-   the moment it lands the text ignites, and when the hold is over the wind
-   takes the sand apart again.
-
-   Raw WebGL, no three.js: two programs and one points buffer. All of the
-   per-grain motion happens in the vertex shader, so a frame costs a handful
-   of uniform writes rather than a JS loop over every particle.
+   Nothing here is a shader. Neighbour lookups go through a uniform grid, so
+   the cost is linear in birds rather than quadratic, and the whole flock is
+   drawn in three filled paths — one per depth band — instead of a thousand.
 
    Set ENABLED to false to fall through to the hourglass scene below.
 ════════════════════════════════════════ */
-(function initDuneIntro() {
+(function initFlockIntro() {
   const ENABLED = true;
   if (!ENABLED) return;
   window.__introTaken = true;
@@ -1200,569 +1268,164 @@ if (document.readyState === 'complete') {
   const lineEls = Array.from(document.querySelectorAll('.loader-quote .line'));
   const finish  = () => { if (window.__introComplete) window.__introComplete(); };
 
-  const reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* Anything missing, refused or unwelcome and the quote is simply shown. */
   function bail() {
     window.__introDrawsQuote = false;
-    if (quote) quote.classList.remove('stellar');
+    if (quote) quote.classList.remove('flock');
     if (window.__revealQuoteText) window.__revealQuoteText();
     setTimeout(finish, 1600);
   }
   if (!canvas || !quote || !lineEls.length || reduced) { bail(); return; }
 
-  const gl = canvas.getContext('webgl', { alpha: false, antialias: true })
-          || canvas.getContext('experimental-webgl', { alpha: false });
-  if (!gl) { bail(); return; }
-
-  /* ── Geometry shared between JS and GLSL ──
-     Three ridges, far to near. `crest` is where the ridge tops out, in the
-     same aspect-corrected space the shader works in: -0.05 puts the skyline
-     55% of the way down the frame, so the sand fills the bottom ~43%.
-
-     Deliberately few, and at low frequency. The reference is two or three
-     long unbroken sweeps, not a busy skyline — most of its calm comes from
-     how little is happening along each ridge.
-
-     `relief` grows steeply toward the viewer. Distant dunes read flatter
-     because the eye is nearer their plane, and that difference is most of
-     what sells the depth.
-
-     The nearest ridge is needed in both places — the shader draws it, and
-     the seeding code has to put grains on it. Declaring the set once here
-     and generating the GLSL from the same numbers is the only way the sand
-     is guaranteed to lift off the sand rather than off thin air. */
-  const RIDGES = [
-    { crest: -0.070, relief: 0.022, f: 0.95, ph:  1.10 },
-    { crest: -0.110, relief: 0.030, f: 0.72, ph: -0.85 },
-    { crest: -0.160, relief: 0.042, f: 0.58, ph:  2.10 },
-    { crest: -0.220, relief: 0.058, f: 0.44, ph:  0.35 },
-    { crest: -0.300, relief: 0.080, f: 0.33, ph: -1.60 }    /* sand comes off this */
-  ];
-
-  /* A sine phase-warped by itself: it stretches the windward slope and
-     steepens the slip face, which is the asymmetry that stops a ridge line
-     reading as a wave. */
-  function duneWave(x, f, ph, skew) {
-    const s = x * f + ph;
-    return Math.sin(s + skew * Math.sin(s));
-  }
-  /* Weighted hard toward the fundamental. The harmonics are only there to
-     keep the sweep from being a bare sine; let them get loud and the ridge
-     starts to ripple, which is exactly what the reference does not do. */
-  function duneShape(r, x) {
-    return 0.80 * duneWave(x, r.f, r.ph, 0.55)
-         + 0.16 * duneWave(x, r.f * 2.1, r.ph * 1.7, 0.30)
-         + 0.04 * Math.sin(x * r.f * 4.1 + r.ph * 2.9);
-  }
-
-  /* The three components never peak at the same x, so the shape tops out
-     well short of 1 — by a different amount for every ridge. Assuming it
-     reaches 1 leaves each crest lower than asked for and, because the error
-     differs per ridge, quietly collapses the spacing between them. So solve
-     for the base numerically: find where this particular ridge actually
-     peaks and place it so that peak lands on `crest`.
-
-     Fitted over a fixed half-width rather than the live aspect, so the
-     skyline does not have to be regenerated on resize. On frames narrower
-     than this the crest can only come out lower, never higher, so the sand
-     never eats more of the screen than it was budgeted. */
-  const FIT_HALF_WIDTH = 1.0;
-  RIDGES.forEach(r => {
-    let m = -Infinity;
-    for (let i = 0; i <= 2000; i++) {
-      m = Math.max(m, duneShape(r, -FIT_HALF_WIDTH + 2 * FIT_HALF_WIDTH * i / 2000));
-    }
-    r.base = r.crest - r.relief * m;
-  });
-
-  function ridgeAt(r, x) { return r.base + r.relief * duneShape(r, x); }
-  const ridgeNear = x => ridgeAt(RIDGES[RIDGES.length - 1], x);
-
-  const RIDGE_GLSL = RIDGES.map((r, i) => `
-    float ridge${i}(float x) {
-      return ${r.base.toFixed(5)} + ${r.relief.toFixed(5)} * (
-          0.80 * duneWave(x, ${r.f.toFixed(3)}, ${r.ph.toFixed(3)}, 0.55)
-        + 0.16 * duneWave(x, ${(r.f * 2.1).toFixed(3)}, ${(r.ph * 1.7).toFixed(3)}, 0.30)
-        + 0.04 * sin(x * ${(r.f * 4.1).toFixed(3)} + ${(r.ph * 2.9).toFixed(3)}));
-    }`).join('');
-
-  /* The sky turns about a celestial pole rather than sliding, the way a
-     long night exposure does. The pole sits off the left edge, so nothing
-     on screen is a still point and stars sweep in arcs instead of tracking
-     in parallel. */
-  const POLE_X = -0.78, POLE_Y = 0.46, ROT_SPEED = 0.034;
-
-  const SCENE_GLSL = `
-    const vec2  POLE = vec2(${POLE_X.toFixed(3)}, ${POLE_Y.toFixed(3)});
-    const float ROT  = ${ROT_SPEED.toFixed(4)};
-
-    vec2 revolve(vec2 p, float t) {
-      float a = t * ROT, c = cos(a), s = sin(a);
-      vec2 r = p - POLE;
-      return POLE + vec2(r.x * c - r.y * s, r.x * s + r.y * c);
-    }
-
-    /* Mirrors duneWave() in the JS above; the two have to agree or the sand
-       would lift off a ridge the shader never drew. */
-    float duneWave(float x, float f, float ph, float skew) {
-      float s = x * f + ph;
-      return sin(s + skew * sin(s));
-    }
-    ${RIDGE_GLSL}`;
-
-  /* ── Background: the sky and the dunes ── */
-  const BG_VS = `
-    attribute vec2 aPos;
-    varying vec2 vUv;
-    void main() { vUv = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }`;
-
-  const BG_FS = `
-    precision highp float;
-    varying vec2 vUv;
-    uniform vec2  uRes;
-    uniform float uTime, uAlpha;
-
-    /* The band stands almost upright and sits left of centre, the way the
-       reference has it climbing out of the dunes rather than lying across
-       the frame. bandSpace rotates by this angle and measures distance from
-       the spine along q.y, so an angle near a quarter turn makes that
-       distance depend almost entirely on x — which is a vertical band. */
-    const float GAL_ANG = 1.450;
-    const float GAL_OFF = -0.220;
-    const float GALAXY_AMT = 0.78;
-    /* How far a star is smeared along its arc. This is the shutter. Kept
-       short: the reference resolves stars as points, so this only has to be
-       long enough to read as movement, not as a trail photograph. */
-    const float TRAIL = 0.020;
-    ${SCENE_GLSL}
-
-    float hash21(vec2 p) {
-      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-    }
-
-    /* One layer of stars: cells with a random occupant, placed at a random
-       spot inside the cell so the field never looks gridded, each with its
-       own size, colour and twinkle rate. The cell distance is measured
-       anisotropically — squashed along the direction the sky is turning —
-       which is what turns each dot into a short arc for almost nothing. */
-    vec3 starLayer(vec2 sp, float scale, float thresh, float t, vec2 tdir, float tlen) {
-      vec2 g = sp * scale;
-      vec2 gid = floor(g);
-      float r = hash21(gid);
-      if (r < thresh) return vec3(0.0);
-      vec2 off = vec2(hash21(gid + 17.3), hash21(gid + 41.7));
-      vec2 dv = fract(g) - off;
-      float pa = dot(dv, tdir);
-      float pb = dot(dv, vec2(-tdir.y, tdir.x));
-      float d = length(vec2(pa / (1.0 + tlen * scale), pb));
-      float mag = (r - thresh) / max(1e-4, 1.0 - thresh);
-      float size = 0.035 + 0.11 * mag * mag;
-      float core = smoothstep(size, 0.0, d);
-      float glow = smoothstep(size * 5.0, 0.0, d) * 0.30;
-      float tw = 0.72 + 0.28 * sin(t * (1.1 + r * 3.4) + r * 60.0);
-      float ct = hash21(gid + 91.1);
-      /* A narrower spectral spread than a rich star field would have: at
-         this exposure almost everything resolves white or blue-white, and
-         only the brightest few show any colour at all. */
-      vec3 tint = ct < 0.55
-        ? mix(vec3(0.72, 0.83, 1.00), vec3(0.94, 0.97, 1.00), ct / 0.55)
-        : mix(vec3(1.00, 0.98, 0.94), vec3(1.00, 0.88, 0.74), (ct - 0.55) / 0.45);
-      return tint * (core + glow) * mag * tw;
-    }
-
-    float vnoise(vec2 p) {
-      vec2 i = floor(p), f = fract(p);
-      f = f * f * (3.0 - 2.0 * f);
-      float a = hash21(i);
-      float b = hash21(i + vec2(1.0, 0.0));
-      float c = hash21(i + vec2(0.0, 1.0));
-      float d = hash21(i + vec2(1.0, 1.0));
-      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
-    }
-    float fbm3(vec2 p) {
-      float v = 0.0, a = 0.5;
-      for (int i = 0; i < 3; i++) { v += a * vnoise(p); p *= 2.07; a *= 0.5; }
-      return v;
-    }
-    float fbm4(vec2 p) {
-      float v = 0.0, a = 0.5;
-      for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; }
-      return v;
-    }
-
-    vec2 bandSpace(vec2 uv) {
-      float ca = cos(GAL_ANG), sa = sin(GAL_ANG);
-      return vec2(uv.x * ca - uv.y * sa, uv.x * sa + uv.y * ca);
-    }
-
-    /* A broad cool halo of nebulosity with a hotter core on the spine and
-       dark dust lanes cut through both, domain-warped by its own noise so
-       the filaments curl instead of sitting in a grid. Kept faint here; the
-       density comes back out for the star field to crowd along. */
-    vec3 galaxy(vec2 uv, out float dens) {
-      vec2 q = bandSpace(uv);
-      float d = q.y - GAL_OFF;
-
-      float halo = exp(-(d * d) / (2.0 * 0.190 * 0.190));
-      float core = exp(-(d * d) / (2.0 * 0.110 * 0.110));
-
-      vec2 w = vec2(fbm3(q * 2.4 + 11.3), fbm3(q * 2.4 + 27.1));
-      vec2 pc = q * 3.2 + (w - 0.5) * 1.5;
-
-      float cloud = fbm4(pc);
-      float fine  = fbm3(pc * 2.4 + 5.1);
-
-      float dust = fbm3(q * 3.9 + 41.0);
-      float lane = mix(0.34, 1.04, smoothstep(0.33, 0.69, dust));
-
-      float warm = smoothstep(0.34, 0.86, cloud) * core;
-      float cool = smoothstep(0.22, 0.78, fine)  * halo;
-      float wash = smoothstep(0.10, 0.90, cloud) * halo;
-
-      /* Nearly neutral. Photographed against a blue sky this bright, the
-         band comes out a dusty grey-tan with only a hint of warmth in the
-         core — pushing saturation here is what makes a Milky Way look
-         painted on rather than exposed. */
-      vec3 col = vec3(0.0);
-      col += vec3(0.72, 0.66, 0.58) * warm * 0.54;
-      col += vec3(0.52, 0.58, 0.66) * cool * 0.42;
-      col += vec3(0.56, 0.58, 0.62) * wash * 0.26;
-      col *= lane;
-
-      dens = clamp((warm * 1.5 + cool + wash * 0.6) * lane, 0.0, 1.0);
-      return col;
-    }
-
-    vec3 skyCol(vec2 uv, float t) {
-      /* A lit blue sky, not a black one. This is the whole character of the
-         reference: a rich steel blue overhead washing out to a pale, almost
-         colourless band at the horizon, bright enough that the dunes read as
-         silhouettes cut out of it rather than as dark shapes on dark.
-         Measured from where the skyline actually tops out, so the gradient
-         and the ridge agree. */
-      float h = clamp((uv.y + 0.050) / 0.60, 0.0, 1.0);
-      vec3 col = mix(vec3(0.225, 0.300, 0.370), vec3(0.042, 0.100, 0.196), pow(h, 0.58));
-      /* Airglow banked along the horizon and pooled to one side, the way it
-         is in the reference. This is what lifts the far dunes away from the
-         near ones and most of why they read as distant rather than small. */
-      col += vec3(0.085, 0.110, 0.128)
-           * exp(-max(0.0, uv.y + 0.050) / 0.130)
-           * (0.55 + 0.45 * exp(-pow((uv.x + 0.45) / 0.70, 2.0)));
-
-      /* Every star turns about the pole, and is stretched along the arc it
-         is travelling. The tangent is perpendicular to the radius, and the
-         smear grows with distance from the pole exactly as the real arc
-         length does. */
-      vec2 rel = uv - POLE;
-      float rad = length(rel);
-      vec2 tdir = rad > 1e-4 ? vec2(-rel.y, rel.x) / rad : vec2(1.0, 0.0);
-      float tlen = rad * TRAIL;
-
-      vec2 sd = revolve(uv, t);
-
-      float gd;
-      col += galaxy(sd, gd) * GALAXY_AMT;
-
-      float dens = 0.62 + 0.38 * h;
-      col += starLayer(sd, 34.0,  0.972, t, tdir, tlen) * 1.55 * dens;
-      col += starLayer(sd, 82.0,  0.962, t, tdir, tlen) * 1.00 * dens;
-      col += starLayer(sd, 168.0, 0.950, t, tdir, tlen) * 0.62 * dens;
-      col += starLayer(sd, 310.0, 0.930, t, tdir, tlen) * 0.34 * dens;
-      /* Extra grains crowded into the band. */
-      col += starLayer(sd, 430.0, 0.922, t, tdir, tlen) * 0.28 * dens * gd;
-      return col;
-    }
-
-    /* One dune, and almost nothing happens on it. There is no light source
-       in this scene — only skyglow — so the whole of the modelling is a slow
-       fall-off away from the crest plus a thin cool rim where the sand
-       catches the sky. The rim is doing the real work: it is the only thing
-       separating one ridge from the one behind it.
-
-       Ripples are barely there. The reference resolves as smooth, and sand
-       texture at this distance would be invented detail. */
-    vec3 duneShade(vec2 uv, float crestY, vec3 body, float rim, float rimFall, float rippleAmt) {
-      float d = max(0.0, crestY - uv.y);
-      vec3 c = body * (1.0 - 0.50 * smoothstep(0.0, 0.30, d));
-      c += vec3(0.62, 0.72, 0.86) * rim * exp(-d / rimFall);
-      if (rippleAmt > 0.0) {
-        vec2 rp = vec2(uv.x / (0.26 + d * 2.2), d);
-        float rip = sin(rp.x * 20.0 + fbm3(rp * 3.2) * 3.0);
-        c *= 1.0 + rippleAmt * rip * smoothstep(0.004, 0.070, d);
-      }
-      return c;
-    }
-
-    void main() {
-      vec2 uv = vec2((vUv.x - 0.5) * (uRes.x / uRes.y), vUv.y - 0.5);
-      vec3 col = skyCol(uv, uTime);
-
-      /* A fixed edge width: WebGL 1 has no guaranteed derivatives, and the
-         ridges are shallow enough that a constant reads as clean. */
-      const float E = 0.0016;
-      float y0 = ridge0(uv.x), y1 = ridge1(uv.x), y2 = ridge2(uv.x);
-
-      /* Far to near. Each is painted over the one behind it, so the nearer
-         ridge occludes for free. The bodies darken hard with proximity —
-         the far ridge still carries a good deal of skyglow, the near one is
-         very nearly a hole cut in the frame. */
-      col = mix(col, duneShade(uv, y0, vec3(0.052, 0.066, 0.088), 0.050, 0.020, 0.0),
-                smoothstep(y0 + E, y0 - E, uv.y));
-      col = mix(col, duneShade(uv, y1, vec3(0.028, 0.034, 0.046), 0.055, 0.017, 0.03),
-                smoothstep(y1 + E, y1 - E, uv.y));
-
-      /* Nearest: the darkest mass in the frame. Its crest catches a little
-         more sky than the body does, and that thin edge is the only reason
-         its shape is legible at all. */
-      vec3 nr = duneShade(uv, y2, vec3(0.013, 0.016, 0.022), 0.048, 0.015, 0.05);
-      /* A little grain so the slope is never a flat gradient. */
-      nr *= 0.95 + 0.05 * fbm3(uv * 30.0);
-      col = mix(col, nr, smoothstep(y2 + E, y2 - E, uv.y));
-
-      gl_FragColor = vec4(col * uAlpha, 1.0);
-    }`;
-
-  /* ── Foreground: the sand that forms the words ── */
-  const ST_VS = `
-    precision highp float;
-    attribute vec2 aStart;
-    attribute vec2 aTarget;
-    attribute vec4 aMeta;      /* delay, seed, size, unused */
-    uniform float uForm, uDisperse, uTime, uPx, uAspect;
-    varying float vSeed, vArrive;
-
-    void main() {
-      float delay = aMeta.x, seed = aMeta.y, sz = aMeta.z;
-      float u = clamp((uForm - delay) / max(1e-3, 1.0 - delay), 0.0, 1.0);
-      float e = u * u * (3.0 - 2.0 * u);
-
-      /* Loose on the crest before it is drawn up: carried downwind with a
-         slow lift, so the grains read as sand already blowing rather than
-         as something waiting in formation. */
-      vec2 a = aStart + vec2(uTime * 0.038 + sin(uTime * 0.45 + seed * 39.0) * 0.020,
-                             uTime * 0.011 + sin(uTime * 0.33 + seed * 27.0) * 0.013);
-      vec2 b = aTarget;
-
-      /* A curved approach rather than a straight slide: each grain swings
-         through its own control point, so the swarm gathers the way blown
-         sand does instead of a grid snapping shut. */
-      vec2 perp = vec2(-(b.y - a.y), b.x - a.x);
-      vec2 mid = (a + b) * 0.5 + perp * (seed - 0.5) * 0.55;
-      vec2 pos = mix(mix(a, mid, e), mix(mid, b, e), e);
-
-      /* Taken apart downwind rather than scattered evenly, and each grain
-         shrinks as it goes, so the words come undone the way sand does. */
-      float ang = seed * 43.0;
-      vec2 wind = vec2(0.90, 0.26) + vec2(cos(ang), sin(ang)) * 0.55;
-      pos += wind * uDisperse * (0.05 + 0.20 * fract(seed * 13.0));
-
-      gl_Position = vec4(pos, 0.0, 1.0);
-      gl_PointSize = uPx * sz * (1.0 + 0.75 * e) * (1.0 - 0.45 * uDisperse);
-      vSeed = seed;
-      vArrive = e;
-    }`;
-
-  const ST_FS = `
-    precision mediump float;
-    varying float vSeed, vArrive;
-    uniform float uAlpha, uFlash;
-
-    void main() {
-      float r = length(gl_PointCoord - 0.5) * 2.0;
-      float a = smoothstep(1.0, 0.0, r);
-      a *= a;
-
-      /* Skylit sand: cool and nearly colourless while it is still loose,
-         because there is no warm light anywhere in this scene for it to
-         catch. */
-      vec3 tint = mix(vec3(0.60, 0.71, 0.88), vec3(0.90, 0.93, 0.98), vSeed);
-      /* It warms only as it arrives, so the grains carry the gold in with
-         them and the formed word and the lit word end the same colour. */
-      tint = mix(tint, vec3(1.00, 0.80, 0.38), vArrive * 0.85);
-
-      float b = (0.28 + 0.85 * vArrive) * (1.0 + 3.0 * uFlash);
-      gl_FragColor = vec4(tint * a * b * uAlpha, a * uAlpha);
-    }`;
-
-  function compile(type, src) {
-    const sh = gl.createShader(type);
-    gl.shaderSource(sh, src);
-    gl.compileShader(sh);
-    return gl.getShaderParameter(sh, gl.COMPILE_STATUS) ? sh : null;
-  }
-  function link(vsSrc, fsSrc) {
-    const vs = compile(gl.VERTEX_SHADER, vsSrc);
-    const fs = compile(gl.FRAGMENT_SHADER, fsSrc);
-    if (!vs || !fs) return null;
-    const p = gl.createProgram();
-    gl.attachShader(p, vs);
-    gl.attachShader(p, fs);
-    gl.linkProgram(p);
-    return gl.getProgramParameter(p, gl.LINK_STATUS) ? p : null;
-  }
-
-  const bgProg = link(BG_VS, BG_FS);
-  const stProg = link(ST_VS, ST_FS);
-  if (!bgProg || !stProg) { bail(); return; }
-
-  /* One oversized triangle covers the viewport with three vertices and no
-     seam down the diagonal. */
-  const bgBuf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-
-  const bgLoc = {
-    pos:   gl.getAttribLocation(bgProg, 'aPos'),
-    res:   gl.getUniformLocation(bgProg, 'uRes'),
-    time:  gl.getUniformLocation(bgProg, 'uTime'),
-    alpha: gl.getUniformLocation(bgProg, 'uAlpha')
-  };
-  const stLoc = {
-    start:  gl.getAttribLocation(stProg, 'aStart'),
-    target: gl.getAttribLocation(stProg, 'aTarget'),
-    meta:   gl.getAttribLocation(stProg, 'aMeta'),
-    form:   gl.getUniformLocation(stProg, 'uForm'),
-    disp:   gl.getUniformLocation(stProg, 'uDisperse'),
-    time:   gl.getUniformLocation(stProg, 'uTime'),
-    px:     gl.getUniformLocation(stProg, 'uPx'),
-    aspect: gl.getUniformLocation(stProg, 'uAspect'),
-    alpha:  gl.getUniformLocation(stProg, 'uAlpha'),
-    flash:  gl.getUniformLocation(stProg, 'uFlash')
-  };
-
-  const startBuf  = gl.createBuffer();
-  const targetBuf = gl.createBuffer();
-  const metaBuf   = gl.createBuffer();
-
-  /* Fewer grains on a phone: the count is the only thing here that scales
-     with screen area rather than with the text. */
-  const N = window.innerWidth < 700 ? 4000 : 8000;
-  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) { bail(); return; }
 
   window.__introDrawsQuote = true;
-  quote.classList.add('stellar');
+  quote.classList.add('flock');
   if (loader) loader.classList.add('swift');
   lineEls.forEach(el => { el.style.opacity = '0'; });
+
+  const DPR = Math.min(window.devicePixelRatio || 1, 2);
+  /* Fewer birds on a phone. Below about four hundred it stops reading as a
+     flock and starts reading as dots, so this is the floor rather than a
+     preference. */
+  const N = window.innerWidth < 700 ? 620 : 1400;
+
+  /* Everything is simulated in CSS pixels; only the draw is scaled by DPR. */
+  let W = 0, H = 0;
+
+  const px = new Float32Array(N), py = new Float32Array(N);
+  const vx = new Float32Array(N), vy = new Float32Array(N);
+  const tx = new Float32Array(N), ty = new Float32Array(N);
+  const dep = new Float32Array(N);      /* 0 far … 1 near: size and tone */
+  const wob = new Float32Array(N);      /* per-bird phase, so nothing is in lockstep */
+  const hdg = new Float32Array(N);      /* last heading, to measure the turn against */
+  const bnk = new Float32Array(N);      /* smoothed signed turn rate = how hard it is banked */
+
+  /* ── Flocking constants ──
+     Tuned so the flock stays loose and legible rather than collapsing into
+     a ball: cohesion is deliberately the weakest of the three. */
+  const R_PERCEPT = 26;    /* neighbour radius, px */
+  const R_SEP     = 9;
+  const W_SEP = 0.055, W_ALI = 0.045, W_COH = 0.0016;
+  const MAXV = 3.1, MINV = 1.15, MAXF = 0.22;
+
+  /* Uniform grid over the viewport. Buckets are singly linked through
+     `next`, so a rebuild is two passes over flat arrays and allocates
+     nothing per frame. */
+  let cols = 0, rows = 0, head = null;
+  const next = new Int32Array(N);
+
+  function sizeGrid() {
+    cols = Math.max(1, Math.ceil(W / R_PERCEPT));
+    rows = Math.max(1, Math.ceil(H / R_PERCEPT));
+    head = new Int32Array(cols * rows);
+  }
+
+  function buildGrid() {
+    head.fill(-1);
+    for (let i = 0; i < N; i++) {
+      let cx = (px[i] / R_PERCEPT) | 0, cy = (py[i] / R_PERCEPT) | 0;
+      if (cx < 0) cx = 0; else if (cx >= cols) cx = cols - 1;
+      if (cy < 0) cy = 0; else if (cy >= rows) cy = rows - 1;
+      const c = cy * cols + cx;
+      next[i] = head[c];
+      head[c] = i;
+    }
+  }
 
   /* ── Sampling the letterforms ──
      The words are drawn once into an offscreen 2-D canvas using the very
      same computed font, size and tracking the live elements carry, at the
-     very same place on screen. Every lit pixel becomes a candidate landing
-     site. Nothing is hard-coded about the quote: re-word it, re-style it or
-     translate it and the swarm follows. */
+     very same place on screen. Every lit pixel becomes a place a bird can
+     be. Nothing is hard-coded about the quote: re-word it, restyle it or
+     translate it and the flock follows. */
   function sampleGlyphs() {
-    const W = window.innerWidth, H = window.innerHeight;
     const cv = document.createElement('canvas');
-    cv.width  = Math.max(2, Math.floor(W * DPR));
+    cv.width = Math.max(2, Math.floor(W * DPR));
     cv.height = Math.max(2, Math.floor(H * DPR));
     const c = cv.getContext('2d', { willReadFrequently: true });
     c.scale(DPR, DPR);
     c.fillStyle = '#fff';
     c.textAlign = 'center';
     c.textBaseline = 'middle';
-
-    const bands = [];
-    lineEls.forEach((el, idx) => {
+    lineEls.forEach(el => {
       const cs = getComputedStyle(el);
       c.font = cs.fontStyle + ' ' + cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
-      /* Not supported everywhere; the swarm is a little wider than the text
-         without it, which the dispersal hides. */
       try { c.letterSpacing = cs.letterSpacing === 'normal' ? '0px' : cs.letterSpacing; } catch (e) {}
       const wrap = (el.parentNode && el.parentNode.getBoundingClientRect)
-        ? el.parentNode.getBoundingClientRect()
-        : el.getBoundingClientRect();
-      const midY = (wrap.top + wrap.bottom) / 2;
-      c.fillText(el.textContent, wrap.left + wrap.width / 2, midY);
-      bands.push({ idx: idx, top: wrap.top, bottom: wrap.bottom });
+        ? el.parentNode.getBoundingClientRect() : el.getBoundingClientRect();
+      c.fillText(el.textContent, wrap.left + wrap.width / 2, (wrap.top + wrap.bottom) / 2);
     });
-
     const img = c.getImageData(0, 0, cv.width, cv.height).data;
     const step = Math.max(1, Math.round(DPR));
-    const xs = [], ys = [], li = [];
+    const xs = [], ys = [];
     for (let y = 0; y < cv.height; y += step) {
       for (let x = 0; x < cv.width; x += step) {
         if (img[(y * cv.width + x) * 4 + 3] < 110) continue;
-        const px = x / DPR, py = y / DPR;
-        let line = 0;
-        for (let k = 0; k < bands.length; k++) {
-          if (py >= bands[k].top && py <= bands[k].bottom) { line = bands[k].idx; break; }
-        }
-        xs.push(px); ys.push(py); li.push(line);
+        xs.push(x / DPR); ys.push(y / DPR);
       }
     }
-    return { xs: xs, ys: ys, li: li, W: W, H: H };
+    return { xs, ys };
   }
 
-  /* Seeds a grain on the near dune. The lift is biased hard toward zero, so
-     most of the swarm starts sitting on the sand and only a few are already
-     airborne — grains come off the crest rather than out of the sky. */
-  function duneStart(aspect) {
-    const ux = (Math.random() * 2 - 1) * aspect * 0.58;
-    const uy = ridgeNear(ux) + Math.pow(Math.random(), 3.0) * 0.22
-             + (Math.random() - 0.5) * 0.014;
-    return [ux / aspect * 2, uy * 2];
-  }
-
-  let count = 0;
-  function buildStars() {
+  let haveTargets = false;
+  function assignTargets() {
     const g = sampleGlyphs();
-    const aspect = g.W / g.H;
-    if (!g.xs.length) { count = 0; return; }
-
-    count = N;
-    const start  = new Float32Array(count * 2);
-    const target = new Float32Array(count * 2);
-    const meta   = new Float32Array(count * 4);
-
-    /* Lines are called in top-down, so the quote assembles in reading order
-       and the attribution is never the first thing to resolve. */
-    const LINE_LEAD = [0.00, 0.10, 0.20];
-
-    for (let i = 0; i < count; i++) {
-      const j = Math.floor(Math.random() * g.xs.length);
-      /* Jitter inside the sampled pixel so the swarm is not visibly a grid
-         even where the glyph mask is coarse. */
-      const px = g.xs[j] + (Math.random() - 0.5) * 1.6;
-      const py = g.ys[j] + (Math.random() - 0.5) * 1.6;
-      target[i * 2]     = (px / g.W) * 2 - 1;
-      target[i * 2 + 1] = 1 - (py / g.H) * 2;
-
-      const s = duneStart(aspect);
-      start[i * 2] = s[0];
-      start[i * 2 + 1] = s[1];
-
-      const lead = LINE_LEAD[g.li[j]] || 0;
-      meta[i * 4]     = Math.min(0.72, lead + Math.random() * 0.34);
-      meta[i * 4 + 1] = Math.random();
-      meta[i * 4 + 2] = 0.60 + Math.random() * 1.00;
-      meta[i * 4 + 3] = 0;
+    if (!g.xs.length) { haveTargets = false; return; }
+    haveTargets = true;
+    for (let i = 0; i < N; i++) {
+      const j = (Math.random() * g.xs.length) | 0;
+      /* Jitter inside the sampled pixel so the formation is not visibly a
+         grid even where the glyph mask is coarse. */
+      tx[i] = g.xs[j] + (Math.random() - 0.5) * 1.7;
+      ty[i] = g.ys[j] + (Math.random() - 0.5) * 1.7;
     }
+  }
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, startBuf);
-    gl.bufferData(gl.ARRAY_BUFFER, start, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, targetBuf);
-    gl.bufferData(gl.ARRAY_BUFFER, target, gl.STATIC_DRAW);
-    gl.bindBuffer(gl.ARRAY_BUFFER, metaBuf);
-    gl.bufferData(gl.ARRAY_BUFFER, meta, gl.STATIC_DRAW);
+  function seed() {
+    for (let i = 0; i < N; i++) {
+      /* Seeded as a flock already wheeling, not one streaming in from the
+         left. Two reasons, both measured. A flock flying in a straight line
+         is not banking, so the whole collective flash — the thing that
+         separates this from a particle system — was invisible for the first
+         second and a half, which on a four-second intro is most of it.
+         And with only 400ms of open flight before the gather begins, a
+         quarter of the birds were still off the left edge when they were
+         needed. Placed on a broad ellipse with tangential velocity, they
+         are turning from the first frame and all of them are on screen. */
+      const a0 = Math.random() * Math.PI * 2;
+      const r0 = (0.30 + 0.70 * Math.sqrt(Math.random())) * Math.min(W, H) * 0.46;
+      px[i] = W * 0.50 + Math.cos(a0) * r0 * 1.30;
+      py[i] = H * 0.46 + Math.sin(a0) * r0 * 0.80;
+      const a = a0 + Math.PI * 0.5 + (Math.random() - 0.5) * 0.55;
+      vx[i] = Math.cos(a) * MAXV;
+      vy[i] = Math.sin(a) * MAXV;
+      dep[i] = Math.random();
+      wob[i] = Math.random() * Math.PI * 2;
+      hdg[i] = a;
+      bnk[i] = 0;
+    }
   }
 
   function resize() {
-    canvas.width  = Math.max(2, Math.floor(window.innerWidth  * DPR));
-    canvas.height = Math.max(2, Math.floor(window.innerHeight * DPR));
-    gl.viewport(0, 0, canvas.width, canvas.height);
-    /* The landing sites are screen positions, so they have to be resampled
-       or the words would form where the text used to be. */
-    buildStars();
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = Math.max(2, Math.floor(W * DPR));
+    canvas.height = Math.max(2, Math.floor(H * DPR));
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    sizeGrid();
+    /* Targets are screen positions, so they have to be resampled or the
+       words would form where the text used to be. */
+    assignTargets();
   }
 
-  /* ── Timeline ──
-     T_HOLD is the beat the whole thing is built around: the swarm has
-     landed, the quote is lit, and nothing moves except the sky turning
-     behind it. Everything else is paced to arrive at that pause and to
-     leave it unhurried. */
-  const T_RISE = 650, T_FORM = 2100, T_IGNITE = 420, T_HOLD = 1500, T_OUT = 1150;
-  const T1 = T_RISE, T2 = T1 + T_FORM, T3 = T2 + T_IGNITE, T4 = T3 + T_HOLD;
+  /* ── Timeline ── */
+  const T_FLY = 400, T_GATHER = 1200, T_IGNITE = 300, T_HOLD = 1300, T_BREAK = 800;
+  const T1 = T_FLY, T2 = T1 + T_GATHER, T3 = T2 + T_IGNITE, T4 = T3 + T_HOLD;
 
   const GLOW      = '0 0 26px rgba(255,158,30,0.60), 0 0 8px rgba(255,188,70,0.50), 0 1px 2px rgba(0,0,0,0.80)';
   const GLOW_ATTR = '0 1px 10px rgba(255,190,90,0.30), 0 1px 1px rgba(0,0,0,0.55)';
@@ -1782,96 +1445,310 @@ if (document.readyState === 'complete') {
     }
   }
 
+  let skyGrad = null, sunGrad = null, coolGrad = null, skyW = -1, skyH = -1;
+  const STARS = [];
+  function buildSky() {
+    skyW = W; skyH = H;
+    skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+    skyGrad.addColorStop(0.00, '#141a2e');
+    skyGrad.addColorStop(0.46, '#2a2a44');
+    skyGrad.addColorStop(0.78, '#6b4a52');
+    skyGrad.addColorStop(1.00, '#c07a4e');
+    /* Where the sun went down: low and to the left, well off the bottom of
+       the frame. A dusk sky is never an even gradient — it has a direction,
+       and without one this reads as a CSS background rather than as air. */
+    sunGrad = ctx.createRadialGradient(W * 0.24, H * 1.02, 0, W * 0.24, H * 1.02, H * 0.86);
+    sunGrad.addColorStop(0.00, 'rgba(255,172,96,0.50)');
+    sunGrad.addColorStop(0.42, 'rgba(226,122,76,0.17)');
+    sunGrad.addColorStop(1.00, 'rgba(226,122,76,0)');
+    /* And the cold half of the sky opposite it, which is what stops the
+       whole frame going uniformly warm. */
+    coolGrad = ctx.createRadialGradient(W * 0.92, -H * 0.15, 0, W * 0.92, -H * 0.15, H * 0.95);
+    coolGrad.addColorStop(0.00, 'rgba(52,72,132,0.34)');
+    coolGrad.addColorStop(1.00, 'rgba(52,72,132,0)');
+    STARS.length = 0;
+    const n = Math.round(W * H / 7000);
+    for (let i = 0; i < n; i++) {
+      STARS.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.60,
+        r: 0.35 + Math.random() * 0.85,
+        a: 0.30 + Math.random() * 0.70
+      });
+    }
+  }
+
+  function sky(t, night) {
+    if (skyW !== W || skyH !== H) buildSky();
+    ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = coolGrad; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = sunGrad;  ctx.fillRect(0, 0, W, H);
+    /* Stars are barely there at dusk and come out as it darkens, so they
+       arrive on the same beat as the flock leaving. */
+    const sa = 0.10 + 0.90 * night;
+    if (sa > 0.02) {
+      for (let i = 0; i < STARS.length; i++) {
+        const s = STARS[i];
+        ctx.globalAlpha = s.a * sa * (0.75 + 0.25 * Math.sin(t * 1.7 + i));
+        ctx.fillStyle = '#dfe6ff';
+        ctx.fillRect(s.x, s.y, s.r, s.r);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* Three depth bands, three filled paths. Nearer birds are bigger and
+     darker; the far ones wash out into the sky, which is the only depth cue
+     a silhouette gets. The alphas are deliberately low — a murmuration
+     reads as a mass, and the darkness has to come from birds piling up on
+     one another rather than from any single bird being opaque. */
+  const BANDS = [
+    { lo: 0.00, hi: 0.34, size: 1.4, fill: 'rgba(42,38,52,0.40)' },
+    { lo: 0.34, hi: 0.70, size: 2.1, fill: 'rgba(26,22,32,0.55)' },
+    { lo: 0.70, hi: 1.01, size: 3.0, fill: 'rgba(12,10,16,0.72)' }
+  ];
+
+  function drawBirds(t, form) {
+    /* Settled birds keep fluttering, but less of it: at full formation the
+       beat is damped so the letters stay legible instead of boiling, and
+       the banking is damped harder still — a word should not pulse. */
+    const beatAmp = 1 - form * 0.58;
+    const bankAmp = 1 - form * 0.80;
+    for (let b = 0; b < BANDS.length; b++) {
+      const band = BANDS[b];
+      ctx.beginPath();
+      for (let i = 0; i < N; i++) {
+        if (dep[i] < band.lo || dep[i] >= band.hi) continue;
+        const s = band.size;
+        let hx = vx[i], hy = vy[i];
+        const sp = Math.sqrt(hx * hx + hy * hy) || 1;
+        hx /= sp; hy /= sp;
+        const nx = -hy, ny = hx;
+        /* Wingbeat. This is most of what makes a distant flock shimmer:
+           thousands of wings beating out of phase, each one catching and
+           losing the sky as it goes. Rate varies with depth so the near
+           birds are visibly faster than the far ones. */
+        const beat = 1 - beatAmp * 0.62 * Math.abs(Math.sin(t * (7.5 + dep[i] * 3.4) + wob[i]));
+        /* Banking. A bird rolled belly-on presents its whole wing area; a
+           bird rolled edge-on presents almost none. Modulating drawn area
+           by the bank is therefore the physical mechanism, not a trick —
+           and since neighbours share a bank, whole regions of the flock
+           swell and thin together as they turn. That collective flashing
+           is the thing that separates a murmuration from a particle
+           system, and it costs one sine per bird. */
+        const surf = 0.42 + 0.86 * (0.5 + 0.5 * Math.sin(bnk[i])) * bankAmp
+                   + 0.72 * (1 - bankAmp);
+        /* Stretched along the heading in proportion to speed, which stands
+           in for the motion blur any real exposure of this would have. */
+        const nose = s * (1.55 + sp * 0.30) * surf;
+        const wing = s * 0.95 * beat * surf;
+        const tail = s * 0.9 * surf;
+        ctx.moveTo(px[i] + hx * nose, py[i] + hy * nose);
+        ctx.lineTo(px[i] - hx * tail + nx * wing, py[i] - hy * tail + ny * wing);
+        ctx.lineTo(px[i] - hx * tail - nx * wing, py[i] - hy * tail - ny * wing);
+        ctx.closePath();
+      }
+      ctx.fillStyle = band.fill;
+      ctx.fill();
+    }
+  }
+
+  function step(dt, form, t) {
+    buildGrid();
+    /* Flocking is turned down as the birds gather, or they would keep
+       shoving each other out of the letters. Separation stays on — without
+       it the formation fills in solid and the words stop being readable. */
+    const flockW = 1 - form * 0.88;
+    const maxv = MAXV * (1 - form * 0.62);
+    const minv = MINV * (1 - form);
+
+    /* A wandering attractor the whole flock leans toward, so it sweeps
+       across the frame rather than hovering in the middle of it. */
+    /* Swept faster than a flock can comfortably follow, which is the point:
+       chasing it is what keeps them turning, and turning is what makes them
+       flash. A slow attractor lets the flock settle into a straight line
+       and the whole effect goes flat. */
+    const ax = W * 0.5 + Math.cos(t * 1.05) * W * 0.26;
+    const ay = H * 0.44 + Math.sin(t * 1.50) * H * 0.19;
+
+    for (let i = 0; i < N; i++) {
+      let sx = 0, sy = 0, alx = 0, aly = 0, cx = 0, cy = 0, n = 0;
+
+      let gx = (px[i] / R_PERCEPT) | 0, gy = (py[i] / R_PERCEPT) | 0;
+      if (gx < 0) gx = 0; else if (gx >= cols) gx = cols - 1;
+      if (gy < 0) gy = 0; else if (gy >= rows) gy = rows - 1;
+
+      for (let oy = -1; oy <= 1; oy++) {
+        const yy = gy + oy;
+        if (yy < 0 || yy >= rows) continue;
+        for (let ox = -1; ox <= 1; ox++) {
+          const xx = gx + ox;
+          if (xx < 0 || xx >= cols) continue;
+          for (let j = head[yy * cols + xx]; j !== -1; j = next[j]) {
+            if (j === i) continue;
+            const ddx = px[j] - px[i], ddy = py[j] - py[i];
+            const d2 = ddx * ddx + ddy * ddy;
+            if (d2 > R_PERCEPT * R_PERCEPT || d2 < 1e-6) continue;
+            cx += px[j]; cy += py[j];
+            alx += vx[j]; aly += vy[j];
+            n++;
+            if (d2 < R_SEP * R_SEP) {
+              const inv = 1 / Math.sqrt(d2);
+              sx -= ddx * inv; sy -= ddy * inv;
+            }
+          }
+        }
+      }
+
+      let fx = 0, fy = 0;
+      if (n) {
+        fx += (cx / n - px[i]) * W_COH * flockW;
+        fy += (cy / n - py[i]) * W_COH * flockW;
+        fx += (alx / n - vx[i]) * W_ALI * flockW;
+        fy += (aly / n - vy[i]) * W_ALI * flockW;
+      }
+      fx += sx * W_SEP; fy += sy * W_SEP;
+
+      /* Lean toward the wandering attractor, and wander a little alone. */
+      fx += (ax - px[i]) * 0.0012 * flockW;
+      fy += (ay - py[i]) * 0.0012 * flockW;
+      fx += Math.cos(t * 1.6 + wob[i]) * 0.030 * flockW;
+      fy += Math.sin(t * 1.9 + wob[i]) * 0.030 * flockW;
+
+      /* Turned back at the edges instead of wrapped. A bird that vanishes
+         off one side and reappears on the other is the plainest possible
+         tell that this is a screensaver; a flock that banks away from the
+         edge of the frame reads as a flock that has somewhere it wants to
+         be — and because neighbours turn together, the turn-back is itself
+         a source of the collective banking below. Ramped by distance past
+         the margin, so it is a lean rather than a wall. */
+      const M = 96;
+      if (px[i] < M)          fx += (M - px[i]) * 0.0026;
+      else if (px[i] > W - M) fx -= (px[i] - (W - M)) * 0.0026;
+      if (py[i] < M)          fy += (M - py[i]) * 0.0026;
+      else if (py[i] > H - M) fy -= (py[i] - (H - M)) * 0.0026;
+
+      if (form > 0 && haveTargets) {
+        const dx = tx[i] - px[i], dy = ty[i] - py[i];
+        fx += dx * 0.020 * form;
+        fy += dy * 0.020 * form;
+        /* Braking on approach, or they orbit their target instead of
+           settling on it and the letters shimmer. */
+        vx[i] *= 1 - 0.16 * form;
+        vy[i] *= 1 - 0.16 * form;
+      }
+
+      const fm = Math.sqrt(fx * fx + fy * fy);
+      if (fm > MAXF) { fx = fx / fm * MAXF; fy = fy / fm * MAXF; }
+
+      vx[i] += fx * dt; vy[i] += fy * dt;
+
+      /* Parallax. Distant birds cover less ground per second, which is the
+         strongest depth cue a flat silhouette can be given. Blended out as
+         the flock forms up, or the far ones would still be straggling in
+         when the words are meant to be legible. */
+      const par = (0.58 + 0.56 * dep[i]) * (1 - form) + form;
+      const mv = maxv * par, nv = minv * par;
+
+      let sp = Math.sqrt(vx[i] * vx[i] + vy[i] * vy[i]);
+      if (sp > mv) { vx[i] = vx[i] / sp * mv; vy[i] = vy[i] / sp * mv; sp = mv; }
+      else if (sp < nv && sp > 1e-4) { vx[i] = vx[i] / sp * nv; vy[i] = vy[i] / sp * nv; }
+
+      px[i] += vx[i] * dt; py[i] += vy[i] * dt;
+
+      /* Bank. The turn this bird just made, low-passed so it leans into a
+         turn and out of it rather than twitching frame to frame. Because
+         alignment makes neighbours turn together, neighbouring birds arrive
+         at the same bank at the same moment — which is what lets whole
+         regions of the flock flash as one in drawBirds. */
+      const nh = Math.atan2(vy[i], vx[i]);
+      let dh = nh - hdg[i];
+      if (dh > Math.PI) dh -= Math.PI * 2; else if (dh < -Math.PI) dh += Math.PI * 2;
+      hdg[i] = nh;
+      const want = Math.max(-1.6, Math.min(1.6, dh / dt * 6.0));
+      bnk[i] += (want - bnk[i]) * 0.20;
+
+      /* A hard reflect far outside the frame. The lean above should mean
+         nothing ever gets here, but a bird that did must not be lost. */
+      const HARD = 240;
+      if (px[i] < -HARD)     { px[i] = -HARD;    vx[i] =  Math.abs(vx[i]); }
+      else if (px[i] > W + HARD) { px[i] = W + HARD; vx[i] = -Math.abs(vx[i]); }
+      if (py[i] < -HARD)     { py[i] = -HARD;    vy[i] =  Math.abs(vy[i]); }
+      else if (py[i] > H + HARD) { py[i] = H + HARD; vy[i] = -Math.abs(vy[i]); }
+    }
+  }
+
   function build() {
-    /* resize() sizes the drawing buffer and samples the glyphs, so it is
-       the whole of setup as well as the resize handler. Calling buildStars()
-       separately here would read back a full-viewport bitmap twice before
-       the first frame. */
     resize();
-    if (!count) { bail(); return; }
+    if (!haveTargets) { bail(); return; }
+    seed();
     window.addEventListener('resize', resize);
 
-    gl.disable(gl.DEPTH_TEST);
-    const t0 = performance.now();
-    let outStart = 0;
+    let t0 = 0, prev = 0, outStart = 0;
 
     function frame(now) {
+      if (!t0) { t0 = now; prev = now; }
       const t = now - t0;
-      let bgA = 1, form = 0, disp = 0, flash = 0, vis = 0, stA = 1;
+      /* Clamped, so a dropped frame or a backgrounded tab cannot hand the
+         simulation a step big enough to blow the flock apart. */
+      const dt = Math.min(2.2, Math.max(0.2, (now - prev) / 16.667));
+      prev = now;
+
+      let form = 0, vis = 0, flash = 0, night = 0, alpha = 1;
 
       if (t < T1) {
-        bgA = t / T1; stA = bgA;
+        alpha = t / T1;
 
       } else if (t < T2) {
-        form = (t - T1) / T_FORM;
+        const u = (t - T1) / T_GATHER;
+        form = u * u * (3 - 2 * u);
 
       } else if (t < T3) {
-        /* Ignition. The sand stays exactly where it landed — only the text
-           comes up underneath it. */
+        /* The flock holds where it landed; only the text comes up. */
         const u = (t - T2) / T_IGNITE;
         form = 1; vis = u; flash = Math.sin(u * Math.PI);
 
       } else if (t < T4 || !outStart) {
-        /* Hold: the formation is kept intact and the quote sits lit inside
-           it. The grains are eased back so the crisp text carries the line
-           and they read as glitter on the letters rather than competing
-           with them. The exit waits on the page behind actually being
-           ready, so a slow load cannot strand the frame mid-dissolve. */
-        form = 1; vis = 1; disp = 0;
-        stA = 1 - 0.35 * Math.min(1, (t - T3) / 400);
+        /* Hold. The exit waits on the page behind actually being ready, so
+           a slow load cannot strand the frame mid-break. */
+        form = 1; vis = 1;
         if (t >= T4 && document.readyState === 'complete') { outStart = t; finish(); }
 
       } else {
-        const u = (t - outStart) / T_OUT;
+        const u = (t - outStart) / T_BREAK;
         if (u >= 1) { window.removeEventListener('resize', resize); return; }
-        form = 1; vis = 1;
-        /* Eased, so the wind takes it gently at first rather than the sand
-           letting go the instant the hold ends. */
-        disp = u * u * 0.85;
-        bgA = 1 - u * u;
-        stA = 0.65 * (1 - u * u);
+        /* Released. Flocking comes straight back up and they scatter of
+           their own accord — nothing pushes them apart. */
+        form = Math.max(0, 1 - u * 2.2);
+        vis = 1;
+        night = u * u;
+        alpha = 1 - u * u;
       }
 
+      step(dt, form, t * 0.001);
       paintQuote(vis, flash);
 
       const ts = t * 0.001;
-      gl.useProgram(bgProg);
-      gl.disable(gl.BLEND);
-      gl.bindBuffer(gl.ARRAY_BUFFER, bgBuf);
-      gl.enableVertexAttribArray(bgLoc.pos);
-      gl.vertexAttribPointer(bgLoc.pos, 2, gl.FLOAT, false, 0, 0);
-      gl.uniform2f(bgLoc.res, canvas.width, canvas.height);
-      gl.uniform1f(bgLoc.time, ts);
-      gl.uniform1f(bgLoc.alpha, bgA);
-      gl.drawArrays(gl.TRIANGLES, 0, 3);
-
-      gl.useProgram(stProg);
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
-      gl.bindBuffer(gl.ARRAY_BUFFER, startBuf);
-      gl.enableVertexAttribArray(stLoc.start);
-      gl.vertexAttribPointer(stLoc.start, 2, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, targetBuf);
-      gl.enableVertexAttribArray(stLoc.target);
-      gl.vertexAttribPointer(stLoc.target, 2, gl.FLOAT, false, 0, 0);
-      gl.bindBuffer(gl.ARRAY_BUFFER, metaBuf);
-      gl.enableVertexAttribArray(stLoc.meta);
-      gl.vertexAttribPointer(stLoc.meta, 4, gl.FLOAT, false, 0, 0);
-      gl.uniform1f(stLoc.form, form);
-      gl.uniform1f(stLoc.disp, disp);
-      gl.uniform1f(stLoc.time, ts);
-      gl.uniform1f(stLoc.px, 1.6 * DPR);
-      gl.uniform1f(stLoc.aspect, canvas.width / canvas.height);
-      gl.uniform1f(stLoc.alpha, stA);
-      gl.uniform1f(stLoc.flash, flash);
-      gl.drawArrays(gl.POINTS, 0, count);
+      ctx.globalAlpha = 1;
+      sky(ts, night);
+      ctx.globalAlpha = alpha;
+      drawBirds(ts, form);
+      ctx.globalAlpha = 1;
+      /* The dusk deepens over everything as the flock leaves, so the last
+         frame of the intro and the first frame of the page are close to the
+         same colour. The opening fade rides on the same veil. */
+      const veil = Math.max(night, 1 - alpha);
+      if (veil > 0.001) {
+        ctx.fillStyle = 'rgba(12,12,14,' + veil.toFixed(3) + ')';
+        ctx.fillRect(0, 0, W, H);
+      }
 
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   }
 
-  /* Cinzel has to be resolved before the glyphs are sampled, or the swarm
+  /* Cinzel has to be resolved before the glyphs are sampled, or the flock
      would form the shape of the fallback face and the text would ignite in
      a different one. */
   const fonts = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
@@ -1879,7 +1756,7 @@ if (document.readyState === 'complete') {
 })();
 
 (function initIntro() {
-  if (window.__introTaken) return;   /* the stellar intro above has it */
+  if (window.__introTaken) return;   /* the murmuration above has it */
   const canvas = document.getElementById('intro-canvas');
   const loader = document.getElementById('loader');
   const finish = () => { if (window.__introComplete) window.__introComplete(); };
@@ -3144,15 +3021,82 @@ if (document.readyState === 'complete') {
 /* ════════════════════════════════════════
    STAGGER TILE ENTRANCE
 ════════════════════════════════════════ */
+/* Tiles reveal when they are actually looked at, rather than all of them
+   firing on a timer at load.
+
+   On desktop this changes nothing visible, and that is expected: .grid is
+   position:fixed and fills the viewport, so every tile is already on screen
+   and they all reveal together in document order exactly as before. It is
+   the narrow breakpoint that this is for — there the grid is unpinned and
+   the page scrolls, so the lower tiles used to play their entrance while
+   they were still well past the bottom of the screen, and you would arrive
+   to find them already sitting there. */
 function staggerTilesIn() {
-  const tiles = document.querySelectorAll('.tile');
-  // hero first, then row 1 left→right, then row 2 left→right
-  const order = [0, 1, 2, 3, 4, 5, 6, 7];
-  order.forEach((idx, i) => {
-    setTimeout(() => {
-      if (tiles[idx]) tiles[idx].classList.add('entered');
-    }, i * 45);
-  });
+  const tiles = Array.prototype.slice.call(document.querySelectorAll('.tile'));
+  if (!tiles.length) return;
+
+  const reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !('IntersectionObserver' in window)) {
+    tiles.forEach(t => t.classList.add('entered'));
+    return;
+  }
+
+  const STEP = 45;              /* ms between tiles arriving together */
+  const pending = new Set(tiles);
+
+  /* Reveal in document order, not in whatever order they were noticed, so a
+     row always lights left to right no matter which tile qualified first. */
+  function reveal(list) {
+    list = list.filter(t => pending.has(t));
+    if (!list.length) return;
+    list.sort((a, b) => tiles.indexOf(a) - tiles.indexOf(b));
+    list.forEach((el, i) => {
+      pending.delete(el);
+      setTimeout(() => el.classList.add('entered'), i * STEP);
+    });
+  }
+
+  if (reduced || !('IntersectionObserver' in window)) {
+    reveal(tiles);
+    return;
+  }
+
+  const inView = t => {
+    const r = t.getBoundingClientRect();
+    return r.height > 0 && r.bottom > 0 && r.top < window.innerHeight * 0.92;
+  };
+
+  /* Whatever is on screen right now is revealed from a direct measurement
+     rather than by waiting for the observer's first delivery. The observer
+     is then only responsible for what scrolls in later. */
+  reveal(tiles.filter(inView));
+
+  const io = new IntersectionObserver(entries => {
+    const hit = entries.filter(e => e.isIntersecting).map(e => e.target);
+    hit.forEach(t => io.unobserve(t));   /* one entrance each, never again */
+    reveal(hit);
+    if (!pending.size) cleanup();
+  }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+  pending.forEach(t => io.observe(t));
+
+  /* Belt and braces, because the failure is not a missing animation — it is
+     a blank page. Tiles sit at opacity:0 until they are revealed, so
+     anything that keeps the observer quiet would permanently hide the
+     entire portfolio. Capture is used because a scroll event from an inner
+     scroll container does not bubble, and this layout scrolls the body
+     rather than the viewport at narrow widths. */
+  function onScroll() { reveal(tiles.filter(inView)); if (!pending.size) cleanup(); }
+  document.addEventListener('scroll', onScroll, { passive: true, capture: true });
+  window.addEventListener('resize', onScroll, { passive: true });
+  const failsafe = setTimeout(() => { reveal(tiles); cleanup(); }, 4000);
+
+  function cleanup() {
+    document.removeEventListener('scroll', onScroll, { capture: true });
+    window.removeEventListener('resize', onScroll);
+    clearTimeout(failsafe);
+    io.disconnect();
+  }
 }
 
 /* custom cursor removed - using native cursor for smooth tracking */
