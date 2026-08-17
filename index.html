@@ -7,7 +7,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0e0e'/%3E%3Ctext x='32' y='40' font-family='Space Mono, monospace' font-size='22' font-weight='700' fill='%236c47ff' text-anchor='middle' letter-spacing='1'%3EAF%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600&family=Space+Mono:wght@400;700&family=Cinzel:wght@400;600&family=Cormorant+Garamond:ital,wght@1,300;1,400&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -200,52 +200,64 @@
     font-weight:400;
     line-height:2;
     letter-spacing:0.04em;
-    color:rgba(26,17,8,0.94);
+    color:rgba(240,224,190,0.92);
     max-width:580px;
     text-align:center;
     padding:0 40px;
-    text-shadow:0 1px 0 rgba(255,224,150,0.70), 0 -1px 1px rgba(0,0,0,0.5);
+    text-shadow:0 1px 14px rgba(255,190,90,0.35), 0 1px 1px rgba(0,0,0,0.6);
   }
   .loader-quote .line-wrap {
     display:block;
     overflow:hidden;
   }
+  /* The line itself carries no motion any more: its words do. All it does
+     is settle its tracking, so the words tighten into place as they land
+     instead of arriving at their final spacing. The opacity flip is
+     instant because the words handle the fade. */
   .loader-quote .line {
     display:block;
     opacity:0;
-    transform:translateY(110%);
-    filter:blur(5px);
-    transition:opacity 0.8s cubic-bezier(0.16,1,0.3,1),
-                transform 0.8s cubic-bezier(0.16,1,0.3,1),
-                filter 0.8s ease;
-  }
-  .loader-quote.fill { will-change: clip-path; }
-  .loader-quote.fill .line {
-    opacity:1;
-    transform:none;
-    filter:blur(0);
-    transition:none;
-  }
-  .loader-quote.merge .line {
-    transform:none;
-    filter:blur(0);
-    transition:opacity 0.5s ease;
+    letter-spacing:0.17em;
+    transition:letter-spacing 1.05s cubic-bezier(0.16,1,0.3,1);
   }
   .loader-quote .line.visible {
+    opacity:1;
+    letter-spacing:0.04em;
+  }
+  /* One word, rising out of the wrap's overflow mask. The per-word delay
+     is set inline in JS so a line reads left to right. */
+  .loader-quote .w {
+    display:inline-block;
+    opacity:0;
+    transform:translateY(88%);
+    filter:blur(4px);
+    will-change:transform, opacity;
+    transition:opacity 0.72s cubic-bezier(0.16,1,0.3,1),
+                transform 0.72s cubic-bezier(0.16,1,0.3,1),
+                filter 0.72s ease;
+  }
+  .loader-quote .line.visible .w {
     opacity:1;
     transform:translateY(0);
     filter:blur(0);
   }
-  .loader-quote .line-attr {
-    font-family:'Space Mono', monospace;
-    font-size:14px;
-    font-weight:700;
-    letter-spacing:0.16em;
-    text-transform:uppercase;
-    color:rgba(12,7,2,0.96);
-    text-shadow:0 1px 0 rgba(255,226,152,0.75), 0 -1px 1px rgba(0,0,0,0.5);
-    margin-top:9px;
+  /* Used for a single synchronous measuring pass: the seating code needs
+     the settled geometry, not the parked-and-wide-tracked one. */
+  .loader-quote.measuring .line,
+  .loader-quote.measuring .w {
+    transition:none !important;
   }
+  .loader-quote .line-attr {
+    font-family:'Cormorant Garamond', 'Cinzel', serif;
+    font-style:italic;
+    font-size:16px;
+    font-weight:300;
+    letter-spacing:0.16em;
+    color:rgba(224,206,172,0.85);
+    text-shadow:0 1px 10px rgba(255,190,90,0.30), 0 1px 1px rgba(0,0,0,0.55);
+    margin-top:10px;
+  }
+  .loader-quote .line-attr.visible { letter-spacing:0.03em; }
 
 
 
@@ -563,7 +575,7 @@
   <div class="loader-quote">
     <span class="line-wrap"><span class="line">"Talk is cheap.</span></span>
     <span class="line-wrap"><span class="line">Show me the code."</span></span>
-    <span class="line-wrap"><span class="line line-attr">Linus Torvalds</span></span>
+    <span class="line-wrap"><span class="line line-attr">— Linus Torvalds</span></span>
   </div>
 </div>
 
@@ -742,7 +754,7 @@
 <script>
 /* Build stamp: lets you confirm which copy the browser actually loaded.
    If the console does not show this line, you are on a cached file. */
-console.log('%c intro build 23:58:49 / 0a740d ',
+console.log('%c intro build 10:17:50 / 6c7f97 ',
   'background:#f0cd8a;color:#1a1108;font-weight:700;padding:2px 6px;border-radius:3px');
 
 /* Heliostream media, inlined so the page is a single portable file */
@@ -1051,43 +1063,36 @@ if (document.readyState === 'complete') {
 /* ════════════════════════════════════════
    LOADER + HOURGLASS INTRO
    Sand drains from a cone that empties bottom-first, squeezes through a
-   glowing neck, and accumulates from the floor up until the drift has
-   built the quote. Stragglers keep trickling as it hands off to type.
+   glowing neck, and piles up naturally on the floor of the lower bulb.
+   Stragglers keep trickling as it hands off to type.
 ════════════════════════════════════════ */
 (function() {
   const loader = document.getElementById('loader');
-  const quote  = document.querySelector('.loader-quote');
   const lines  = document.querySelectorAll('.loader-quote .line');
 
+  /* Split each line into per-word spans so words can rise one after
+     another instead of the line arriving as a slab. Spaces stay as real
+     text nodes, so wrapping and justification behave normally. Done
+     immediately, before anything measures the quote. */
+  const WORD_STEP = 0.062;   /* seconds between consecutive words */
+  lines.forEach(line => {
+    const words = line.textContent.trim().split(/\s+/);
+    line.textContent = '';
+    words.forEach((word, i) => {
+      const span = document.createElement('span');
+      span.className = 'w';
+      span.textContent = word;
+      span.style.transitionDelay = (i * WORD_STEP).toFixed(3) + 's';
+      line.appendChild(span);
+      if (i < words.length - 1) line.appendChild(document.createTextNode(' '));
+    });
+  });
+
+  /* Lines are revealed one at a time, driven by how far the heap has
+     actually built (see the intro loop). Falling back to all-at-once if
+     the WebGL intro never runs. */
+  window.__revealQuoteLine = i => { if (lines[i]) lines[i].classList.add('visible'); };
   window.__revealQuoteText = () => lines.forEach(l => l.classList.add('visible'));
-  /* The reveal edge is a liquid surface: two ripples of different
-     wavelength travelling in opposite directions, calming as the level
-     rises so it settles flat rather than sloshing forever. */
-  window.__setQuoteFill = (frac, t) => {
-    if (!quote) return;
-    quote.classList.add('fill');
-    lines.forEach(l => l.classList.add('visible'));
-    const f = Math.max(0, Math.min(1, frac));
-    const top = (1 - f) * 100;
-    const amp = 9.5 * (1 - f * 0.55);
-    const pts = [];
-    const SEG = 30;
-    for (let i = 0; i <= SEG; i++) {
-      const u = i / SEG;
-      const y = top
-        + Math.sin(u * Math.PI * 2.1 + t * 0.0034) * amp
-        + Math.sin(u * Math.PI * 4.7 - t * 0.0056) * amp * 0.42;
-      pts.push((u * 100).toFixed(2) + '% ' + y.toFixed(2) + '%');
-    }
-    pts.push('100% 140%', '0% 140%');
-    const poly = 'polygon(' + pts.join(',') + ')';
-    quote.style.clipPath = poly;
-    quote.style.webkitClipPath = poly;
-  };
-  window.__mergeQuoteText = () => {
-    if (quote) quote.classList.add('merge');
-    lines.forEach(l => l.classList.add('visible'));
-  };
   setTimeout(() => { if (!window.__introDrawsQuote) window.__revealQuoteText(); }, 120);
 
   let pageLoaded = document.readyState === 'complete';
@@ -1144,90 +1149,6 @@ if (document.readyState === 'complete') {
   s.onerror = bail;
   document.head.appendChild(s);
 
-  function drawLS(g, text, cx, cy, ls) {
-    if (!ls) { g.fillText(text, cx, cy); return; }
-    const chars = Array.from(text);
-    let total = 0;
-    for (const ch of chars) total += g.measureText(ch).width + ls;
-    total -= ls;
-    let x = cx - total / 2;
-    for (const ch of chars) {
-      const w = g.measureText(ch).width;
-      g.fillText(ch, x + w / 2, cy);
-      x += w + ls;
-    }
-  }
-
-  function sampleQuote(unitsPerPixel) {
-    const wraps = Array.from(document.querySelectorAll('.loader-quote .line-wrap'));
-    if (!wraps.length) return null;
-    const SS = 3;
-    const rects = wraps.map(w => w.getBoundingClientRect());
-    const minX = Math.min.apply(null, rects.map(r => r.left));
-    const maxX = Math.max.apply(null, rects.map(r => r.right));
-    const minY = Math.min.apply(null, rects.map(r => r.top));
-    const maxY = Math.max.apply(null, rects.map(r => r.bottom));
-    const W = Math.max(8, Math.ceil((maxX - minX) * SS));
-    const H = Math.max(8, Math.ceil((maxY - minY) * SS));
-    if (W > 6000 || H > 4000) return null;
-
-    const c = document.createElement('canvas');
-    c.width = W; c.height = H;
-    const g = c.getContext('2d');
-    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    wraps.forEach((w, i) => {
-      const line = w.querySelector('.line');
-      if (!line) return;
-      const cs = getComputedStyle(line);
-      let text = line.textContent.trim();
-      if (cs.textTransform === 'uppercase') text = text.toUpperCase();
-      g.font = `${cs.fontStyle} ${cs.fontWeight} ${parseFloat(cs.fontSize) * SS}px ${cs.fontFamily}`;
-      let ls = parseFloat(cs.letterSpacing);
-      if (!isFinite(ls)) ls = 0;
-      const r = rects[i];
-      drawLS(g, text, (r.left + r.width / 2 - minX) * SS, (r.top + r.height / 2 - minY) * SS, ls * SS);
-    });
-
-    const d = g.getImageData(0, 0, W, H).data;
-
-    /* Ink bounds, so the slab hugs the words rather than the full-width
-       block the line wrappers occupy. */
-    let iL = W, iR = 0, iT = H, iB = 0;
-    for (let y = 0; y < H; y++) {
-      for (let x = 0; x < W; x++) {
-        if (d[(y * W + x) * 4 + 3] > 120) {
-          if (x < iL) iL = x; if (x > iR) iR = x;
-          if (y < iT) iT = y; if (y > iB) iB = y;
-        }
-      }
-    }
-    if (iR <= iL || iB <= iT) return null;
-
-    const padX = 26 * SS, padY = 16 * SS;
-    iL = Math.max(0, iL - padX); iR = Math.min(W, iR + padX);
-    iT = Math.max(0, iT - padY); iB = Math.min(H, iB + padY);
-
-    const k = unitsPerPixel / SS;
-    const offX = ((minX + maxX) / 2 - window.innerWidth / 2) * unitsPerPixel;
-    const offY = -((minY + maxY) / 2 - window.innerHeight / 2) * unitsPerPixel;
-
-    /* A dense fill of the slab. This is the body of sand the quote is
-       carved into, so it wants to read as a solid surface. */
-    const STEP = 1.7 * SS;
-    const pts = [];
-    for (let y = iT; y <= iB; y += STEP) {
-      for (let x = iL; x <= iR; x += STEP) {
-        pts.push(
-          (x - W/2 + (Math.random() - 0.5) * STEP) * k + offX,
-          -(y - H/2 + (Math.random() - 0.5) * STEP) * k + offY,
-          (Math.random() - 0.5) * 1.0
-        );
-      }
-    }
-    if (!pts.length) return null;
-    return { targets: new Float32Array(pts), offX: offX, offY: offY };
-  }
-
   function radialTex(THREE, stops) {
     const cv = document.createElement('canvas');
     cv.width = cv.height = 256;
@@ -1253,36 +1174,28 @@ if (document.readyState === 'complete') {
 
     const scene  = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
-    const Z_END = 100, Z_START = 112;
-    camera.position.z = Z_START;
+    /* The camera does not move. The vessel is drawn at its settled size
+       from the first frame to the last, so nothing grows during the intro. */
+    const Z_END = 100;
+    camera.position.z = Z_END;
     scene.add(camera);
     const vFov = camera.fov * Math.PI / 180;
     const tanHalf = Math.tan(vFov / 2);
     const unitsPerPixel = (2 * Z_END * tanHalf) / window.innerHeight;
 
-    const sampled = sampleQuote(unitsPerPixel);
-    if (!sampled) { bail(); return; }
-    const targets = sampled.targets;
-    const N = targets.length / 3;
-
-    let tMinX = Infinity, tMaxX = -Infinity, tMinY = Infinity, tMaxY = -Infinity;
-    for (let i = 0; i < N; i++) {
-      const x = targets[i*3], y = targets[i*3+1];
-      if (x < tMinX) tMinX = x; if (x > tMaxX) tMaxX = x;
-      if (y < tMinY) tMinY = y; if (y > tMaxY) tMaxY = y;
-    }
-    const halfW = (tMaxX - tMinX) / 2, halfH = (tMaxY - tMinY) / 2;
-    const cx = sampled.offX;
-
+    const cx = 0;
     const viewH  = 2 * Z_END * tanHalf;
     const viewW  = viewH * (window.innerWidth / window.innerHeight);
     /* The waist sits exactly on the horizon: upper chamber in the sky,
-       lower chamber in the sea. Sky is the narrower band. */
+       lower chamber in the sea. Sky is the narrower band. These are fixed
+       fractions of the viewport, so the vessel is the same shape whatever
+       the quote happens to say. The quote is fitted to the glass further
+       down instead of the other way round. */
     const HORIZON_Y = viewH * 0.19;
     const neckY  = HORIZON_Y;
-    const botY   = Math.max(tMinY - (halfH * 1.4 + 8), -viewH * 0.44);
+    const botY   = -viewH * 0.40;
     const topY   = Math.min(neckY + (neckY - botY) * 0.55, viewH * 0.46);
-    const wallW  = Math.min(Math.max(halfW * 2.8, 20), viewW * 0.34);
+    const wallW  = Math.min(Math.max(viewW * 0.145, 20), viewW * 0.34);
     const neckHW = wallW * 0.052;
     const span   = Math.max(1e-3, topY - botY);
 
@@ -1320,6 +1233,112 @@ if (document.readyState === 'complete') {
         e = a + (1 - a) * (1 - (1 - q) * (1 - q));
       }
       return neckHW + (wallW - neckHW) * e;
+    }
+
+    /* ── Seat the quote inside the glass ──
+       The vessel is narrow where the screen centre falls, so the quote is
+       slid down into the wide part of the lower bulb until every line
+       clears the walls. Measured per line against the real rendered text,
+       so it holds for any viewport, font fallback or wrap. */
+    /* Order the lines are released in: lowest on screen first, so the text
+       surfaces bottom-up the way the mound does. Filled in by seatQuote
+       from the measured positions rather than assumed, so it stays right
+       if the quote is ever re-worded or re-ordered. */
+    let revealOrder = [0, 1, 2];
+
+    (function seatQuote() {
+      const quoteEl = document.querySelector('.loader-quote');
+      const lineEls = Array.from(document.querySelectorAll('.loader-quote .line'));
+      if (!quoteEl || !lineEls.length) return;
+
+      /* Measure the quote as it will finally look, not as it is parked.
+         Before reveal the words sit a line low and the tracking is wide,
+         so measuring the live state would both misplace and over-widen it.
+         The lines are flipped to their settled state with transitions
+         suppressed, measured, and flipped back inside this one task, so
+         the browser never paints the intermediate state. */
+      quoteEl.classList.add('measuring');
+      lineEls.forEach(el => el.classList.add('visible'));
+
+      /* Width comes from a Range, which gives the real drawn text box
+         rather than the full-width block the line sits in, so a short line
+         is not treated as page-wide. Vertical position comes from the
+         .line-wrap parent, which is never transformed. */
+      const lines = lineEls.map(el => {
+        const rng = document.createRange();
+        rng.selectNodeContents(el);
+        const r = rng.getBoundingClientRect();
+        const wrap = (el.parentNode && el.parentNode.getBoundingClientRect)
+          ? el.parentNode.getBoundingClientRect()
+          : el.getBoundingClientRect();
+        return {
+          width: r.width > 1 ? r.width : wrap.width,
+          midY:  (wrap.top + wrap.bottom) / 2
+        };
+      });
+      const block = quoteEl.getBoundingClientRect();
+      const CLEAR_PX = 16;   /* breathing room between text and glass wall */
+      const EDGE_PX  = 20;   /* keep the block off the bottom of the screen */
+
+      /* Clearance, in px, of the tightest line if the block is nudged
+         down by d. Positive means everything fits. */
+      function worstClearance(d) {
+        let worst = Infinity;
+        for (const ln of lines) {
+          const worldY = -((ln.midY + d) - window.innerHeight / 2) * unitsPerPixel;
+          if (worldY < botY || worldY > neckY) return -Infinity;
+          const s = Math.min(1, Math.max(0, (neckY - worldY) / Math.max(1e-3, neckY - botY)));
+          const glassHalfPx = profileW(s) / unitsPerPixel;
+          worst = Math.min(worst, glassHalfPx - (ln.width / 2 + CLEAR_PX));
+        }
+        return worst;
+      }
+
+      const maxD = Math.max(0, window.innerHeight - EDGE_PX - block.bottom);
+      let bestD = 0, bestC = worstClearance(0);
+      for (let d = 0; d <= maxD; d += 2) {
+        const c = worstClearance(d);
+        if (c >= 0) { bestD = d; bestC = c; break; }   /* first offset that fits */
+        if (c > bestC) { bestC = c; bestD = d; }       /* else the roomiest */
+      }
+      if (bestD > 0) quoteEl.style.transform = 'translateY(' + Math.round(bestD) + 'px)';
+
+      /* Lowest line first. midY is a screen coordinate, so the largest
+         value is the line nearest the bottom of the glass, which is the
+         one the rising sand would reach first. */
+      revealOrder = lines
+        .map((ln, i) => i)
+        .sort((a, b) => lines[b].midY - lines[a].midY);
+
+      /* Back to the parked state. The forced reflow commits it while
+         transitions are still suppressed, so removing .measuring cannot
+         start an animation from the measured pose. */
+      lineEls.forEach(el => el.classList.remove('visible'));
+      void quoteEl.offsetHeight;
+      quoteEl.classList.remove('measuring');
+    })();
+
+    /* ── Natural sand pile: grains build a cone-shaped mound on the floor
+       of the lower bulb, wide at the base where the glass is widest and
+       tapering toward the neck. No text is sampled or traced. ── */
+    const N = 8000;
+    const pileTopY = botY + (neckY - botY) * 0.34;
+    const PILE_H   = pileTopY - botY;
+    const PILE_R0  = wallW * 0.86;
+    const targets  = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const j = i * 3;
+      /* Bias toward the base: density falls off toward the apex the way a
+         cone's cross-sectional area does, so the mound reads as solid. */
+      const xh = 1 - Math.cbrt(1 - Math.random());
+      const y  = botY + xh * PILE_H;
+      const s  = Math.min(1, Math.max(0, (neckY - y) / Math.max(1e-3, neckY - botY)));
+      const rmax = Math.min(PILE_R0 * (1 - xh), profileW(s) * 0.92);
+      const a  = Math.random() * Math.PI * 2;
+      const rr = Math.sqrt(Math.random()) * Math.max(rmax, 0.001);
+      targets[j]   = cx + Math.cos(a) * rr;
+      targets[j+1] = y;
+      targets[j+2] = (Math.random() - 0.5) * 3.0;
     }
 
     const lp = [], lc = [], lbase = [], lxs = [];
@@ -1403,12 +1422,44 @@ if (document.readyState === 'complete') {
     const delay = new Float32Array(N);
     const resX = new Float32Array(N), resY = new Float32Array(N);
     const spread = new Float32Array(N), zJit = new Float32Array(N);
+    /* Per-grain motion character. Without these every grain shares one
+       fall time and one acceleration curve, which is what makes the
+       stream read as a single moving sheet rather than as grains. */
+    const fallK = new Float32Array(N);   /* fall-duration multiplier */
+    const accel = new Float32Array(N);   /* vertical easing exponent  */
+    const swayA = new Float32Array(N);   /* lateral drift amplitude   */
+    const swayF = new Float32Array(N);   /* drift frequency           */
+    const swayP = new Float32Array(N);   /* drift phase               */
+    /* Where the grain first touches the heap, before it rolls to rest. */
+    const impX = new Float32Array(N), impY = new Float32Array(N);
+    const bounce = new Float32Array(N);
+
     const SPAN_D = 0.70, FALL = 0.26;
+    const ROLL = 0.075;                  /* settle+roll, in pour-fraction */
     for (let rank = 0; rank < N; rank++) {
       const i = order[rank];
-      delay[i] = (rank / N) * SPAN_D + Math.random() * 0.04;
       spread[i] = (Math.random() - 0.5) * neckHW * 0.85;
       zJit[i] = (Math.random() - 0.5) * 5;
+      fallK[i] = 0.84 + Math.random() * 0.40;
+      accel[i] = 1.72 + Math.random() * 0.62;
+      swayA[i] = (0.35 + Math.random() * 1.05) * neckHW;
+      swayF[i] = 3.4 + Math.random() * 4.6;
+      swayP[i] = Math.random() * Math.PI * 2;
+      bounce[i] = (0.35 + Math.random() * 0.9) * neckHW;
+
+      /* The grain lands short of its resting place, up the cone's slope
+         toward the apex, then rolls down and outward into position. */
+      const tx = targets[i*3], ty = targets[i*3+1];
+      let dx = cx - tx, dy = pileTopY - ty;
+      const dl = Math.hypot(dx, dy) || 1;
+      const roll = (0.10 + Math.random() * 0.30) * PILE_R0 * 0.5;
+      impX[i] = tx + (dx / dl) * roll;
+      impY[i] = ty + (dy / dl) * roll;
+
+      /* Held back so every grain still finishes its fall, bounce and roll
+         inside the pour, otherwise the settle phase would snap it. */
+      const need = FALL * fallK[i] + ROLL + 0.006;
+      delay[i] = Math.min((rank / N) * SPAN_D + Math.random() * 0.04, 1 - need);
     }
 
     const dOrder = new Uint32Array(N);
@@ -1447,15 +1498,46 @@ if (document.readyState === 'complete') {
     }
     const colBase = Float32Array.from(col);
 
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(N * 3), 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    const mat = new THREE.PointsMaterial({
-      size: unitsPerPixel * 2.15, map: SPRITE, vertexColors: true,
-      sizeAttenuation: true, transparent: true, opacity: 0,
-      depthWrite: false, blending: THREE.AdditiveBlending
-    });
-    scene.add(new THREE.Points(geo, mat));
+    /* ── Grain sizes ──
+       PointsMaterial has one size for the whole draw, so the grains are
+       split into three size bands. All three bands are views onto the SAME
+       position and colour arrays via subarray(), so the motion code still
+       writes one flat buffer and knows nothing about the split. Grain
+       index is already unrelated to where a grain sits or when it falls,
+       so slicing by index is effectively a random partition. */
+    const posArr = new Float32Array(N * 3);
+    const SIZE_BANDS = [
+      { upTo: 0.42, scale: 0.68 },
+      { upTo: 0.83, scale: 1.06 },
+      { upTo: 1.00, scale: 1.62 }
+    ];
+    const grainMats = [];
+    const grainGeos = [];
+    let bandStart = 0;
+    for (const band of SIZE_BANDS) {
+      const bandEnd = Math.round(band.upTo * N);
+      const count = bandEnd - bandStart;
+      if (count <= 0) { bandStart = bandEnd; continue; }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(
+        posArr.subarray(bandStart * 3, bandEnd * 3), 3));
+      g.setAttribute('color', new THREE.BufferAttribute(
+        col.subarray(bandStart * 3, bandEnd * 3), 3));
+      const m = new THREE.PointsMaterial({
+        size: unitsPerPixel * 2.15 * band.scale, map: SPRITE, vertexColors: true,
+        sizeAttenuation: true, transparent: true, opacity: 0,
+        depthWrite: false, blending: THREE.AdditiveBlending
+      });
+      scene.add(new THREE.Points(g, m));
+      grainMats.push(m);
+      grainGeos.push(g);
+      bandStart = bandEnd;
+    }
+    /* Stand-ins so the rest of the code keeps treating the grains as one
+       object: one buffer to write, one opacity to set. */
+    const geo = { attributes: { position: { array: posArr,
+      set needsUpdate(v) { for (const g of grainGeos) g.attributes.position.needsUpdate = v; } } } };
+    const mat = { set opacity(v) { for (const m of grainMats) m.opacity = v; } };
 
     /* ── Stragglers: a thin trickle that outlasts the pour ── */
     const SG = 150;
@@ -1537,8 +1619,8 @@ if (document.readyState === 'complete') {
         p[j+1] = y;
         p[j+2] = bkZ[i];
         /* Full brightness up in the charge, gone by the time it reaches
-           the text so it never muddies the words. */
-        const f = Math.min(1, Math.max(0, (y - tMaxY) / Math.max(1e-3, neckY - tMaxY)));
+           the top of the pile so it never muddies the mound. */
+        const f = Math.min(1, Math.max(0, (y - pileTopY) / Math.max(1e-3, neckY - pileTopY)));
         const b = bkLm[i] * f;
         k[j] = 1.00 * b; k[j+1] = 0.78 * b; k[j+2] = 0.26 * b;
       }
@@ -1753,42 +1835,70 @@ if (document.readyState === 'complete') {
     }
     window.addEventListener('resize', onResize);
 
-    const T_POUR = 2700, T_SETTLE = 450, T_MERGE = 700, T_TAIL = 650;
-    const TOTAL = T_POUR + T_SETTLE + T_MERGE + T_TAIL;
-    const easeOut = t => 1 - Math.pow(1 - t, 3);
-    const easeInOut = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3) / 2;
+    /* T_HOLD is a dead beat at the end: the scene has already faded out,
+       so the quote sits on its own before the page takes over. Kept as its
+       own phase rather than a longer T_TAIL so the fade-out speed of the
+       sand and water is untouched. */
+    const T_POUR = 2700, T_SETTLE = 450, T_MERGE = 700, T_TAIL = 650, T_HOLD = 1000;
+    const T_FADED = T_POUR + T_SETTLE + T_MERGE + T_TAIL;
+    const TOTAL = T_FADED + T_HOLD;
     const WARM = [0.96, 0.82, 0.56];
 
     const t0 = performance.now();
-    let done = false, merged = false;
+    let done = false;
+    /* Heap-height fractions at which each line is released, applied in
+       revealOrder (bottom line first). Held back deliberately so the sand
+       is well underway before any text shows. */
+    const LINE_AT = [0.40, 0.62, 0.84];
+    let nextLine = 0;
 
 
     function grainAt(i, raw, p) {
       const j = i * 3, d = delay[i];
+
+      /* Still up in the charge, working its way toward the neck. */
       if (raw < d) {
         const pre = d > 0 ? raw / d : 1;
         const e = pre * pre;
         p[j]   = resX[i] + (cx + spread[i] - resX[i]) * e;
         p[j+1] = resY[i] + (neckY - resY[i]) * e;
         p[j+2] = zJit[i];
-      } else {
-        const u = (raw - d) / FALL;
-        const uc = u >= 1 ? 1 : u;
-        /* Vertical drop accelerates; lateral drift is held back hard so the
-           stream stays a narrow column and only spreads onto the pile. */
-        const xu = uc * uc * uc * Math.sqrt(uc);
-        const x0 = cx + spread[i];
-        p[j]   = x0      + (targets[j]   - x0)      * xu;
-        p[j+1] = neckY   + (targets[j+1] - neckY)   * (uc * uc);
-        p[j+2] = zJit[i] + (targets[j+2] - zJit[i]) * xu;
+        return;
       }
+
+      const fall = FALL * fallK[i];
+      const u = (raw - d) / fall;
+
+      if (u < 1) {
+        /* Falling. Vertical drop accelerates on this grain's own curve;
+           lateral drift is held back hard so the stream stays a narrow
+           column and only opens out onto the heap. The sway is enveloped
+           by sin(pi*u), which is zero at both ends: a grain leaves the
+           throat exactly on the stream axis and still arrives exactly on
+           its landing point, but is free to wander in between. */
+        const xu = u * u * u * Math.sqrt(u);
+        const x0 = cx + spread[i];
+        const drift = Math.sin(u * swayF[i] + swayP[i]) * swayA[i] * Math.sin(Math.PI * u);
+        p[j]   = x0      + (impX[i]      - x0)      * xu + drift;
+        p[j+1] = neckY   + (impY[i]      - neckY)   * Math.pow(u, accel[i]);
+        p[j+2] = zJit[i] + (targets[j+2] - zJit[i]) * xu;
+        return;
+      }
+
+      /* Landed. It hit short of its resting place, so it now rolls down
+         and outward into position while a damped bounce plays out. Both
+         are gone by the end of ROLL, leaving it exactly on target. */
+      const v  = Math.min(1, (raw - d - fall) / ROLL);
+      const ev = 1 - Math.pow(1 - v, 3);
+      const hop = Math.sin(v * Math.PI * 2.0) * (1 - v) * (1 - v) * bounce[i];
+      p[j]   = impX[i] + (targets[j]   - impX[i]) * ev;
+      p[j+1] = impY[i] + (targets[j+1] - impY[i]) * ev + hop;
+      p[j+2] = targets[j+2];
     }
 
     function frame(now) {
       const t = now - t0;
       const p = geo.attributes.position.array;
-      const zp = Math.min(1, t / (T_POUR + T_SETTLE));
-      camera.position.z = Z_END + (Z_START - Z_END) * (1 - easeInOut(zp));
 
       updateGlint(t);
       updateStragglers(t);
@@ -1800,19 +1910,14 @@ if (document.readyState === 'complete') {
         updateBulk(raw);
         bkMat.opacity = Math.min(0.9, t / 450);
 
-        /* The fill line rises with the landings. Real type is revealed
-           below it, and each grain fades as the line passes its resting
-           place, so the sand becomes the letters instead of being swapped
-           for them. */
-        const span = Math.max(1e-3, tMaxY - tMinY);
-        const fillFrac = Math.min(1, Math.max(0, (raw - 0.20) / 0.76));
-        const fillY = tMinY + span * fillFrac;
-        const band = span * 0.16;
-        if (window.__setQuoteFill) window.__setQuoteFill(fillFrac, t);
-        /* The sand is the slab now, so grains keep their colour once they
-           arrive. Nothing fades: the quote is carved into this surface,
-           not made of it. */
-        void band;
+        /* Each line is released as the heap actually reaches it. Grains
+           are delayed in order of resting height, so the fraction of the
+           pour that has landed is also how far up the mound has built. */
+        const heap = Math.min(1, Math.max(0, (raw - FALL) / SPAN_D));
+        while (nextLine < LINE_AT.length && heap >= LINE_AT[nextLine]) {
+          if (window.__revealQuoteLine) window.__revealQuoteLine(revealOrder[nextLine]);
+          nextLine++;
+        }
         mat.opacity = Math.min(0.95, t / 450);
         lmat.opacity = Math.min(1.0, t / 900);
         /* Neck flares while sand is actually squeezing through. */
@@ -1822,6 +1927,12 @@ if (document.readyState === 'complete') {
         setOcean(Math.min(1, t / 1500));
 
       } else if (t < T_POUR + T_SETTLE) {
+        /* The pour is over, so anything the heap thresholds did not reach
+           is released now rather than being left hidden. */
+        while (nextLine < LINE_AT.length) {
+          if (window.__revealQuoteLine) window.__revealQuoteLine(revealOrder[nextLine]);
+          nextLine++;
+        }
         const u = (t - T_POUR) / T_SETTLE;
         const jig = Math.sin(u * Math.PI * 4) * (1 - u) * 0.35;
         for (let i = 0; i < N; i++) {
@@ -1830,7 +1941,6 @@ if (document.readyState === 'complete') {
           p[j+1] = targets[j+1] + jig * ((i % 5) - 2) * 0.22;
           p[j+2] = targets[j+2];
         }
-        if (window.__setQuoteFill) window.__setQuoteFill(1, t);
         mat.opacity = 0.95;
         updateBulk(1);
         bkMat.opacity = 0.9 * (1 - u);
@@ -1840,7 +1950,6 @@ if (document.readyState === 'complete') {
         setOcean(1);
 
       } else if (t < T_POUR + T_SETTLE + T_MERGE) {
-        if (!merged) { merged = true; if (window.__setQuoteFill) window.__setQuoteFill(1, t); }
         const u = (t - T_POUR - T_SETTLE) / T_MERGE;
         for (let i = 0; i < N * 3; i++) p[i] = targets[i];
         mat.opacity = 0.95;
@@ -1850,10 +1959,15 @@ if (document.readyState === 'complete') {
         sgMat.opacity = 0.26 * (1 - u);
         setOcean(1 - u * 0.35);
 
-      } else if (t < TOTAL) {
+      } else if (t < T_FADED) {
         const u = (t - T_POUR - T_SETTLE - T_MERGE) / T_TAIL;
         mat.opacity = 0.95 * (1 - u); lmat.opacity = 0; ngMat.opacity = 0; sgMat.opacity = 0; bkMat.opacity = 0;
         setOcean(0.65 * (1 - u));
+
+      } else if (t < TOTAL) {
+        /* Hold. The scene is already gone; only the quote is left. */
+        mat.opacity = 0; lmat.opacity = 0; ngMat.opacity = 0; sgMat.opacity = 0; bkMat.opacity = 0;
+        setOcean(0);
 
       } else {
         if (!done) { done = true; window.removeEventListener('resize', onResize); finish(); }
