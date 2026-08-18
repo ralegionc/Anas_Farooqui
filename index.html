@@ -46,6 +46,18 @@
   .tile:not(.vid-playing):hover .tile-bg { opacity:0.66; transform:scale(1); }
 
   /* canvas animation layer - hidden at rest, shown on hover only */
+  /* Opt-in video background, one tile at a time via data-video.
+     It is a child of .tile-bg rather than a sibling, which means the hover
+     spring that already drives that layer's opacity and scale carries the
+     video with it and the driver needs no changes at all. The still image
+     on .tile-bg stays underneath as the poster, so there is never a blank
+     rectangle while the first frame decodes. */
+  .tile-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block; }
+  /* Moving footage is far busier behind text than a still is, so a video
+     tile gets a scrim under its bottom block to hold the title legible. */
+  .tile.has-video .tile-inner::after { content:''; position:absolute; inset:auto 0 0 0; height:62%; z-index:-1; background:linear-gradient(to top, rgba(10,10,12,0.82), rgba(10,10,12,0.45) 42%, transparent); pointer-events:none; }
+  .tile.has-video .tile-inner { isolation:isolate; }
+
   .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
   .tile:hover .tile-canvas { opacity:1; }
   .tile:hover .tile-bg { opacity:0.66; transform:scale(1); }
@@ -719,9 +731,8 @@
   </div>
 
   <!-- 03 Neural ODE -->
-  <div class="tile tile--sm" data-project="2" data-anim="predprey">
+  <div class="tile tile--sm" data-project="2" data-video="assets/neuralode-video.mp4">
     <div class="tile-bg" id="odeTileBg"></div>
-    <canvas class="tile-canvas"></canvas>
     <div class="tile-overlay"></div><div class="tile-wash"></div>
     <div class="tile-play-pip"><span class="rec"></span>PREVIEW</div>
     <div class="tile-inner">
@@ -1191,6 +1202,66 @@ if (document.readyState === 'complete') {
 } else {
   window.addEventListener('load', () => requestAnimationFrame(initTiles));
 }
+
+/* ════════════════════════════════════════
+   TILE VIDEO BACKGROUNDS
+   Any tile carrying data-video gets that file playing behind its text.
+   Currently opted in on one tile only, to see whether it is worth the
+   bytes before it goes anywhere near the rest.
+
+   Mounted inside .tile-bg on purpose: the hover spring already animates
+   that layer's opacity and scale, so the video picks both up for free, and
+   the still image behind it acts as the poster.
+════════════════════════════════════════ */
+(function initTileVideo() {
+  const ENABLED = true;
+  if (!ENABLED) return;
+
+  const reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* Someone on a metered connection should not be made to fetch video for
+     decoration they did not ask for. The still image is already there. */
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  const saveData = !!(conn && conn.saveData);
+  if (reduced || saveData) return;
+
+  const vids = [];
+  document.querySelectorAll('.tile[data-video]').forEach(tile => {
+    const bg = tile.querySelector('.tile-bg');
+    const src = tile.getAttribute('data-video');
+    if (!bg || !src) return;
+
+    const v = document.createElement('video');
+    v.className = 'tile-video';
+    v.muted = true;            /* set before autoplay, or the play() is refused */
+    v.defaultMuted = true;
+    v.loop = true;
+    v.playsInline = true;
+    v.setAttribute('muted', '');
+    v.setAttribute('playsinline', '');
+    v.preload = 'auto';
+    v.src = src;
+    /* Held back until it has a frame, so the poster underneath is never
+       replaced by a black rectangle mid-decode. */
+    v.style.opacity = '0';
+    v.style.transition = 'opacity 0.45s ease';
+    v.addEventListener('playing', () => { v.style.opacity = '1'; }, { once: true });
+    /* A file that cannot load must leave the still image showing rather
+       than a broken element. */
+    v.addEventListener('error', () => { v.remove(); tile.classList.remove('has-video'); });
+
+    bg.appendChild(v);
+    tile.classList.add('has-video');
+    vids.push(v);
+    v.play().catch(() => {});
+  });
+  if (!vids.length) return;
+
+  /* Nothing decodes while the tab is in the background. */
+  document.addEventListener('visibilitychange', () => {
+    vids.forEach(v => { if (document.hidden) v.pause(); else v.play().catch(() => {}); });
+  });
+})();
 
 /* ════════════════════════════════════════
    TILE HOVER — PER-FRAME MOTION
