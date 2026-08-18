@@ -104,11 +104,46 @@
   .modal-backdrop.open { background:rgba(0,0,0,0.72); pointer-events:auto; }
   .modal { position:fixed; top:52px; right:0; bottom:0; z-index:700; width:min(600px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; will-change:transform; }
   .modal.open { transform:translateX(0); }
-  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.715) saturate(0.8); }
+  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.715) saturate(0.8); opacity:0; transition:opacity 0.35s ease; }
   .modal-img-wrap { position:relative; flex-shrink:0; height:240px; overflow:hidden; }
-  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.792) saturate(0.95); }
+  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.792) saturate(0.95); opacity:0; transition:opacity 0.45s ease; }
   .modal-img-wrap.has-video .modal-video { display:block; }
-  .modal-img-wrap.has-video .modal-img { opacity:0; }
+  /* Nothing is shown until it can actually be shown. The still doubles as
+     the poster and stays up until the video has produced a real frame —
+     hiding it the moment a video was merely assigned is what used to flash
+     a black rectangle while the first frame decoded. */
+  .modal-img-wrap.img-ready .modal-img { opacity:1; }
+  .modal-img-wrap.vid-ready .modal-video { opacity:1; }
+  .modal-img-wrap.vid-ready .modal-img { opacity:0; }
+  /* While the cover is still in flight out of the tile the real one is held
+     back, so there are never two of it. Has to sit after the ready rules:
+     same specificity, later wins. */
+  .modal-img-wrap.flying .modal-img,
+  .modal-img-wrap.flying .modal-video { opacity:0; }
+
+  /* The panel's contents arrive in sequence instead of as one finished
+     slab. The resting state keeps a fast fade so that closing does not
+     leave text hanging inside a panel that is already on its way out. */
+  .modal-body > * { opacity:0; transform:translateY(10px); transition:opacity 0.18s ease, transform 0.18s ease; }
+  .modal.open .modal-body > * { opacity:1; transform:none; transition:opacity 0.42s ease, transform 0.42s cubic-bezier(0.16,1,0.3,1); }
+  .modal.open .modal-body > *:nth-child(1) { transition-delay:0.13s; }
+  .modal.open .modal-body > *:nth-child(2) { transition-delay:0.18s; }
+  .modal.open .modal-body > *:nth-child(3) { transition-delay:0.23s; }
+  .modal.open .modal-body > *:nth-child(4) { transition-delay:0.28s; }
+  .modal.open .modal-body > *:nth-child(5) { transition-delay:0.33s; }
+  .modal.open .modal-body > *:nth-child(6) { transition-delay:0.38s; }
+
+  /* Morph open. The cover flies out of the tile, so the panel itself must
+     not also fly across the screen — two large motions crossing each other
+     reads as chaos. It settles in place and lets the flight be the only
+     thing travelling. Only applied when the flight actually runs; without
+     it the panel keeps its original slide. */
+  .modal.morph { transform:translateX(0) scale(0.988); opacity:0; transition:opacity 0.28s ease, transform 0.42s cubic-bezier(0.16,1,0.3,1); }
+  .modal.morph.open { transform:translateX(0) scale(1); opacity:1; }
+
+  /* The cover in flight. Matches .modal-img's grade so the hand-off at the
+     end of the flight is not also a colour change. */
+  .cover-fly { position:fixed; z-index:750; background-size:cover; background-position:center; pointer-events:none; will-change:opacity; filter:brightness(0.715) saturate(0.8); }
   .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
   .modal-body { flex:1; overflow-y:auto; padding:32px 40px 48px; scrollbar-width:thin; scrollbar-color:rgba(108,71,255,0.3) transparent; }
   .modal-body::-webkit-scrollbar { width:4px; }
@@ -3175,27 +3210,154 @@ const modal=document.getElementById('modal'), backdrop=document.getElementById('
 const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
 const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
 
-/* Set modal cover: video if the project has one, otherwise a still image */
+/* -- Modal cover --
+   Video if the project has one, otherwise a still. Neither is revealed
+   before it is ready: the image fades in once it has decoded, and the video
+   only takes over from the still once it has actually produced a frame. The
+   old version assigned src and opened regardless, so an uncached asset
+   snapped into place after the panel had already arrived.
+
+   Every call carries a token. A slow image belonging to the project you
+   just navigated away from must not fade itself in over the one you are
+   now looking at. */
+let coverToken = 0;
 function setModalCover(p) {
   const wrap  = document.querySelector('.modal-img-wrap');
   const img   = document.getElementById('modalImg');
   const video = document.getElementById('modalVideo');
+  const mine  = ++coverToken;
+
+  wrap.classList.remove('img-ready', 'vid-ready', 'has-video');
 
   video.pause();
   video.removeAttribute('src');
   video.load();
 
-  img.src = p.img;
   img.alt = p.title;
+  const ready = () => { if (mine === coverToken) wrap.classList.add('img-ready'); };
+  /* A cover that fails to load still has to un-hide, or the panel opens on
+     a permanently blank rectangle. */
+  img.onload = ready;
+  img.onerror = ready;
+  img.src = p.img;
+  /* An already-cached image never fires load, because it is complete by the
+     time the assignment returns. */
+  if (img.complete && img.naturalWidth) ready();
 
   if (p.video) {
     wrap.classList.add('has-video');
     video.poster = p.img;
     video.src = p.video;
+    const onPlaying = () => {
+      video.removeEventListener('playing', onPlaying);
+      if (mine === coverToken) wrap.classList.add('vid-ready');
+    };
+    video.addEventListener('playing', onPlaying);
     video.play().catch(() => {});
-  } else {
-    wrap.classList.remove('has-video');
   }
+}
+
+/* -- Opening --
+   The clicked tile's cover is cloned and flown into the panel's cover slot,
+   so the panel reads as the thing you just clicked opening up rather than
+   an unrelated sheet arriving from off-screen. */
+let morphReset = 0;
+
+/* Where the cover will end up. Measured rather than derived: the panel's
+   geometry changes at the narrow breakpoint, and a rect hard-coded here
+   would rot the first time that CSS moved. The transition is suppressed
+   around the read so what comes back is the final position and not one
+   frame of an animation already in progress. */
+function coverTargetRect() {
+  const wrap = document.querySelector('.modal-img-wrap');
+  const prev = modal.style.transition;
+  const hadMorph = modal.classList.contains('morph');
+  const hadOpen  = modal.classList.contains('open');
+  modal.style.transition = 'none';
+  modal.classList.add('morph', 'open');
+  const r = wrap.getBoundingClientRect();
+  if (!hadOpen)  modal.classList.remove('open');
+  if (!hadMorph) modal.classList.remove('morph');
+  void modal.offsetWidth;
+  modal.style.transition = prev;
+  return r;
+}
+
+function flyCover(srcEl) {
+  const bg = getComputedStyle(srcEl).backgroundImage;
+  if (!bg || bg === 'none') return false;
+  const from = srcEl.getBoundingClientRect();
+  if (from.width < 4 || from.height < 4) return false;
+  const to = coverTargetRect();
+  if (to.width < 4 || to.height < 4) return false;
+
+  const wrap = document.querySelector('.modal-img-wrap');
+  wrap.classList.add('flying');
+
+  const fly = document.createElement('div');
+  fly.className = 'cover-fly';
+  fly.style.backgroundImage = bg;
+  fly.style.left   = from.left + 'px';
+  fly.style.top    = from.top + 'px';
+  fly.style.width  = from.width + 'px';
+  fly.style.height = from.height + 'px';
+  document.body.appendChild(fly);
+
+  /* The box is animated, not transform-scaled. A tile is portrait and the
+     cover slot is wide -- here 312x423 into 599x240 -- so scaling would
+     stretch the photograph by nearly 3.4x in one axis against the other and
+     read as distortion rather than as a morph. Animating width and height
+     instead lets background-size:cover re-crop at every frame, so the image
+     stays undistorted and arrives cropped exactly the way the modal's own
+     object-fit:cover image will be. It costs paint on one fixed-position
+     element with no children, which is affordable for half a second. */
+  const box = t => ({ left: t.left + 'px', top: t.top + 'px',
+                      width: t.width + 'px', height: t.height + 'px' });
+  const a0 = box(from), a1 = box(to);
+  const anim = fly.animate([
+    Object.assign({}, a0, { opacity: 1, offset: 0 }),
+    Object.assign({}, a1, { opacity: 1, offset: 0.74 }),
+    Object.assign({}, a1, { opacity: 0, offset: 1 })
+  ], { duration: 540, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
+
+  /* The real cover is uncovered just before the clone starts to fade, so
+     the two cross over rather than leaving a gap where neither is drawn. */
+  const unveil = setTimeout(() => wrap.classList.remove('flying'), 400);
+  const done = () => {
+    clearTimeout(unveil);
+    fly.remove();
+    wrap.classList.remove('flying');
+  };
+  anim.finished.then(done, done);
+  /* An interrupted animation must never leave the cover stuck behind a
+     .flying that nobody removes. */
+  setTimeout(done, 1100);
+  return true;
+}
+
+/* Shared by both ways into the modal: the project tiles, and the cards in
+   the all-projects grid. */
+function presentModal(srcEl) {
+  const reduced = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const canFly = !reduced && srcEl && typeof Element.prototype.animate === 'function';
+
+  clearTimeout(morphReset);
+  if (canFly && flyCover(srcEl)) {
+    modal.classList.add('morph');
+    /* A reflow between the two classes. Without it the browser folds them
+       into one style change and there is no start state to move from. */
+    void modal.offsetWidth;
+  } else {
+    modal.classList.remove('morph');
+  }
+  modal.classList.add('open');
+  backdrop.classList.add('open');
+  /* Otherwise a project opened after you scrolled through a long
+     description starts halfway down it -- and now that the body staggers
+     in, you would watch it do that from the wrong place. */
+  const body = document.querySelector('.modal-body');
+  if (body) body.scrollTop = 0;
 }
 
 function openModal(idx) {
@@ -3213,13 +3375,20 @@ function openModal(idx) {
   document.getElementById('modalDesc').textContent=p.desc;
   document.getElementById('modalChips').innerHTML=p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
   document.getElementById('modalLinks').innerHTML=`<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
-  modal.classList.add('open'); backdrop.classList.add('open');
+  presentModal(srcTile ? srcTile.querySelector('.tile-bg') : null);
 }
 function closeModal() {
   modal.classList.remove('open'); backdrop.classList.remove('open');
   const mv = document.getElementById('modalVideo');
   if (mv) { mv.pause(); mv.currentTime = 0; }
   document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
+  /* morph is only dropped once the panel has finished leaving. Removing it
+     while the close is still running would snap the panel back to its
+     off-screen resting transform mid-animation. */
+  if (modal.classList.contains('morph')) {
+    clearTimeout(morphReset);
+    morphReset = setTimeout(() => modal.classList.remove('morph'), 480);
+  }
 }
 document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click',()=>openModal(+t.dataset.project)));
 document.getElementById('modalClose').addEventListener('click',closeModal);
@@ -3289,8 +3458,7 @@ function buildApGrid() {
       document.getElementById('modalDesc').textContent = p.desc;
       document.getElementById('modalChips').innerHTML = p.chips.map(c=>`<span class="chip">${c}</span>`).join('');
       document.getElementById('modalLinks').innerHTML = `<a href="${p.github}" target="_blank" rel="noopener" class="modal-link modal-link--primary">${ghIcon} GitHub</a><a href="${p.medium}" target="_blank" rel="noopener" class="modal-link">${medIcon} Medium</a>`;
-      document.getElementById('modal').classList.add('open');
-      document.getElementById('backdrop').classList.add('open');
+      presentModal(card.querySelector('.ap-card-bg'));
     });
   });
 }
