@@ -73,6 +73,20 @@
   .tile:hover .tile-accent-bar { width:100%; }
 
   /* live pip */
+  /* The per-frame driver writes these properties as inline styles every
+     frame, so the stylesheet must stop competing for them. Only the
+     transitions are removed: the :hover rules stay, because inline styles
+     already outrank them, and they are what runs if the driver never
+     starts. The class is added by JS, so without it nothing here changes. */
+  .tiles-driven .tile-bg,
+  .tiles-driven .tile-overlay,
+  .tiles-driven .tile-canvas,
+  .tiles-driven .tile-wash,
+  .tiles-driven .tile-tag,
+  .tiles-driven .tile-desc,
+  .tiles-driven .tile-arrow,
+  .tiles-driven .tile-accent-bar { transition:none; }
+
   .tile-play-pip { position:absolute; top:10px; left:12px; z-index:5; display:flex; align-items:center; gap:5px; font-family:var(--mono); font-size:9px; letter-spacing:0.1em; color:rgba(255,255,255,0.5); opacity:0; transition:opacity 0.3s; }
   .tile-play-pip .rec { width:5px; height:5px; border-radius:50%; background:#ff4d4d; animation:recpulse 1s ease infinite; }
   @keyframes recpulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
@@ -1177,6 +1191,187 @@ if (document.readyState === 'complete') {
 } else {
   window.addEventListener('load', () => requestAnimationFrame(initTiles));
 }
+
+/* ════════════════════════════════════════
+   TILE HOVER — PER-FRAME MOTION
+   The tiles' hover states are driven by springs on one animation frame loop
+   instead of by CSS transitions.
+
+   The reason is interruption. A CSS transition has a fixed duration and has
+   to either run to completion or snap when the target changes, so sweeping
+   the pointer across the grid used to leave every tile playing out its full
+   0.55s fade whether or not you were still on it. A spring carries velocity:
+   change its target halfway and it turns around from wherever it actually
+   is, at whatever speed it actually had. Nothing ever jumps.
+
+   The stylesheet keeps its transitions and its :hover rules. They are only
+   suppressed while this driver is running, via .tiles-driven on <html>, so
+   switching ENABLED off — or landing on a device without hover, or asking
+   for reduced motion — falls straight back to the original CSS behaviour
+   with nothing missing.
+
+   The loop is not always running. It starts when a tile is hovered and
+   stops once every spring has settled, so at rest this costs nothing.
+════════════════════════════════════════ */
+(function initTileMotion() {
+  const ENABLED = true;
+  if (!ENABLED) return;
+
+  const canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
+  const reduced  = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  /* The narrow breakpoint already pins these properties with !important and
+     hides the preview canvas, so there is nothing here to drive. */
+  if (!canHover || reduced) return;
+
+  const tiles = Array.prototype.slice.call(document.querySelectorAll('.tile'));
+  if (!tiles.length) return;
+
+  /* Rest and hover values, mirroring the stylesheet. They are written out
+     here rather than read back from the CSSOM because :hover cannot be
+     forced for measurement. If they ever drift from the stylesheet the
+     result is slightly wrong end values, not breakage — and the CSS is
+     still the fallback whenever this driver does not run. */
+  const SPEC = {
+    normal: {
+      bg:      { o: [0.495, 0.66], s: [1.04, 1.00] },
+      overlay: { o: [0.30,  0.26] },
+      canvas:  { o: [0,     1   ] },
+      wash:    { o: [0,     1   ] },
+      tag:     { o: [0,     1   ], y: [-4, 0] },
+      desc:    { o: [0,     1   ], y: [ 6, 0] },
+      arrow:   { o: [0,     1   ], x: [-6, 0], y: [6, 0] },
+      bar:     { w: [0,   100  ] }
+    },
+    hero: {
+      bg:      { o: [0.33, 0.242], s: [1.04, 1.00] },
+      overlay: { o: [0.40, 0.35 ] },
+      canvas:  { o: [0.50, 0.70 ] }
+    }
+  };
+
+  /* Three springs per tile rather than one, so the original cascade
+     survives: the background is slow, the text and the wash are quick, the
+     accent bar sits between them and is allowed a little overshoot.
+     omega is the natural frequency in rad/s, zeta the damping ratio —
+     at 1.0 it settles without overshooting, below 1.0 it passes the target
+     and comes back. */
+  const GROUPS = {
+    slow: { omega:  9.0, zeta: 1.00 },
+    fast: { omega: 16.0, zeta: 0.90 },
+    bar:  { omega: 11.0, zeta: 0.82 }
+  };
+
+  /* Semi-implicit Euler on a fixed sub-step. The sub-step is what makes it
+     frame-rate independent and stops one long frame — a background tab, a
+     slow paint — from handing the integrator a step big enough to throw the
+     spring somewhere absurd. */
+  const SUB = 1 / 240;
+  function advance(s, target, dt, g) {
+    let t = Math.min(dt, 0.1);
+    const w = g.omega, z = g.zeta;
+    while (t > 0) {
+      const h = t > SUB ? SUB : t;
+      s.v += (-w * w * (s.p - target) - 2 * z * w * s.v) * h;
+      s.p += s.v * h;
+      t -= h;
+    }
+  }
+  const settled = (s, target) =>
+    Math.abs(s.p - target) < 0.0015 && Math.abs(s.v) < 0.0015;
+
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const px = n => n.toFixed(2) + 'px';
+
+  const items = tiles.map(el => {
+    const hero = el.classList.contains('tile--hero');
+    return {
+      el, hero,
+      spec: hero ? SPEC.hero : SPEC.normal,
+      target: 0,
+      s: { slow: { p: 0, v: 0 }, fast: { p: 0, v: 0 }, bar: { p: 0, v: 0 } },
+      bg:      el.querySelector('.tile-bg'),
+      overlay: el.querySelector('.tile-overlay'),
+      canvas:  el.querySelector('.tile-canvas'),
+      wash:    el.querySelector('.tile-wash'),
+      tag:     el.querySelector('.tile-tag'),
+      desc:    el.querySelector('.tile-desc'),
+      arrow:   el.querySelector('.tile-arrow'),
+      bar:     el.querySelector('.tile-accent-bar')
+    };
+  });
+
+  function paint(it) {
+    const sp = it.spec, slow = it.s.slow.p, fast = it.s.fast.p, bar = it.s.bar.p;
+    if (it.bg && sp.bg) {
+      it.bg.style.opacity = lerp(sp.bg.o[0], sp.bg.o[1], slow).toFixed(4);
+      it.bg.style.transform = 'scale(' + lerp(sp.bg.s[0], sp.bg.s[1], slow).toFixed(4) + ')';
+    }
+    if (it.overlay && sp.overlay)
+      it.overlay.style.opacity = lerp(sp.overlay.o[0], sp.overlay.o[1], slow).toFixed(4);
+    if (it.canvas && sp.canvas)
+      it.canvas.style.opacity = lerp(sp.canvas.o[0], sp.canvas.o[1], slow).toFixed(4);
+    if (it.wash && sp.wash)
+      it.wash.style.opacity = lerp(sp.wash.o[0], sp.wash.o[1], fast).toFixed(4);
+    if (it.tag && sp.tag) {
+      it.tag.style.opacity = lerp(sp.tag.o[0], sp.tag.o[1], fast).toFixed(4);
+      it.tag.style.transform = 'translateY(' + px(lerp(sp.tag.y[0], sp.tag.y[1], fast)) + ')';
+    }
+    if (it.desc && sp.desc) {
+      it.desc.style.opacity = lerp(sp.desc.o[0], sp.desc.o[1], fast).toFixed(4);
+      it.desc.style.transform = 'translateY(' + px(lerp(sp.desc.y[0], sp.desc.y[1], fast)) + ')';
+    }
+    if (it.arrow && sp.arrow) {
+      it.arrow.style.opacity = lerp(sp.arrow.o[0], sp.arrow.o[1], fast).toFixed(4);
+      it.arrow.style.transform = 'translate(' + px(lerp(sp.arrow.x[0], sp.arrow.x[1], fast))
+        + ',' + px(lerp(sp.arrow.y[0], sp.arrow.y[1], fast)) + ')';
+    }
+    if (it.bar && sp.bar)
+      it.bar.style.width = lerp(sp.bar.w[0], sp.bar.w[1], bar).toFixed(3) + '%';
+  }
+
+  let raf = null, prev = 0;
+  function frame(now) {
+    const dt = prev ? Math.min(0.1, (now - prev) / 1000) : 1 / 60;
+    prev = now;
+    let busy = false;
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i], t = it.target;
+      if (settled(it.s.slow, t) && settled(it.s.fast, t) && settled(it.s.bar, t)) continue;
+      advance(it.s.slow, t, dt, GROUPS.slow);
+      advance(it.s.fast, t, dt, GROUPS.fast);
+      advance(it.s.bar,  t, dt, GROUPS.bar);
+      paint(it);
+      busy = true;
+    }
+    if (busy) { raf = requestAnimationFrame(frame); return; }
+    /* Everything has arrived. Snap the last fraction of a pixel away, paint
+       once more so the resting state is exact, and stop the loop — at rest
+       this should cost nothing at all. */
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      it.s.slow.p = it.s.fast.p = it.s.bar.p = it.target;
+      it.s.slow.v = it.s.fast.v = it.s.bar.v = 0;
+      paint(it);
+    }
+    raf = null; prev = 0;
+  }
+  function kick() { if (!raf) { prev = 0; raf = requestAnimationFrame(frame); } }
+
+  document.documentElement.classList.add('tiles-driven');
+  items.forEach(it => {
+    paint(it);
+    it.el.addEventListener('pointerenter', e => {
+      if (e.pointerType === 'touch') return;
+      it.target = 1; kick();
+    });
+    it.el.addEventListener('pointerleave', () => { it.target = 0; kick(); });
+    /* A tile can lose the pointer without a leave: the modal opening over
+       it, or the window losing focus mid-hover. */
+    it.el.addEventListener('pointercancel', () => { it.target = 0; kick(); });
+  });
+  window.addEventListener('blur', () => { items.forEach(it => it.target = 0); kick(); });
+})();
 
 /* ════════════════════════════════════════
    LOADER + HOURGLASS INTRO
