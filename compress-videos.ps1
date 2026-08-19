@@ -73,4 +73,4 @@ if ($totalIn -gt 0) {
 if ($failed -gt 0) { Write-Host ("{0} file(s) failed." -f $failed) -ForegroundColor Red }
 Write-Host ""
 Write-Host "If any clip looks soft, change -crf 20 to -crf 18 and re-run."
-Write-Host "Then tell Claude it is done and the five -bg.mp4 files get wired in."
+Write-Host "Then point the five VID constants in index.html at the new -bg.mp4 files."
