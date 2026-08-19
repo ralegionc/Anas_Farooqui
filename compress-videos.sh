@@ -66,4 +66,4 @@ awk -v a="$total_in" -v b="$total_out" 'BEGIN{printf "TOTAL  %.1f MB -> %.2f MB\
 [ "$failed" -gt 0 ] && echo "$failed file(s) failed."
 echo
 echo "If any clip still looks soft, drop -crf to 18 and re-run."
-echo "Then tell Claude it is done and the five -bg.mp4 files get wired in."
+echo "Then point the five VID constants in index.html at the new -bg.mp4 files."
