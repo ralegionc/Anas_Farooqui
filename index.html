@@ -127,8 +127,20 @@
   /* Full-panel video background, opted into per project with bgVideo.
      The panel is portrait and the footage is landscape, so object-fit:cover
      crops it hard -- that is the trade being tested here. */
-  .modal-bg-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0; opacity:0; transition:opacity 0.5s ease; pointer-events:none; }
-  .modal.full-video .modal-bg-video.ready { opacity:1; }
+  /* Two elements, because the scale-in and the parallax both want
+     transform and would overwrite each other on one. The wrapper does the
+     settle; the video inside it does the drift. */
+  .modal-bg-wrap { position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; transform:scale(1.06); transition:transform 1.2s cubic-bezier(0.16,1,0.3,1); }
+  .modal.full-video .modal-bg-wrap.ready { transform:scale(1); }
+  /* Taller than the frame so the parallax has somewhere to travel without
+     ever exposing an edge. */
+  .modal-bg-video { position:absolute; left:0; width:100%; top:-6%; height:112%; object-fit:cover; opacity:0; transition:opacity 0.5s ease; will-change:transform; }
+  .modal.full-video .modal-bg-wrap.ready .modal-bg-video { opacity:1; }
+  /* Only applied when the footage is actually wider than the panel, which
+     is when there is a hidden 60% of frame worth revealing. Drifting the
+     visible slice across it turns the crop from a loss into a reveal. */
+  @keyframes bgpan { 0% { object-position:16% center; } 50% { object-position:84% center; } 100% { object-position:16% center; } }
+  .modal-bg-video.pan { animation:bgpan 26s ease-in-out infinite; }
   /* The 240px cover slot is redundant once the whole panel is footage. */
   .modal.full-video .modal-img-wrap { display:none; }
   /* A whole panel of text over moving footage needs a heavy scrim, and it
@@ -814,7 +826,7 @@
 <!-- MODAL -->
 <div class="modal-backdrop" id="backdrop"></div>
 <div class="modal" id="modal" role="dialog" aria-modal="true">
-  <video class="modal-bg-video" id="modalBgVideo" muted loop playsinline preload="none"></video>
+  <div class="modal-bg-wrap" id="modalBgWrap"><video class="modal-bg-video" id="modalBgVideo" muted loop playsinline preload="none"></video></div>
   <div class="modal-scrim"></div>
   <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
   <div class="modal-img-wrap">
@@ -3410,27 +3422,75 @@ function setModalCover(p) {
 }
 
 /* Full-panel background video, for projects that opt in with bgVideo.
-   Held at opacity 0 until it reports a frame, so the panel never opens on a
+   Held invisible until it reports a frame, so the panel never opens on a
    black rectangle while the first one decodes. */
 function setModalBg(p) {
+  const wrap = document.getElementById('modalBgWrap');
   const v = document.getElementById('modalBgVideo');
-  if (!v) return;
-  v.classList.remove('ready');
+  if (!wrap || !v) return;
+
+  wrap.classList.remove('ready');
+  v.classList.remove('pan');
+  v.style.transform = '';
   try { v.pause(); } catch (e) {}
-  if (p.bgVideo && p.video) {
-    modal.classList.add('full-video');
-    if (v.getAttribute('src') !== p.video) { v.src = p.video; v.load(); }
-    v.addEventListener('playing', () => v.classList.add('ready'), { once: true });
-    /* A file that will not load leaves the panel on its plain background
-       rather than on a dead element. */
-    v.addEventListener('error', () => modal.classList.remove('full-video'), { once: true });
-    v.play().catch(() => {});
-  } else {
+
+  if (!(p.bgVideo && p.video)) {
     modal.classList.remove('full-video');
     v.removeAttribute('src');
     v.load();
+    return;
   }
+
+  modal.classList.add('full-video');
+  if (v.getAttribute('src') !== p.video) { v.src = p.video; v.load(); }
+
+  v.addEventListener('playing', () => {
+    wrap.classList.add('ready');
+    /* Pan only if the source really is wider than the panel. On portrait or
+       square footage object-position has nowhere to travel and the
+       animation would be a no-op burning a compositor layer. */
+    const box = modal.getBoundingClientRect();
+    if (v.videoWidth && box.height > 0
+        && (v.videoWidth / v.videoHeight) > (box.width / box.height) * 1.15) {
+      v.classList.add('pan');
+    }
+  }, { once: true });
+  /* A file that will not load leaves the panel on its plain background
+     rather than on a dead element. */
+  v.addEventListener('error', () => modal.classList.remove('full-video'), { once: true });
+  v.play().catch(() => {});
 }
+
+/* Parallax. The background drifts against the text as the body scrolls, so
+   the panel reads as two layers rather than as type on a poster. The video
+   is 112% tall, so this can travel without ever showing an edge. */
+(function initModalParallax() {
+  const body = document.querySelector('.modal-body');
+  const v = document.getElementById('modalBgVideo');
+  if (!body || !v) return;
+  /* No requestAnimationFrame throttle here, deliberately. An earlier
+     version latched a `queued` flag and cleared it inside a rAF callback,
+     which meant that any time rAF was not running -- a backgrounded tab
+     with the panel open -- the flag stuck on and the parallax was dead for
+     the rest of the session. A passive scroll listener already fires at
+     most once per frame, and the body of this is a single style write. */
+  body.addEventListener('scroll', () => {
+    if (!modal.classList.contains('full-video')) return;
+    const span = body.scrollHeight - body.clientHeight;
+    const t = span > 0 ? Math.min(1, Math.max(0, body.scrollTop / span)) : 0;
+    /* Up, and far less than the text moves: that difference is the effect.
+       Stays well inside the headroom above and below. */
+    v.style.transform = 'translateY(' + (-t * 38).toFixed(1) + 'px)';
+  }, { passive: true });
+})();
+
+/* Nothing decodes while the tab is in the background. */
+document.addEventListener('visibilitychange', () => {
+  const v = document.getElementById('modalBgVideo');
+  if (!v || !v.getAttribute('src')) return;
+  if (document.hidden) v.pause();
+  else if (modal.classList.contains('open')) v.play().catch(() => {});
+});
 
 function openModal(idx) {
   // clear previous active
@@ -3455,10 +3515,39 @@ function closeModal() {
   const mv = document.getElementById('modalVideo');
   if (mv) { mv.pause(); mv.currentTime = 0; }
   const bv = document.getElementById('modalBgVideo');
-  if (bv) { bv.pause(); bv.classList.remove('ready'); }
+  const bw = document.getElementById('modalBgWrap');
+  if (bv) { bv.pause(); bv.classList.remove('pan'); bv.style.transform = ''; }
+  if (bw) bw.classList.remove('ready');
   document.querySelectorAll('.tile.active').forEach(t => t.classList.remove('active'));
 }
 document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click',()=>openModal(+t.dataset.project)));
+
+/* Buffering starts on hover rather than on click. By the time the pointer
+   travels from the tile to a press, a small file is already cached and the
+   panel opens on a frame instead of on a spinner. Each URL is warmed once,
+   and never on a metered connection. */
+(function initVideoPrefetch() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+  if (conn && conn.saveData) return;
+  if (window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
+  const warmed = new Set();
+  document.querySelectorAll('.tile[data-project]').forEach(tile => {
+    tile.addEventListener('pointerenter', e => {
+      if (e.pointerType === 'touch') return;
+      const proj = PROJECTS[+tile.dataset.project];
+      const url = proj && proj.video;
+      if (!url || warmed.has(url)) return;
+      warmed.add(url);
+      /* Never attached to the document. It exists only to pull the file
+         into the HTTP cache for the real element to find later. */
+      const pre = document.createElement('video');
+      pre.muted = true;
+      pre.preload = 'auto';
+      pre.src = url;
+      pre.load();
+    }, { passive: true });
+  });
+})();
 document.getElementById('modalClose').addEventListener('click',closeModal);
 backdrop.addEventListener('click',closeModal);
 document.addEventListener('keydown',e=>{
