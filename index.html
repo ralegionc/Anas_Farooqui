@@ -852,14 +852,14 @@ console.log('%c intro build 18:33:05 / 994eac ',
 
 /* Heliostream media, inlined so the page is a single portable file */
 const FLUID_IMG = 'assets/fluidsr-tile.jpg';
-const FLUID_VID = 'assets/fluidsr-video.mp4';
+const FLUID_VID = 'assets/fluidsr-bg.mp4';
 const SLEEP_IMG = 'assets/sleepatlas-tile.jpg';
-const SLEEP_VID = 'assets/sleepatlas-video.mp4';
+const SLEEP_VID = 'assets/sleepatlas-bg.mp4';
 const ODE_IMG = 'assets/neuralode-tile.jpg';
-const ODE_VID = 'assets/neuralode-video.mp4';
+const ODE_VID = 'assets/neuralode-bg.mp4';
 const HELIO_IMG = 'assets/heliostream-tile.jpg';
-const HELIO_VID = 'assets/heliostream-video.mp4';
-const DNA_VID = 'assets/dna.mp4';
+const HELIO_VID = 'assets/heliostream-bg.mp4';
+const DNA_VID = 'assets/dna-bg.mp4';
 document.addEventListener('DOMContentLoaded', () => {
   const paint = (id, uri) => {
     const el = document.getElementById(id);
@@ -3330,6 +3330,7 @@ const PROJECTS = [
     title:"Convergent Evolution Detector",
     img:"https://images.unsplash.com/photo-1628595351029-c2bf17511435?w=1200&q=80",
     video:DNA_VID,
+    bgVideo:true,
     stats:[{label:"Method",val:"ESM-2 + Gate"},{label:"AP (gated)",val:"~1.0"},{label:"AP (naive)",val:"~0.38"}],
     desc:"Sometimes two species evolve the same ability completely independently, like night vision or echolocation. This project automatically finds the proteins behind those cases. It uses an AI model that “reads” protein sequences to measure how similar their function is, while filtering out proteins that only resemble each other because they share a common ancestor. That filtering step is the key: it lifts detection accuracy from about 38% to near-perfect on a benchmark of light-sensing proteins. A second mode traces exactly which mutations gave dolphins and bats their echolocation.",
     chips:["ESM-2","Python","Biopython","HDBSCAN","UMAP","FastICA","UniProt REST"],
@@ -3351,7 +3352,7 @@ const PROJECTS = [
     title:"Predator-Prey Neural ODE",
     img:ODE_IMG,
     video:ODE_VID,
-    bgVideo:true,   /* test: this one plays behind the whole panel */
+    bgVideo:true,
     stats:[{label:"Dataset",val:"120-year HBC"},{label:"Species",val:"Lynx & Hare"},{label:"Method",val:"Neural ODE"}],
     desc:"Predator and prey populations rise and fall in linked cycles: when hares are plentiful, lynx thrive; then the hares crash, and the lynx follow. This project trains a neural network on 120 years of Hudson Bay fur-trading records and has it learn that cyclical relationship entirely on its own, without ever being handed the classic equations that describe it. It then checks the network’s self-discovered behaviour against the known mathematical model. The write-up was featured on the front page of Towards Data Science.",
     chips:["torchdiffeq","PyTorch","SciPy","Matplotlib","NumPy"],
@@ -3363,6 +3364,7 @@ const PROJECTS = [
     title:"Sleep Atlas",
     img:SLEEP_IMG,
     video:SLEEP_VID,
+    bgVideo:true,
     stats:[{label:"Species",val:"42"},{label:"Method",val:"Multi-regression"},{label:"Signals",val:"REM, NREM, total"}],
     desc:"Why does a bat sleep twenty hours a day while an elephant gets by on two? This project compares sleep across 42 species, from shrews to elephants, to find what actually predicts how much and how deeply an animal sleeps: things like body size, brain size, metabolism, and how exposed it is to predators. Looking across many species at once reveals patterns and trade-offs that studying any single animal would miss.",
     chips:["Python","Pandas","Scikit-learn","Statsmodels","Matplotlib","Seaborn"],
@@ -3374,6 +3376,7 @@ const PROJECTS = [
     title:"Diffusion-Based Fluid Super-Resolution",
     img:FLUID_IMG,
     video:FLUID_VID,
+    bgVideo:true,
     stats:[{label:"Model",val:"EDM + FNO"},{label:"Platform",val:"PhysicsNeMo"},{label:"Metric",val:"↓ RMSE vs bicubic"}],
     desc:"Detailed fluid simulations (think swirling smoke or turbulent water) are expensive to compute at high resolution. This project trains an AI to take a very coarse, blocky simulation and reconstruct the fine swirls and detail that would normally need far more computing power, essentially a physics-aware “enhance” button. It combines two AI techniques so the result stays physically believable, and it consistently beats standard image-upscaling methods. Built on NVIDIA’s PhysicsNeMo framework.",
     chips:["PyTorch","PhysicsNeMo","EDM","FNO","CUDA","NumPy","Matplotlib"],
@@ -3385,6 +3388,7 @@ const PROJECTS = [
     title:"Heliostream",
     img:HELIO_IMG,
     video:HELIO_VID,
+    bgVideo:true,
     stats:[{label:"Data",val:"NASA OMNI"},{label:"Model",val:"Physics-informed GRU"},{label:"Uncertainty",val:"Split-conformal"}],
     desc:"Solar storms can disrupt satellites, GPS, and power grids. Heliostream forecasts them in near-real-time by reading live solar-wind measurements from NASA and predicting how strong the resulting geomagnetic storm will be. The model is guided by established space-physics equations, and every forecast comes with an honest confidence range rather than a single number. Under the hood it runs on a full professional data pipeline that streams, stores, transforms, and schedules the data, and it’s tested on real NASA records rather than simulated data.",
     chips:["PyTorch","Kafka","DuckDB","dbt","Dagster","Conformal Prediction","NASA OMNI"],
@@ -3527,6 +3531,8 @@ document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click
    panel opens on a frame instead of on a spinner. Each URL is warmed once,
    and never on a metered connection. */
 (function initVideoPrefetch() {
+  /* Anything past this is left to load on click instead. */
+  const PREFETCH_MAX = 3 * 1024 * 1024;
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (conn && conn.saveData) return;
   if (window.matchMedia && !window.matchMedia('(hover: hover)').matches) return;
@@ -3538,13 +3544,22 @@ document.querySelectorAll('[data-project]').forEach(t=>t.addEventListener('click
       const url = proj && proj.video;
       if (!url || warmed.has(url)) return;
       warmed.add(url);
-      /* Never attached to the document. It exists only to pull the file
-         into the HTTP cache for the real element to find later. */
-      const pre = document.createElement('video');
-      pre.muted = true;
-      pre.preload = 'auto';
-      pre.src = url;
-      pre.load();
+      /* Ask how big it is before pulling it. Warming a 500KB clip on hover
+         is a courtesy; doing the same to a 30MB one because somebody
+         dropped an uncompressed export into assets/ is an attack on the
+         visitor's connection. The HEAD costs one round trip and makes this
+         safe whatever ends up in the folder. */
+      fetch(url, { method: 'HEAD' }).then(r => {
+        const len = +(r.headers.get('content-length') || 0);
+        if (!r.ok || len > PREFETCH_MAX) return;
+        /* Never attached to the document. It exists only to pull the file
+           into the HTTP cache for the real element to find later. */
+        const pre = document.createElement('video');
+        pre.muted = true;
+        pre.preload = 'auto';
+        pre.src = url;
+        pre.load();
+      }).catch(() => {});
     }, { passive: true });
   });
 })();
