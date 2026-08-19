@@ -1,0 +1,5 @@
+# Raw video exports. These are the uncompressed sources (20-48MB each);
+# only their compressed -bg.mp4 outputs belong in the repo. Git keeps every
+# blob forever, so a stray commit of these cannot be undone without a
+# history rewrite.
+assets/*2.mp4
