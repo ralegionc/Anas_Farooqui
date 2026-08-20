@@ -3,7 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Anas Farooqui</title>
+<title>Anas Farooqui — AI/ML Research &amp; Data Infrastructure</title>
+
+<!-- Canonical and preview metadata.
+     If a custom domain is ever added, every absolute URL below has to change
+     with it: crawlers will not resolve a relative og:image, so these cannot
+     be made path-relative. -->
+<link rel="canonical" href="https://ralegionc.github.io/Anas_Farooqui/">
+<meta name="description" content="Computer Science engineer working on AI/ML research, data infrastructure and backend systems. Protein embeddings, neural ODEs, diffusion models and real-time data pipelines.">
+<meta name="author" content="Anas Farooqui">
+<meta name="theme-color" content="#0e0e0e">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Anas Farooqui">
+<meta property="og:url" content="https://ralegionc.github.io/Anas_Farooqui/">
+<meta property="og:title" content="Anas Farooqui — AI/ML Research &amp; Data Infrastructure">
+<meta property="og:description" content="Computer Science engineer working on AI/ML research, data infrastructure and backend systems. Protein embeddings, neural ODEs, diffusion models and real-time data pipelines.">
+<meta property="og:image" content="https://ralegionc.github.io/Anas_Farooqui/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Anas Farooqui — AI/ML research, data infrastructure, backend systems">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Anas Farooqui — AI/ML Research &amp; Data Infrastructure">
+<meta name="twitter:description" content="Computer Science engineer working on AI/ML research, data infrastructure and backend systems. Protein embeddings, neural ODEs, diffusion models and real-time data pipelines.">
+<meta name="twitter:image" content="https://ralegionc.github.io/Anas_Farooqui/assets/og-card.png">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": "Anas Farooqui",
+  "url": "https://ralegionc.github.io/Anas_Farooqui/",
+  "jobTitle": "Master of Applied Computer Science student",
+  "description": "Computer Science engineer working on AI/ML research, data infrastructure and backend systems. Protein embeddings, neural ODEs, diffusion models and real-time data pipelines.",
+  "sameAs": [
+    "https://github.com/ralegionc",
+    "https://medium.com/@anasfarooqui373",
+    "https://www.linkedin.com/in/anas-farooqui-5617b1244/"
+  ]
+}
+</script>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e0e0e'/%3E%3Ctext x='32' y='40' font-family='Space Mono, monospace' font-size='22' font-weight='700' fill='%236c47ff' text-anchor='middle' letter-spacing='1'%3EAF%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -3418,6 +3458,34 @@ const PROJECTS = [
   }
 ];
 
+/* ── Analytics ──
+   GA4 was loaded but never told anything beyond the page view, so there was
+   no way to know which project anyone opened or whether a single visitor
+   ever reached GitHub. Interaction names only, no personal data.
+
+   Guarded because gtag simply will not exist for anyone running a content
+   blocker, and an undefined call would take the click handler down with
+   it. */
+function track(name, params) {
+  try { if (typeof gtag === 'function') gtag('event', name, params || {}); }
+  catch (e) {}
+}
+
+/* One delegated listener rather than a binding per link, so anything added
+   to the page later is covered without being wired up. */
+document.addEventListener('click', e => {
+  const a = e.target && e.target.closest && e.target.closest('a[href]');
+  if (!a) return;
+  let url;
+  try { url = new URL(a.href, location.href); } catch (err) { return; }
+  if (url.origin === location.origin) return;
+  track('outbound_click', {
+    link_domain: url.hostname.replace(/^www\./, ''),
+    link_url: url.href,
+    link_text: (a.textContent || '').trim().slice(0, 60)
+  });
+}, { capture: true });
+
 /* ── Modal ── */
 const modal=document.getElementById('modal'), backdrop=document.getElementById('backdrop');
 const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
@@ -3525,6 +3593,7 @@ function openModal(idx) {
   if (srcTile) srcTile.classList.add('active');
 
   const p=PROJECTS[idx];
+  track('project_open', { project_title: p.title, project_tag: p.tag, source: 'tile' });
   setModalCover(p);
   setModalBg(p);
   document.getElementById('modalTag').textContent=p.tag;
@@ -3642,6 +3711,7 @@ function buildApGrid() {
   grid.querySelectorAll('.ap-card').forEach(card => {
     card.addEventListener('click', () => {
       const p = ALL_PROJECTS[+card.dataset.ap];
+      track('project_open', { project_title: p.title, project_tag: p.tag, source: 'all_projects' });
       const ghIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
       const medIcon=`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.54 12a6.8 6.8 0 01-6.77 6.82A6.8 6.8 0 010 12a6.8 6.8 0 016.77-6.82A6.8 6.8 0 0113.54 12zM20.96 12c0 3.54-1.51 6.42-3.38 6.42-1.87 0-3.39-2.88-3.39-6.42s1.52-6.42 3.39-6.42 3.38 2.88 3.38 6.42M24 12c0 3.17-.53 5.75-1.19 5.75-.66 0-1.19-2.58-1.19-5.75s.53-5.75 1.19-5.75C23.47 6.25 24 8.83 24 12z"/></svg>`;
       setModalCover(p);
@@ -3659,6 +3729,7 @@ function buildApGrid() {
 }
 
 function openAllProjects() {
+  track('all_projects_open');
   if (!apBuilt) { buildApGrid(); apBuilt = true; }
   document.getElementById('all-projects').classList.add('open');
   document.body.style.overflow = 'hidden';
