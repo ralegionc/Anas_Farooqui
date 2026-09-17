@@ -538,6 +538,11 @@
     flex:1; overflow-y:auto;
     display:grid;
     grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+    /* Rows were sizing to the cards' min-height rather than their content,
+       so every card was 200px tall holding up to 321px of text and clipping
+       the rest against overflow:hidden. The tag chips sat entirely below the
+       cut on half the cards and were never visible on any of them. */
+    grid-auto-rows:max-content;
     gap:1px;
     background:var(--border);
     padding:0;
@@ -578,7 +583,10 @@
   .ap-card:hover .ap-card-title { color:#fff; }
   .ap-card-desc { font-size:12px; line-height:1.65; color:var(--text-muted); }
 
-  .ap-card-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; }
+  /* The chips only became visible once the rows sized to content, and they
+     run straight under the hover arrow in the bottom-right corner, so the
+     row keeps that corner clear. */
+  .ap-card-chips { display:flex; flex-wrap:wrap; gap:6px; margin-top:20px; padding-right:30px; }
   .ap-card-chip { font-family:var(--mono); font-size:9px; letter-spacing:0.06em; padding:3px 8px; border:1px solid rgba(108,71,255,0.25); color:rgba(108,71,255,0.7); background:rgba(108,71,255,0.05); }
 
   .ap-card-arrow { position:absolute; bottom:28px; right:28px; font-size:16px; color:var(--accent); opacity:0; transform:translate(-4px,4px); transition:opacity 0.25s, transform 0.25s; }
