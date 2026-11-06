@@ -82,19 +82,32 @@
   .tile:last-child { border-right:none; }
 
   /* static fallback bg */
-  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.495; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
-  .tile:not(.vid-playing):hover .tile-bg { opacity:0.66; transform:scale(1); }
+  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.73; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
+  .tile:not(.vid-playing):hover .tile-bg { opacity:0.85; transform:scale(1); }
 
   /* canvas animation layer - hidden at rest, shown on hover only */
   .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
   .tile:hover .tile-canvas { opacity:1; }
-  .tile:hover .tile-bg { opacity:0.66; transform:scale(1); }
+  .tile:hover .tile-bg { opacity:0.85; transform:scale(1); }
   /* hero canvas always faintly visible */
   .tile--hero .tile-canvas { opacity:0.5; }
   .tile--hero:hover .tile-canvas { opacity:0.7; }
 
   .tile-overlay { position:absolute; inset:0; z-index:2; background:var(--bg); opacity:0.3; transition:opacity 0.45s ease; }
   .tile:hover .tile-overlay { opacity:0.26; }
+  /* Project tiles darken only toward the bottom, where the title sits, so
+     the photo can run brighter without the type losing contrast. */
+  .tile--sm .tile-overlay { background:linear-gradient(to top, var(--bg) 0%, rgba(14,14,14,0.3) 45%, rgba(14,14,14,0) 100%); opacity:0.6; }
+  .tile--sm:hover .tile-overlay { opacity:0.45; }
+
+  /* Cinematic finish: a vignette that darkens each project tile toward its
+     edges, and a fine film grain over the photo, so fifty stock images feel
+     more like one shoot. Both keep the photos' own colour. Remove the
+     cinematic class from .grid to switch them off. */
+  .cinematic .tile--sm::before { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.4) 100%); transition:opacity 0.5s ease; }
+  .cinematic .tile--sm:hover::before { opacity:0.6; }
+  .cinematic .tile--sm::after { content:''; position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0.136; mix-blend-mode:overlay; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
   .tile-wash { position:absolute; inset:0; z-index:3; background:rgba(255,255,255,0.04); opacity:0; transition:opacity 0.35s; }
   .tile:hover .tile-wash { opacity:1; }
 
@@ -134,16 +147,16 @@
 
   /* HERO */
   .tile--hero { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); border-bottom:none; }
-  .tile--hero .tile-bg { opacity:0.33; }
-  .tile--hero:hover .tile-bg { opacity:0.242; }
-  .tile--hero .tile-overlay { opacity:0.4; }
-  .tile--hero:hover .tile-overlay { opacity:0.35; }
+  .tile--hero .tile-bg { opacity:0.45; }
+  .tile--hero:hover .tile-bg { opacity:0.35; }
+  .tile--hero .tile-overlay { opacity:0.22; }
+  .tile--hero:hover .tile-overlay { opacity:0.18; }
   .tile--hero .tile-inner { padding:40px 44px; justify-content:flex-end; }
   .tile--hero .tile-pattern { position:absolute; top:0; right:0; width:55%; height:55%; z-index:1; background:repeating-linear-gradient(0deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px),repeating-linear-gradient(90deg,transparent,transparent 28px,rgba(255,255,255,0.025) 28px,rgba(255,255,255,0.025) 29px); mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); -webkit-mask-image:radial-gradient(ellipse at top right,black 20%,transparent 70%); pointer-events:none; }
   .hero-eyebrow { font-family:var(--mono); font-size:10px; letter-spacing:0.18em; color:var(--accent); text-transform:uppercase; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
   .hero-eyebrow::before { content:''; display:inline-block; width:24px; height:1px; background:var(--accent); }
   .hero-name { font-size:clamp(38px,3.2vw,58px); font-weight:600; line-height:1.04; letter-spacing:-0.02em; margin-bottom:20px; color:var(--text-primary); }
-  .hero-sub { font-size:14px; line-height:1.7; color:var(--text-muted); max-width:340px; margin-bottom:40px; }
+  .hero-sub { font-size:14px; line-height:1.7; color:rgba(240,238,232,0.78); text-shadow:0 1px 10px rgba(0,0,0,0.9); max-width:340px; margin-bottom:40px; }
   .hero-links { display:flex; gap:16px; }
   .hero-link { font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; text-decoration:none; padding:10px 20px; border:1px solid var(--border-hover); color:var(--text-primary); transition:border-color 0.2s,background 0.2s; }
   .hero-link:hover { border-color:var(--accent); background:var(--accent-light); }
@@ -158,12 +171,16 @@
   .modal-backdrop.open { background:rgba(0,0,0,0.72); pointer-events:auto; }
   .modal { position:fixed; top:52px; right:0; bottom:0; z-index:700; width:min(641px,100vw); background:#111; border-left:1px solid var(--border-hover); transform:translateX(100%); transition:transform 0.4s cubic-bezier(0.16,1,0.3,1); display:flex; flex-direction:column; overflow:hidden; will-change:transform; }
   .modal.open { transform:translateX(0); }
-  .modal-img { width:100%; height:240px; object-fit:cover; display:block; flex-shrink:0; filter:brightness(0.715) saturate(0.8); }
-  .modal-img-wrap { position:relative; flex-shrink:0; height:240px; overflow:hidden; }
-  .modal-video { position:absolute; inset:0; width:100%; height:240px; object-fit:cover; display:none; filter:brightness(0.792) saturate(0.95); }
+  /* The cover is a strip pinned above the text, like a phone video player:
+     it stays put while the description scrolls under it, and plays at
+     full brightness because no text sits on top of it. Projects with
+     bgVideo (the first six) skip it and fill the whole panel instead. */
+  .modal-img { width:100%; height:100%; object-fit:cover; display:block; flex-shrink:0; }
+  .modal-img-wrap { position:relative; flex-shrink:0; height:clamp(240px, 40vh, 440px); overflow:hidden; }
+  .modal-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:none; }
   .modal-img-wrap.has-video .modal-video { display:block; }
   .modal-img-wrap.has-video .modal-img { opacity:0; }
-  .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:100px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
+  .modal-img-gradient { position:absolute; bottom:0; left:0; right:0; height:56px; background:linear-gradient(to bottom,transparent,#111); pointer-events:none; }
   /* Full-panel video background, opted into per project with bgVideo.
      The panel is portrait and the footage is landscape, so object-fit:cover
      crops it hard -- that is the trade being tested here. */
@@ -638,14 +655,14 @@
     .tile:hover .tile-bg,
     .tile--hero .tile-bg,
     .tile--hero:hover .tile-bg,
-    .tile:not(.vid-playing):hover .tile-bg { opacity:0.495 !important; transform:scale(1) !important; }
+    .tile:not(.vid-playing):hover .tile-bg { opacity:0.73 !important; transform:scale(1) !important; }
     .tile--hero .tile-bg,
-    .tile--hero:hover .tile-bg { opacity:0.33 !important; }
+    .tile--hero:hover .tile-bg { opacity:0.45 !important; }
     /* reduce overlay so bg image shows through */
     .tile-overlay,
-    .tile:hover .tile-overlay { opacity:0.3 !important; }
+    .tile:hover .tile-overlay { opacity:0.6 !important; }
     .tile--hero .tile-overlay,
-    .tile--hero:hover .tile-overlay { opacity:0.4 !important; }
+    .tile--hero:hover .tile-overlay { opacity:0.22 !important; }
     /* hide canvas on mobile - no hover animations */
     .tile-canvas { display:none !important; }
 
@@ -742,7 +759,7 @@
     .modal-body { padding:24px 20px 40px; }
     .modal-title { font-size:20px; }
     .modal-stats { gap:16px; flex-wrap:wrap; }
-    .modal-img { height:180px; }
+    .modal-img-wrap { height:clamp(200px, 34vh, 320px); }
     .modal-desc { font-size:13px; }
 
     /* all projects overlay */
@@ -797,12 +814,12 @@
   </nav>
 </header>
 
-<div class="grid">
+<div class="grid cinematic">
 
   <!-- HERO - WebGL Darcy flow solver -->
   <div class="tile tile--hero">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.242;"></div>
-    <div class="tile-overlay" style="opacity:0.55;transition:opacity 0.45s ease;"></div>
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.45;"></div>
+    <div class="tile-overlay" style="opacity:0.22;transition:opacity 0.45s ease;"></div>
     <div class="tile-pattern"></div>
     <div class="tile-wash"></div>
     <div class="tile-inner">
@@ -939,82 +956,82 @@
    down collect the tiles. PROJECTS picks these up by index in the main
    script, so data-project lines up with openModal. */
 const EXTRA_PROJECTS = [
-  { tag:"Data / History", title:"Isochrones of Sail", photo:"photo-1625508133058-78bc39fbd228",
+  { tag:"Data / History", title:"Isochrones of Sail", video:"assets/isochrones-bg.mp4", photo:"photo-1625508133058-78bc39fbd228",
     blurb:"How much time did Dutch East India captains lose to the winds? 756 voyages from 1836 to 1855, re-sailed through reconstructed weather.",
     stats:[{label:"Voyages",val:"756"},{label:"Method",val:"Isochrone routing"},{label:"Finding",val:"~15% slower"}],
     desc:"Ocean racers plan routes with isochrones: draw every place the boat could reach in 6 hours, then 12, then 18, until a ring touches the finish. This project points that method at 756 voyages of Dutch East Indiamen between 1836 and 1855, using the noon positions in their logbooks (CLIWOC) and the winds of those exact days from the 20th Century Reanalysis, which rebuilds the weather from pressure readings alone.\n\nEach voyage gets two ghost ships sailed through the same winds: the hindsight optimum, and the best route a planner could have drawn from perfect wind charts for that month. The logged routes took about 15% longer than the chart route, roughly 16 to 18 days on the 98-day run out to Java. Every model variant agrees within four percentage points, and the method was pre-registered before any result was computed.",
     chips:["Python","20CRv3","CLIWOC","Route Optimisation","Bootstrap"], github:"https://github.com/ralegionc/isochrones-of-sail" },
-  { tag:"Data / Linguistics", title:"Old Water", photo:"photo-1664829431768-537613b4075e",
+  { tag:"Data / Linguistics", title:"Old Water", video:"assets/oldwater-bg.mp4", photo:"photo-1664829431768-537613b4075e",
     blurb:"Do big rivers keep the oldest names? Every named river in England, the US, Australia and New Zealand, tested against a century-old claim.",
     stats:[{label:"Countries",val:"4"},{label:"Method",val:"Logistic regression"},{label:"Odds per 10x size",val:"~2.5 to 3x"}],
     desc:"When one language replaces another, the newcomers rename the small streams and inherit the names of the big rivers. Philologists have said so since Eilert Ekwall in 1928. This project tests it on every named river in England, the conterminous United States, Australia and New Zealand, measuring how the share of old names rises with catchment size.\n\nBig rivers do keep old names: in England and the US, every tenfold increase in catchment multiplies the odds of an old name by about 2.5 to 3. How big counts as big depends on how the land changed hands. Across the US, the earlier a place was organised into counties, the smaller the rivers that kept indigenous names. In Australia, where explorers named the trunk rivers after patrons, the size gradient disappears, as predicted.",
     chips:["Python","GeoPandas","Hydrography","Logistic Regression","Toponymy"], github:"https://github.com/ralegionc/old-water" },
-  { tag:"Data / Climate", title:"Fossil Wind Vanes", photo:"photo-1542401886-65d6c61db217",
+  { tag:"Data / Climate", title:"Fossil Wind Vanes", video:"assets/dunes-bg.mp4", photo:"photo-1542401886-65d6c61db217",
     blurb:"Do the giant dunes of the world's sand seas still point along the winds of the last ice age? Crest directions across 38 sand seas.",
     stats:[{label:"Sand seas",val:"38"},{label:"Winds",val:"ERA5 + PMIP"},{label:"Model agreement",val:"r = 0.12"}],
     desc:"Giant dunes take thousands of years to turn, so their crests might still line up with the winds of the Last Glacial Maximum, about 21,000 years ago, while small dunes follow today's winds. If so, a sand sea would be a fossil wind vane and a check on what climate models say ice-age winds were.\n\nThe project measures crest directions across 38 sand seas and predicts the crest each climate would build from sand-flux physics. Today's winds explain giant crests well above chance (a 33.6 degree average miss against 44.4 for shuffled crests). Ice-age winds do not fit better, but a benchmark that plants each hypothesis into the real data shows the standard test could never have told: its power to detect perfect memory is 2%. The climate models also disagree about ice-age desert winds, with predicted turns that correlate at only r = 0.12.",
     chips:["Python","ERA5","PMIP","Remote Sensing","Sand-flux Physics"], github:"https://github.com/ralegionc/Fossil-Wind-Vanes" },
-  { tag:"Data / Ecology", title:"Switchback Law", photo:"photo-1587044759121-6b5431d03a5a",
+  { tag:"Data / Ecology", title:"Switchback Law", video:"assets/switchback-bg.mp4", photo:"photo-1760900383804-1fd493c0517a",
     blurb:"Do big animals zigzag up hills sooner than small ones? 1.25 million GPS steps from 12 mammal species, from house cats to moose.",
     stats:[{label:"GPS steps",val:"1.25M"},{label:"Species",val:"12"},{label:"Design",val:"Pre-registered"}],
     desc:"Climbing costs every animal about the same energy per kilogram per metre of height, but walking on the flat is far cheaper per kilogram for big animals. So big animals should stop climbing straight up and start cutting across the slope at a gentler gradient than small ones. This project tests that on 1.25 million GPS steps from 12 mammal species on 30 m terrain, with hypotheses and methods written down before any track was scored.\n\nMost animals show no hard climbing ceiling at the scale GPS can see. Where a ceiling does appear (sheep, elk and bobcats, at about 20%), it does not depend on body size: a 6 kg cat and a 241 kg deer turn off the fall line at the same gradient. The pre-registered prediction failed, and the ceilings that exist sit at about half the energy-saving optimum.",
     chips:["Python","GPS Tracking","Terrain Analysis","Bootstrap","Pre-registration"], github:"https://github.com/ralegionc/switchback-law" },
-  { tag:"Data / Infrastructure", title:"Exit Time", photo:"photo-1507680465142-ef2223e23308",
+  { tag:"Data / Infrastructure", title:"Exit Time", video:"assets/exittime-bg.mp4", photo:"photo-1507680465142-ef2223e23308",
     blurb:"How long would it take to drive everyone out of each wildfire-exposed town in California, on the roads it actually has?",
     stats:[{label:"Towns",val:"365"},{label:"People",val:"2.47M"},{label:"Method",val:"Network flow"}],
     desc:"Public rankings of towns with the fewest ways out use people-per-exit ratios. This project instead solves an evacuation flow problem on the OpenStreetMap road network for 365 wildfire-exposed California towns (2.47 million people), finds the roads that set each town's clearance time, and tests what happens when one exit road is blocked.\n\nWith every road open, the median town gets 90% of its vehicles out in 23 minutes, but 42 towns need more than an hour. Block the worst of a town's three largest exits and 64 towns pass an hour; in two towns a single closure cuts off every home. Exit ratios turn out to be a weak guide: only about half of the 30 slowest towns appear in the ratio's worst 30, and in 82% of towns the real bottleneck sits on roads inside town or downstream, not on the exits a ratio counts.",
     chips:["Python","OpenStreetMap","Network Flow","Census","Geospatial"], github:"https://github.com/ralegionc/exit-time" },
-  { tag:"Bio / Physics", title:"The Gill Penalty", photo:"photo-1698472505070-6d3b90afb530",
+  { tag:"Bio / Physics", title:"The Gill Penalty", video:"assets/gill-bg.mp4", photo:"photo-1698472505070-6d3b90afb530",
     blurb:"Why didn't whales get gills? A heat budget shows plain gills cap any warm body at about 1 K above the sea.",
     stats:[{label:"Gill ceiling",val:"~1 K"},{label:"Tuna exchanger",val:"≥ 95.5%"},{label:"Gilled whale",val:"24.5x over"}],
     desc:"The usual answers are that water holds little oxygen and evolution cannot run backwards. Neither explains why no warm-blooded animal of any size breathes water. This project puts a number on the real obstacle, heat. Blood leaves a gill at the temperature of the sea and can carry only enough oxygen to warm itself by about one kelvin before it comes back, for a minnow and a blue whale alike.\n\nEvery warm fish beats that ceiling with a counter-current heat exchanger, and the size of the beat says how good it must be: bluefin tuna muscle runs 21 K above the water, implying an exchanger at least 95.5% effective. A test that could have failed did not: measured blood leaving skipjack tuna muscle stays under the predicted ceiling. A blue whale with gills would run 24.5 times its ceiling, shedding 1.2 MW against the 48 kW it burns.",
     chips:["Python","Physiology","Heat Transfer","Allometry"], github:"https://github.com/ralegionc/gill-penalty" },
-  { tag:"ML / Vision", title:"Snowflake Letters", photo:"photo-1457269449834-928af64c684d",
+  { tag:"ML / Vision", title:"Snowflake Letters", video:"assets/snowflake-bg.mp4", photo:"photo-1457269449834-928af64c684d",
     blurb:"Can a neural network read the air above a mountain from photographs of the snowflakes falling on it?",
     stats:[{label:"Snowflakes",val:"130,926"},{label:"Model",val:"3-view CNN"},{label:"Image gain",val:"≤ 3.5%, n.s."}],
     desc:"Nakaya called snowflakes letters sent from the sky: a crystal's shape depends on the temperature and humidity where it grew. This project tests whether that letter is legible to deep learning in real field data, using 130,926 Multi-Angle Snowflake Camera triplets (MASCDB) from 8 campaigns, matched to weather balloon soundings of the air above.\n\nA three-view CNN learns what a gradient-boosting model on surface weather misses, and is compared with the same network with its image branch switched off. Cross-validation folds are grouped by snow episode, because grouping by day leaked storms that cross midnight and inflated skill. The images help on every target by point estimate (up to 3.5% at 1.5 km), but no single interval excludes zero, and against the surface-weather model they make no detectable difference. An honest null result.",
     chips:["PyTorch","CNN","MASCDB","IGRA2","Gradient Boosting"], github:"https://github.com/ralegionc/snowflake-letters" },
-  { tag:"ML / Audio", title:"Cricket Thermometer", photo:"photo-1509967733342-437077d8e41a",
+  { tag:"ML / Audio", title:"Cricket Thermometer", video:"assets/cricket-bg.mp4", photo:"photo-1509967733342-437077d8e41a",
     blurb:"Can a microphone read the air temperature from insect song? Night-time choruses from a continental sensor network in Australia.",
     stats:[{label:"Clips",val:"2,422"},{label:"Audio error",val:"1.53 °C"},{label:"Climatology",val:"2.10 °C"}],
     desc:"Insects are ectotherms, so the muscles that drive their song run faster when it is warm. For the snowy tree cricket this was written down in 1897 as Dolbear's law. This project tests whether it holds for the whole night-time insect chorus, using continuous recordings from the Australian Acoustic Observatory and hourly ERA5 temperatures at each sensor.\n\nPulse rates are extracted per 250 Hz band from the amplitude envelope, with a filter that caught an electric fence ticking at exactly 2.000 Hz. 92% of song units speed up with temperature, the cleanest with a Q10 of 1.7 to 1.9, squarely in the range of insect muscle physiology. As a thermometer, audio alone reaches a mean error of 1.53 °C against 2.10 for the site's seasonal climatology.",
     chips:["Python","Signal Processing","STFT","A2O","ERA5"], github:"https://github.com/ralegionc/cricket-thermometer" },
-  { tag:"Data / Games", title:"Engine Monoculture", photo:"photo-1586165368502-1bad197a6461",
+  { tag:"Data / Games", title:"Engine Monoculture", video:"assets/engine-bg.mp4", photo:"photo-1586165368502-1bad197a6461",
     blurb:"Did superhuman chess engines make top players' openings more alike? 2.5 million over-the-board games and 39.5 million online.",
     stats:[{label:"Games",val:"42M"},{label:"Measure",val:"Opening entropy"},{label:"Break",val:"2022, not engines"}],
     desc:"This project measures how varied chess openings are, move by move, in 2.5 million over-the-board games from The Week in Chess (2012 to 2026) and 39.5 million Lichess games sampled from every monthly dump, then tests for breaks at the engine milestones: AlphaZero (2017), Leela winning TCEC (2019) and Stockfish NNUE (2020).\n\nThe top did narrow: over the first two moves, games between 2600+ players went from 14.3 to 9.9 effective lines. But every over-the-board rating band from 2000 to 2599 lost the same amount, and the sharpest break is early 2022, when over-the-board chess resumed after the pandemic, not any engine date. Online, mid-rated blitz players spread out, most of all deep in the opening.",
     chips:["Python","Lichess","TWIC","Entropy","Changepoint"], github:"https://github.com/ralegionc/engine-monoculture" },
-  { tag:"Data / History", title:"The Longitude Wind", photo:"photo-1723306744533-bed5a4f696dc",
+  { tag:"Data / History", title:"The Longitude Wind", video:"assets/longitude-bg.mp4", photo:"photo-1723306744533-bed5a4f696dc",
     blurb:"Did old maps get east and west more wrong than north and south, and when did that stop? 4,763 dated historical maps.",
     stats:[{label:"Maps",val:"4,763"},{label:"Places",val:"~154,000"},{label:"Stretch error",val:"15% → 4%"}],
     desc:"Before the 18th century, latitude could be read from the sun and stars, but longitude had to be estimated from travel times. This project measures what that did to maps, using 4,763 dated historical maps (about 154,000 places) whose control points volunteers matched to modern coordinates in Allmaps, replicated on 1,172 more maps from MapWarper. It ran in two pre-registered rounds.\n\nLongitude error lived in the stretch, not the scatter: maps before 1750 drew longitudes about 15% too wide or narrow, falling to about 4% after 1750. Near the city where a map was printed there was no east-west excess, but places over 6,000 km away were 1.39 times as far off east-west. One pre-registered prediction failed, and the write-up reports it.",
     chips:["Python","Allmaps","Georeferencing","Projections","Mixed Models"], github:"https://github.com/ralegionc/longitude-wind" },
-  { tag:"ML / Weather", title:"Record Breakers", photo:"photo-1454789476662-53eb23ba5907",
+  { tag:"ML / Weather", title:"Record Breakers", video:"assets/record-bg.mp4", photo:"photo-1454789476662-53eb23ba5907",
     blurb:"Do AI weather models refuse to forecast temperatures they never saw? Every temperature record set in 2020, against GraphCast, Pangu and FuXi.",
     stats:[{label:"Models",val:"GraphCast, Pangu, FuXi"},{label:"Reference",val:"ECMWF HRES"},{label:"Hard ceiling",val:"None"}],
     desc:"ML weather models such as GraphCast, Pangu-Weather and FuXi learn only from past data, so a common worry is that they cannot forecast beyond their training range and will fail on the days that matter most: new local records. This project tests that on every 2 m temperature record set in 2020, with ECMWF's physics model as the reference, using WeatherBench 2.\n\nThere is no hard ceiling. All three models undershoot extremes, but the undershoot grows smoothly with how rare a value is and does not jump when a value passes the old record. A synthetic control shows what a real ceiling would look like, and it looks very different. What remains is a small record-specific penalty and a 0.1 K cold drift in long warm spells.",
     chips:["Python","WeatherBench 2","xarray","Extremes","Forecast Verification"], github:"https://github.com/ralegionc/record-breakers" },
-  { tag:"Data / Economics", title:"Dictator Lights", photo:"photo-1451187580459-43490279c0fa",
+  { tag:"Data / Economics", title:"Dictator Lights", video:"assets/dictator-bg.mp4", photo:"photo-1451187580459-43490279c0fa",
     blurb:"Do dictators inflate GDP? A replication of Martinez (2022) using satellite night lights, extended to 2024.",
     stats:[{label:"Replicates",val:"Martinez 2022"},{label:"Lights",val:"to 2024"},{label:"Verdict",val:"Holds, but fragile"}],
     desc:"Satellites see a country's night lights whatever its government says. Martinez (2022, Journal of Political Economy) used this to argue that autocracies overstate GDP growth by about 35%. This project rebuilds his main table from public data, then re-runs it with VIIRS lights through 2024, GDP as revised up to 2026 and Freedom House ratings through 2024, and estimates an inflation factor for every country.\n\nThe pattern replicates and survives later GDP revisions. But it is less robust than the paper suggests: letting the light elasticity vary with income, agriculture and industry shares together cuts the overstatement from 0.63 to 0.17, and with a separate elasticity for each country the gradient falls to a tenth. Most of the evidence is a fixed difference between countries, which economic structure can also produce.",
     chips:["Python","VIIRS","Panel Regression","Fixed Effects","Replication"], github:"https://github.com/ralegionc/dictator-lights" },
-  { tag:"ML / Applied", title:"Bird Identifier", photo:"photo-1759354001829-233b2025c6b2",
+  { tag:"ML / Applied", title:"Bird Identifier", video:"assets/bird-bg.mp4", photo:"photo-1759354001829-233b2025c6b2",
     blurb:"Identifies bird species from a photo or a sound clip, with two transfer-learned models and an 'unknown' answer for birds it was never trained on.",
     stats:[{label:"Image model",val:"ResNet50"},{label:"Audio model",val:"Log-mel ResNet18"},{label:"Species",val:"200"}],
     desc:"Two PyTorch models identify birds: a ResNet50 fine-tuned on the 200 species of CUB-200-2011 for photos, and a ResNet18 adapted to log-mel spectrograms for song from xeno-canto. Around them sits the engineering that makes a classifier usable: detect-then-classify cropping to the bird, location and date priors that reweight species by where and when the observation was made, and open-set rejection so an unfamiliar bird or a non-bird comes back as unknown rather than as a confident wrong answer.\n\nIt also handles long field recordings with several species singing, fuses image and audio evidence by species, explains predictions with Grad-CAM in both modalities, and ships as a FastAPI service, a batch CSV tool, TorchScript and ONNX exports, and a Gradio demo.",
     chips:["PyTorch","Transfer Learning","Audio","Grad-CAM","FastAPI","ONNX"], github:"https://github.com/ralegionc/bird-identifier" },
-  { tag:"Data / Ecology", title:"First Flowering", photo:"photo-1674668560191-536c9fd88b8d",
+  { tag:"Data / Ecology", title:"First Flowering", video:"assets/flowering-bg.mp4", photo:"photo-1683390124983-7b5df9d5861a",
     blurb:"Is first flowering really getting earlier, or are more people looking? A simulation with known truth shows observer effort alone can fake the trend.",
     stats:[{label:"Spurious advance",val:"up to 7.6 d/decade"},{label:"False alarms",val:"88%"},{label:"Method",val:"Simulation + theory"}],
     desc:"Phenology studies often track the first date a species is seen flowering each year. But the minimum of a sample falls as the sample grows, so if more people are looking each year, first dates advance with no biological change at all. Effort and climate trend upward over the same decades, so the two cannot be separated in observational records. This project therefore carries every causal claim with a simulation where the truth is set, plus a closed-form order-statistic prediction that the simulation matches within 0.25 days per decade.\n\nAt effort growth typical of citizen-science record streams, the artifact is the same size as the published effect: 2.4 to 7.6 days per decade. At 11% yearly growth, 88% of simulated series with zero real change report a significant advance. The recommendation is concrete: use mean dates or a model-based low quantile, report effort growth next to the trend, or rarefy each year to a common sample size.",
     chips:["Python","Simulation","Order Statistics","Phenology","Bias"], github:"https://github.com/ralegionc/first-flowering" },
-  { tag:"Data / Economics", title:"Housing Supply and Rents", photo:"photo-1515112569565-1e4aef316db9",
+  { tag:"Data / Economics", title:"Housing Supply and Rents", video:"assets/housing-bg.mp4", photo:"photo-1515112569565-1e4aef316db9",
     blurb:"Does new construction lower nearby rents? 376,587 new units across 29,940 New York City projects, in a modern event study.",
     stats:[{label:"New units",val:"376,587"},{label:"Design",val:"Callaway–Sant'Anna"},{label:"Rent effect",val:"< 2% either way"}],
     desc:"New York City added 376,587 net housing units across 29,940 completed projects between 2012 and 2025. This project asks what those units did to rents in the ZIP codes that received them, using a Callaway-Sant'Anna event study on a 71-ZIP by 47-quarter panel built entirely from live public data. The estimator is written out rather than imported, so the identifying comparison is visible.\n\nThe headline is a bound, not a shrug: a supply shock of 2% or more of a ZIP's housing stock moves rents by less than 2% in either direction for at least three years, and pre-treatment trends pass testing. That rules out the strong claims on both sides of the housing debate at ZIP scale. A second finding is about the data: 48 of the 173 ZIPs with a measurable supply shock have under a year of rent data, and they are not a random 48.",
     chips:["Python","Event Study","Diff-in-Diff","Bootstrap","Housing"], github:"https://github.com/ralegionc/nyc-supply-rents" },
-  { tag:"Systems / C++", title:"Order Book Tail Forensics", photo:"photo-1560221328-12fe60f83ab8",
+  { tag:"Systems / C++", title:"Order Book Tail Forensics", video:"assets/orderbook-bg.mp4", photo:"photo-1560221328-12fe60f83ab8",
     blurb:"Where do the slow events in a trading engine come from? A full day of real Nasdaq order flow replayed through six C++ order books.",
     stats:[{label:"Book events",val:"6.1M"},{label:"p99.9 latency",val:"−80%"},{label:"Language",val:"C++"}],
     desc:"This project replays one full day of real Nasdaq TotalView-ITCH order flow (268.7 million messages, five heavily traded names, 6.1 million book events) through six limit order book engines and times every event. Each event is tagged with what it did inside the book, such as creating a price level, growing a hash table or sweeping several levels, so the slowest 0.1% can be explained rather than just measured. All engines are cross-checked by a differential fuzz test, and every run checks that they end the day in identical state.\n\nThe hypothesis was that tail latency comes from memory allocation and data layout, not matching logic. Mostly true, but layout matters far more: swapping the allocator for a pool cuts p99.9 by 37%, while a flat, preallocated layout cuts it by 80%. Hardware counters show why: allocators cost instructions, layout costs cache misses. Beyond 1 in 10,000 events, the tail belongs to the operating system, not the engine.",
@@ -1024,12 +1041,12 @@ const EXTRA_PROJECTS = [
     stats:[{label:"Injectables",val:"OR 9.88"},{label:"Shortage records",val:"1,628"},{label:"Source",val:"openFDA"}],
     desc:"This project assembles a panel of US drug shortages from three openFDA bulk endpoints and asks which product and market characteristics put a drug at risk. The first finding is about the data: the shortage file only records shortages in progress, the NDC directory purges delisted products, and discontinued approvals carry no dates. So the analysis estimates what the snapshot can identify, corrects elapsed durations for length bias (2.55 years against a naive 5.64), and labels what it cannot identify.\n\nSterile injectables carry far higher shortage risk, with an odds ratio of 9.88. Supplier concentration raises risk once market size is controlled for, but that result is flagged as fragile: rebuilt from an alternative size measure it loses significance. The idea that cheap generics add explanatory power is not supported, and the effect of a manufacturer exit is not identified with the data available.",
     chips:["Python","statsmodels","Survival Analysis","openFDA","Panel Data"], github:"https://github.com/ralegionc/Drug-shortage-risk-analysis-from-openFDA" },
-  { tag:"Data / History", title:"The Price Revolution", photo:"photo-1769676391701-bb77f3b95686",
+  { tag:"Data / History", title:"The Price Revolution", video:"assets/price-bg.mp4", photo:"photo-1769676391701-bb77f3b95686",
     blurb:"Did New World silver cause Europe's sixfold grain price rise? The textbook monetarist story, tested region by region from 1450 to 1650.",
     stats:[{label:"Region-years",val:"4,020"},{label:"Granger tests",val:"255"},{label:"Significant",val:"0 of 17 regions"}],
     desc:"Between 1450 and 1650 the price of grain across Europe rose roughly sixfold. The textbook explanation, from Earl Hamilton in 1934, is monetarist: Spanish silver from Potosi and Zacatecas expanded the money supply and prices followed. This project builds the panel needed to test it from Robert Allen's city prices and wages, Maddison population and output, and TePaske mint output: 4,020 region-years across 20 regions, with every price converted to grams of silver first so that debasement cannot pass for inflation.\n\nSilver inflow does not Granger-cause grain prices in any of the 17 testable regions, at any lag from 1 to 15 years. Cross-correlations peak two to four decades late, often with the wrong sign, and implied transmission speeds from Seville vary seventeenfold. Structural breaks found blind in the price series line up with dated historical events instead. The standard causal story is underdetermined by the standard evidence.",
     chips:["Python","Granger Causality","Time Series","Breakpoints","Economic History"], github:"https://github.com/ralegionc/price-revolution" },
-  { tag:"Data / Politics", title:"If Congress Were Chosen by Lottery", photo:"photo-1603565816030-6b389eeb23cb",
+  { tag:"Data / Politics", title:"If Congress Were Chosen by Lottery", video:"assets/sortition-bg.mp4", photo:"photo-1603565816030-6b389eeb23cb",
     blurb:"What would a randomly drawn Congress look like? 5,000 lottery draws of 535 Americans, set against the real thing.",
     stats:[{label:"Draws",val:"5,000"},{label:"Wealth gap",val:"5.2x"},{label:"Class gap",val:"26x"}],
     desc:"The Athenians filled most public offices by lot, and Aristotle gave the reason: election is oligarchic, lottery is democratic. This project tests that with two Monte Carlo studies. The first draws 535 citizens at random 5,000 times, with net worth sampled exactly from the Federal Reserve's 2022 Survey of Consumer Finances percentiles and class background from Nicholas Carnes's research, and compares the result with the actual Congress.\n\nThe median random Congress has a net worth of about $192K against the real $1.0M, and not one of 5,000 draws reached the real median. Working-class members would be about 52% of a random chamber against under 2% today, a 26-fold gap. The second study models modern citizens' assemblies in Ireland, France and the UK, where voluntary participation means stratified selection has to correct for who says yes.",
@@ -1044,17 +1061,17 @@ const EXTRA_PROJECTS = [
     stats:[{label:"Eras",val:"12"},{label:"Chunks indexed",val:"2.39M"},{label:"Subjects linked",val:"67,219"}],
     desc:"One retrieval index per edition of Encyclopaedia Britannica, sealed off from the others, so a question runs against every era independently. Ask what causes cholera and the 1771 volumes answer from miasma and bile, 1860 from contagion and sanitation, 1911 from Vibrio cholerae, and Wikipedia from molecular epidemiology. The output is a row of answers with the differences between them, and an era with no entry on the subject is required to say so.\n\nThe hard part is not retrieval but the sources: the eighteenth-century layers arrive as raw OCR of long-s typography and 195 volumes of undivided text with no article boundaries. The finished pipeline reconstructs 198,323 entries across ten early eras, 36,757 articles from the 1911 edition and 36,227 modern ones, links 67,219 subjects, and indexes 2.39 million chunks in 22 era-locked full-text tables.",
     chips:["Python","RAG","SQLite FTS5","OCR","Entity Linking"], github:"https://github.com/ralegionc/britannica-time-machine" },
-  { tag:"ML / LLMs", title:"Stale RAG", photo:"photo-1566378246598-5b11a0d486cc", q:45,
+  { tag:"ML / LLMs", title:"Stale RAG", video:"assets/stalerag-bg.mp4", photo:"photo-1566378246598-5b11a0d486cc", q:45,
     blurb:"Does retrieval-augmented generation notice when a fact is out of date? Old and new Wikipedia passages, fed to LLM readers.",
     stats:[{label:"Facts",val:"725"},{label:"Scored prompts",val:"41,350"},{label:"Stale answers",val:"40 to 50%"}],
     desc:"Real RAG corpora are full of passages that were true when written and are wrong now. This project builds 725 facts from dated Wikidata statements (heads of government, CEOs, coaches) and pairs each with a stale and a current Wikipedia passage that truly disagree. It then crosses passage order, date stamps and a 'trust the most recent source' instruction across 26 conditions for three Qwen2.5 readers (0.5B, 1.5B and 3B).\n\nOne stale passage overrides what the model knows at every size: given only the stale passage, the models name the current holder 4 to 6% of the time. Which passage wins flips with size, from the first passage at 0.5B and 1.5B to the last at 3B, and the instruction to trust the newest source is read as trust the last one, which hurts the 3B model. A second experiment on a real 158,567-chunk index tests date-aware rerankers, because the fix has to happen in retrieval, not in the prompt.",
     chips:["Python","Hugging Face","RAG","BM25","Dense Retrieval","Wikidata"], github:"https://github.com/ralegionc/stale-rag" },
-  { tag:"Data / Visualization", title:"River Basin Dendrograms", photo:"photo-1448099940878-e0c48ea3a165",
+  { tag:"Data / Visualization", title:"River Basin Dendrograms", video:"assets/riverbasin-bg.mp4", photo:"photo-1448099940878-e0c48ea3a165",
     blurb:"Every stream in a river basin drawn as one tapered line on black. The Amazon alone carries 744,786 reaches.",
     stats:[{label:"Amazon reaches",val:"744,786"},{label:"Bifurcation ratio",val:"4.22"},{label:"Horton fit",val:"R² 0.999"}],
     desc:"Renders a single river basin from HydroSHEDS / HydroRIVERS as a tapered dendrogram: every stream drawn as a line that thickens from headwater to outlet, coloured by the elevation it runs through or by the tributary system it belongs to. At basin scale a drainage network stops looking like a map and starts looking like a nervous system. It also runs on a whole continent, colouring by basin: South America is 15,511 basins and 1.6 million reaches, and nothing in the image is a coastline, only where the rivers stop.\n\nThe network is measurable, not only drawable: Horton's laws hold across all ten of the Amazon's Strahler orders, with a bifurcation ratio of 4.22 at an R² of 0.999. HydroRIVERS carries no names, so tributaries are named automatically against Natural Earth, and output can be sized for print at a chosen paper size and resolution.",
     chips:["Python","HydroSHEDS","Geospatial","Matplotlib","Hydrology"], github:"https://github.com/ralegionc/river-basin-dendrograms" },
-  { tag:"Data / Science", title:"Zombie Citations", photo:"photo-1709924168698-620ea32c3488",
+  { tag:"Data / Science", title:"Zombie Citations", video:"assets/zombie-bg.mp4", photo:"photo-1709924168698-620ea32c3488",
     blurb:"After a paper is retracted, how long do people keep citing it? 5,433 retracted papers against matched papers that never were.",
     stats:[{label:"Retracted papers",val:"5,433"},{label:"Half-life",val:"0.8 years"},{label:"Citations kept",val:"27%"}],
     desc:"This project joins the Retraction Watch database, published openly by Crossref, to OpenAlex citation counts, and compares 5,433 retracted papers with matched papers that were never retracted. Before retraction the two groups are cited at almost the same rate. Then the lines split: a retracted paper's yearly citations fall to half in about 0.8 years, against 3 years for its matches.\n\nBut the decline levels off well above zero. Three to five years after retraction, papers still collect 27% of the citations they would otherwise have had, and medicine keeps the most (34%). That adds up to 208,330 citations since 2013 to papers that were already retracted, and among the 61 most-cited of them only 1.3% of post-retraction citations come from works that mention the retraction. The result holds across 8 analysis variants.",
@@ -1084,12 +1101,12 @@ const EXTRA_PROJECTS = [
     stats:[{label:"Hansard words",val:"983M"},{label:"Span",val:"1800 to 2026"},{label:"Masking fell",val:"28 to 560x"}],
     desc:"In books, a word is taboo when printers would not set it in full: 'be d--d'. Inside fixed idioms, the share of uses printed masked is a taboo index, measured from 1800 to 2018 in Google Books Ngrams. In the House of Commons (Hansard 1919 to 2026, 983 million words), the index is how much likelier the Chair is to step in after a speech that uses the word.\n\nTaboo moved from religion to the body to race, and each wave of masking collapsed, by 28 to 560 times from its peak. 'Damn' was printed masked in 31% of idiomatic uses at its 1834 peak; sexual words peaked in the 20th century; race is not masked but talked around. The ordering holds in all 11 variants of the analysis. In Parliament the Chair polices accusations, not vocabulary: calling someone a hypocrite or a liar draws the Chair far more than swearing does.",
     chips:["Python","Google Ngrams","Hansard","NLP","Time Series"], github:"https://github.com/ralegionc/taboo-timeline" },
-  { tag:"Data / Mathematics", title:"Strata of Mathematics", photo:"photo-1601232193692-28a2a69a2d3f", q:45,
+  { tag:"Data / Mathematics", title:"Strata of Mathematics", photo:"photo-1722182877533-7378b60bf1e8",
     blurb:"Do newer theorems stand on more mathematics? 250 famous theorems traced down to the axioms in Lean's mathlib.",
     stats:[{label:"Library theorems",val:"300,498"},{label:"Year vs depth",val:"ρ = −0.10"},{label:"Real numbers explain",val:"78%"}],
     desc:"Economists call it the burden of knowledge: each new discovery needs more prior knowledge than the last. A formal library lets you count it exactly. Lean's mathlib proves about 300,000 named theorems and every definition can be followed down to the axioms. This project takes the 250 famous theorems that mathlib links to Lean code, dates each one, and measures the longest chain of definitions you must unfold to read its statement.\n\nThe hypothesis fails: across 247 dated theorems the correlation between year and depth is −0.10. What sets depth is whether a statement passes through the real numbers, which sit 22 definitions deep and explain 78% of the variation, against 0.3% for the year. The same split holds in two other libraries. Against the history of the library itself, though, the idea holds: mathlib formalized the shallow theorems first.",
     chips:["Lean 4","mathlib","Python","Graph Analysis","Formal Methods"], github:"https://github.com/ralegionc/strata-of-mathematics" },
-  { tag:"Data / Games", title:"Blunder Thermodynamics", photo:"photo-1509048191080-d2984bad6ae5",
+  { tag:"Data / Games", title:"Blunder Thermodynamics", video:"assets/blunder-bg.mp4", photo:"photo-1509048191080-d2984bad6ae5",
     blurb:"How does a chess player fall apart as the clock runs out? 227,541 engine-analysed games and 14.4 million moves.",
     stats:[{label:"Moves",val:"14.4M"},{label:"Skill gap at 1.5 s",val:"None"},{label:"Blunder ceiling",val:"0.17 to 0.19"}],
     desc:"This project streams a month of the Lichess database straight out of the HTTP response, decompresses it in flight and keeps 227,541 engine-analysed games: 14.4 million moves across four time controls and five rating bands. It then models blunder rate against the clock, adjusted for game phase and position sharpness, with a bootstrap clustered on games.\n\nSkill buys a floor, not a ceiling. With a full clock, a 2200 to 2599 bullet player blunders 38% less often than a 1000 to 1299 player. With a second and a half left, the two are indistinguishable (rate ratio 1.01). Once the clock is effectively gone, every rating band blunders at 0.17 to 0.19. Pressure is set by the seconds left rather than the share of the game they represent, but only above about 1227 Elo; below that, players track the fraction of their clock spent.",
@@ -1124,17 +1141,17 @@ const EXTRA_PROJECTS = [
     stats:[{label:"Modelled on",val:"RFC 6962"},{label:"Proof size",val:"O(log n)"},{label:"Testing",val:"Property-based"}],
     desc:"A normal audit log records events like 'alice granted billing-admin at 14:03', but if someone with database access edits or deletes a past row, a plain log cannot prove it. This service makes rewriting history cryptographically detectable, even by an attacker with full write access to the database, following RFC 6962, the design behind Certificate Transparency.\n\nEvery entry is a leaf in a Merkle tree, with leaves and internal nodes hashed under different prefixes to block second-preimage attacks, and a signed tree head anchors trust. Clients get inclusion proofs ('entry N is really in the log') and consistency proofs ('this log is a strict append-only extension of the one you saw') in O(log n) hashes. Proof generation follows the recursive RFC definitions and verification the iterative algorithms real clients run, so two independent implementations cross-check each other under property testing.",
     chips:["Python","FastAPI","Cryptography","Merkle Trees","Property Testing"], github:"https://github.com/ralegionc/merkle-audit-log" },
-  { tag:"Systems / Rust", title:"minidb", photo:"photo-1695668548342-c0c1ad479aee",
+  { tag:"Systems / Rust", title:"minidb", video:"assets/minidb-bg.mp4", photo:"photo-1695668548342-c0c1ad479aee",
     blurb:"A small analytical database written from scratch in Rust: SQL pipeline, columnar storage, snapshot isolation and a write-ahead log, with no external crates.",
     stats:[{label:"Language",val:"Rust"},{label:"Dependencies",val:"0"},{label:"Checked against",val:"TPC-H oracle"}],
     desc:"A single-node analytical database in Rust. SQL text goes through a hand-written lexer, a recursive-descent and Pratt parser, a binder that resolves names and types, and an optimizer with constant folding, predicate and projection pushdown, and Selinger dynamic programming for join order. A pull-based executor exchanges columnar batches over row groups with zone maps and dictionary, run-length and bit-packed encodings.\n\nTransactions get snapshot isolation through MVCC and durability through a redo write-ahead log. Everything, including the hasher, HyperLogLog, fixed-point decimals and calendar maths, is built on the standard library with no external crates. Correctness is checked by unit and integration tests, sqllogictest, and a TPC-H differential test whose expected answers to Q1 and Q6 are computed independently in Python.",
     chips:["Rust","SQL","MVCC","Query Optimisation","Columnar Storage"], github:"https://github.com/ralegionc/minidb" },
-  { tag:"Bio / Ageing", title:"Mammalian Methylation Clocks", photo:"photo-1570481662006-a3a1374699e8",
+  { tag:"Bio / Ageing", title:"Mammalian Methylation Clocks", video:"assets/methyl-bg.mp4", photo:"photo-1570481662006-a3a1374699e8",
     blurb:"Which mammals age faster than their size predicts? DNA methylation from 126 species, and a sampling artifact that explains most of the answer.",
     stats:[{label:"Species",val:"126"},{label:"Clock accuracy",val:"r = 0.948"},{label:"Outliers left",val:"1 of 126"}],
     desc:"A pan-mammalian DNA methylation ageing analysis on the Mammalian Methylation Consortium release: 126 species, 15 orders, 11,112 arrays. The clocks work: the published universal clock reaches r = 0.948 on 50 bottlenose dolphin samples, and a clock trained from scratch reaches 0.915 while independently rediscovering 7 of the published clock's sites, against about 1 expected by chance.\n\nThe obvious next question, which species age faster or slower than their body size predicts, mostly dissolves. The standard cross-species rate measure is mechanically proportional to one over the spread of sampled ages, and long-lived species are sampled across wider ranges. Fitted directly, the coefficient on sampled age span is −0.96, against −1 for a pure artifact, and that null cannot be rejected. After correction only 1 of 126 species remains a defensible outlier, and the naked mole rat's residual reverses sign.",
     chips:["Python","Epigenetics","Regression","Multiple Testing","Comparative Biology"], github:"https://github.com/ralegionc/Metabolism_Rate" },
-  { tag:"Security / AI Agents", title:"Taintflow", photo:"photo-1716274644458-d30c57acdeb4",
+  { tag:"Security / AI Agents", title:"Taintflow", video:"assets/taintflow-bg.mp4", photo:"photo-1716274644458-d30c57acdeb4",
     blurb:"Finds the paths along which an AI agent could leak private data or obey injected instructions, before it runs and while it runs.",
     stats:[{label:"Labels",val:"untrusted, private, secret"},{label:"First rule",val:"Lethal trifecta"},{label:"Modes",val:"Static + runtime"}],
     desc:"The failure that keeps happening in production AI agents is not a model being dumb but a dataflow problem: the agent has access to private data, reads content someone else wrote, and can send messages outward, so an instruction hidden in that content has everything it needs. Simon Willison called this the lethal trifecta. Taintflow is a static analyzer for that class of bug.\n\nIt reads a declarative workflow, propagates three labels (untrusted, private, secret) across every step, and reports each place where a dangerous combination reaches a step that can act: send, write, pay, execute or fetch. Every finding carries the path the label took and a concrete fix, and the same checks run again at runtime when the agent improvises. A prompt-injection exfiltration path passes every functional test, because nothing attacks it on a sunny day, but it is a property of the graph, and the graph is exactly what a static analyzer can read.",
@@ -1144,7 +1161,7 @@ const EXTRA_PROJECTS = [
     stats:[{label:"Specimens",val:"59"},{label:"Clades",val:"15"},{label:"Span",val:"2015 to 2026"}],
     desc:"Software ecosystems behave like ecosystems: technologies radiate into empty niches, compete, go extinct, and some survive as living fossils. This project measures that story instead of telling it, tracking 59 technologies across 15 clades in the JavaScript and Python ecosystems year by year from real registry data, with extinction dated from a package's last release rather than from opinion.\n\nThe output is a self-contained interactive visualisation, one HTML file with no server or CDN, where time runs downward like sediment, each vein's width is that year's popularity, and extinct species are sealed with a dagger. Living fossils fall out of the data: jQuery, born 2006, has its peak download year in 2026, two decades after the arguments about it ended. Normalising npm and PyPI download conventions onto one axis is most of the work.",
     chips:["Python","npm","PyPI","Data Visualisation","Time Series"], github:"https://github.com/ralegionc/software-fossil-record" },
-  { tag:"Security", title:"SIEM Detection Lab", photo:"photo-1526374965328-7f61d4dc18c5",
+  { tag:"Security", title:"SIEM Detection Lab", video:"assets/siem-bg.mp4", photo:"photo-1526374965328-7f61d4dc18c5",
     blurb:"Generates labelled attack telemetry, runs Sigma-style rules over it, and scores every rule on precision, coverage and time to detect.",
     stats:[{label:"Events",val:"4,652"},{label:"Incidents caught",val:"8 of 8"},{label:"Overall precision",val:"4%"}],
     desc:"A self-contained detection-engineering playground. It generates labelled, multi-stage attack telemetry, runs Sigma-compatible detection rules over it, and scores those rules honestly: per-rule precision, MITRE ATT&CK technique recall, and the number that matters, incident detection with mean time to detect and the attack stage at which each incident was caught.\n\nThe point is to practise the loop a detection engineer lives in: write a rule, measure how much real attack it catches, measure how much analyst time it wastes, tighten it. Because the telemetry carries ground truth, every alert is scored automatically. The sample run makes the trade-off visible: all 8 incidents are detected, but one deliberately broad rule raises 848 false alerts, dragging overall precision to 4%, and only half the incidents are caught before lateral movement. Pure Python standard library, no dependencies.",
@@ -1703,8 +1720,8 @@ if (document.readyState === 'complete') {
      still the fallback whenever this driver does not run. */
   const SPEC = {
     normal: {
-      bg:      { o: [0.495, 0.66], s: [1.04, 1.00] },
-      overlay: { o: [0.30,  0.26] },
+      bg:      { o: [0.73,  0.85], s: [1.04, 1.00] },
+      overlay: { o: [0.60,  0.45] },
       canvas:  { o: [0,     1   ] },
       wash:    { o: [0,     1   ] },
       tag:     { o: [0,     1   ], y: [-4, 0] },
@@ -1713,8 +1730,8 @@ if (document.readyState === 'complete') {
       bar:     { w: [0,   100  ] }
     },
     hero: {
-      bg:      { o: [0.33, 0.242], s: [1.04, 1.00] },
-      overlay: { o: [0.40, 0.35 ] },
+      bg:      { o: [0.45, 0.35 ], s: [1.04, 1.00] },
+      overlay: { o: [0.22, 0.18 ] },
       canvas:  { o: [0.50, 0.70 ] }
     }
   };
