@@ -82,13 +82,13 @@
   .tile:last-child { border-right:none; }
 
   /* static fallback bg */
-  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.73; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
-  .tile:not(.vid-playing):hover .tile-bg { opacity:0.85; transform:scale(1); }
+  .tile-bg { position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:0.88; transform:scale(1.04); transition:opacity 0.55s ease,transform 0.55s ease; }
+  .tile:not(.vid-playing):hover .tile-bg { opacity:1; transform:scale(1); }
 
   /* canvas animation layer - hidden at rest, shown on hover only */
   .tile-canvas { position:absolute; inset:0; z-index:1; width:100%; height:100%; opacity:0; transition:opacity 0.4s ease; pointer-events:none; }
   .tile:hover .tile-canvas { opacity:1; }
-  .tile:hover .tile-bg { opacity:0.85; transform:scale(1); }
+  .tile:hover .tile-bg { opacity:1; transform:scale(1); }
   /* hero canvas always faintly visible */
   .tile--hero .tile-canvas { opacity:0.5; }
   .tile--hero:hover .tile-canvas { opacity:0.7; }
@@ -97,15 +97,12 @@
   .tile:hover .tile-overlay { opacity:0.26; }
   /* Project tiles darken only toward the bottom, where the title sits, so
      the photo can run brighter without the type losing contrast. */
-  .tile--sm .tile-overlay { background:linear-gradient(to top, var(--bg) 0%, rgba(14,14,14,0.3) 45%, rgba(14,14,14,0) 100%); opacity:0.6; }
-  .tile--sm:hover .tile-overlay { opacity:0.45; }
+  .tile--sm .tile-overlay { background:linear-gradient(to top, var(--bg) 0%, rgba(14,14,14,0.3) 45%, rgba(14,14,14,0) 100%); opacity:0.4; }
+  .tile--sm:hover .tile-overlay { opacity:0.3; }
 
-  /* Cinematic finish: a vignette that darkens each project tile toward its
-     edges, and a fine film grain over the photo, so fifty stock images feel
-     more like one shoot. Both keep the photos' own colour. Remove the
-     cinematic class from .grid to switch them off. */
-  .cinematic .tile--sm::before { content:''; position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at 50% 45%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.4) 100%); transition:opacity 0.5s ease; }
-  .cinematic .tile--sm:hover::before { opacity:0.6; }
+  /* Cinematic finish: a fine film grain over each project photo, so fifty
+     stock images feel more like one shoot without changing their colour.
+     Remove the cinematic class from .grid to switch it off. */
   .cinematic .tile--sm::after { content:''; position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0.136; mix-blend-mode:overlay; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
 
   .tile-wash { position:absolute; inset:0; z-index:3; background:rgba(255,255,255,0.04); opacity:0; transition:opacity 0.35s; }
@@ -147,8 +144,8 @@
 
   /* HERO */
   .tile--hero { grid-column:1; grid-row:1/3; border-right:1px solid var(--border); border-bottom:none; }
-  .tile--hero .tile-bg { opacity:0.45; }
-  .tile--hero:hover .tile-bg { opacity:0.35; }
+  .tile--hero .tile-bg { opacity:0.6; }
+  .tile--hero:hover .tile-bg { opacity:0.5; }
   .tile--hero .tile-overlay { opacity:0.22; }
   .tile--hero:hover .tile-overlay { opacity:0.18; }
   .tile--hero .tile-inner { padding:40px 44px; justify-content:flex-end; }
@@ -655,12 +652,12 @@
     .tile:hover .tile-bg,
     .tile--hero .tile-bg,
     .tile--hero:hover .tile-bg,
-    .tile:not(.vid-playing):hover .tile-bg { opacity:0.73 !important; transform:scale(1) !important; }
+    .tile:not(.vid-playing):hover .tile-bg { opacity:0.88 !important; transform:scale(1) !important; }
     .tile--hero .tile-bg,
-    .tile--hero:hover .tile-bg { opacity:0.45 !important; }
+    .tile--hero:hover .tile-bg { opacity:0.6 !important; }
     /* reduce overlay so bg image shows through */
     .tile-overlay,
-    .tile:hover .tile-overlay { opacity:0.6 !important; }
+    .tile:hover .tile-overlay { opacity:0.4 !important; }
     .tile--hero .tile-overlay,
     .tile--hero:hover .tile-overlay { opacity:0.22 !important; }
     /* hide canvas on mobile - no hover animations */
@@ -818,7 +815,7 @@
 
   <!-- HERO - WebGL Darcy flow solver -->
   <div class="tile tile--hero">
-    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.45;"></div>
+    <div class="tile-bg" style="background-image:url('https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=1200&q=80');opacity:0.6;"></div>
     <div class="tile-overlay" style="opacity:0.22;transition:opacity 0.45s ease;"></div>
     <div class="tile-pattern"></div>
     <div class="tile-wash"></div>
@@ -1720,8 +1717,8 @@ if (document.readyState === 'complete') {
      still the fallback whenever this driver does not run. */
   const SPEC = {
     normal: {
-      bg:      { o: [0.73,  0.85], s: [1.04, 1.00] },
-      overlay: { o: [0.60,  0.45] },
+      bg:      { o: [0.88,  1.00], s: [1.04, 1.00] },
+      overlay: { o: [0.40,  0.30] },
       canvas:  { o: [0,     1   ] },
       wash:    { o: [0,     1   ] },
       tag:     { o: [0,     1   ], y: [-4, 0] },
@@ -1730,7 +1727,7 @@ if (document.readyState === 'complete') {
       bar:     { w: [0,   100  ] }
     },
     hero: {
-      bg:      { o: [0.45, 0.35 ], s: [1.04, 1.00] },
+      bg:      { o: [0.60, 0.50 ], s: [1.04, 1.00] },
       overlay: { o: [0.22, 0.18 ] },
       canvas:  { o: [0.50, 0.70 ] }
     }
