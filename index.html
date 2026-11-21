@@ -484,8 +484,8 @@
   .tile.active { box-shadow:inset 0 0 0 1.5px var(--accent); }
 
   /* ══ PROJECT TICKER ══
-     The projects run in two rows of three, and every few seconds both rows
-     slide along by one tile together, like a headline ticker. The hero
+     The projects run in two rows of three that drift left continuously,
+     like a headline ticker, and ease to a stop under the pointer. The hero
      never moves. */
   @media (min-width:769px) {
     .grid-projects { grid-column:2/5; grid-row:1/3; display:flex; flex-direction:column; min-height:0; }
@@ -1224,8 +1224,8 @@ const EXTRA_PROJECTS = [
     tracks[i % 2].appendChild(t);
   });
 
-  const TICK = 4000;            /* ms the tiles stay put */
-  const SLIDE = 800;            /* ms one slide takes */
+  const SPEED = 40;              /* px per second the rows drift left */
+  const EASE = 5;               /* how quickly they slow down or pick up, per second */
   const narrow = window.matchMedia ? window.matchMedia('(max-width:768px)') : { matches: false };
   const reduced = window.matchMedia
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1233,33 +1233,41 @@ const EXTRA_PROJECTS = [
   if (reduced) return;
   let hovering = false;
 
-  /* One tile along. The row slides left and the tile that left the frame
-     goes to the back, so the rows never run out. */
-  function slide(track) {
-    const step = track.firstElementChild.getBoundingClientRect().width;
-    track.style.transition = 'transform ' + SLIDE + 'ms cubic-bezier(0.65,0,0.35,1)';
-    track.style.transform = 'translateX(' + (-step) + 'px)';
-    setTimeout(() => {
-      track.style.transition = 'none';
-      track.appendChild(track.firstElementChild);
-      track.style.transform = '';
-    }, SLIDE);
-  }
-
-  /* Holds still under the pointer, so a tile never slides away from
+  /* Holds still under the pointer, so a tile never drifts away from
      someone about to click it, and while a panel is open over the grid. */
   host.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') hovering = true; });
   host.addEventListener('pointerleave', () => { hovering = false; });
 
-  function tick() {
-    if (!hovering && !narrow.matches && !document.hidden
-        && !document.querySelector('.modal.open, #all-projects.open')) tracks.forEach(slide);
+  /* Both rows drift left continuously. When a tile has fully left the frame
+     it moves to the back of its row and the offset gives its width back, so
+     the rows never run out and never jump. Speed eases toward zero on a
+     pause and back up after it rather than stopping dead. */
+  const offset = [0, 0];
+  let v = 0, prev = 0;
+  function frame(now) {
+    const dt = prev ? Math.min(0.1, (now - prev) / 1000) : 0;
+    prev = now;
+    const hold = hovering || narrow.matches || document.hidden
+      || document.querySelector('.modal.open, #all-projects.open');
+    v += ((hold ? 0 : SPEED) - v) * Math.min(1, dt * EASE);
+    tracks.forEach((track, r) => {
+      if (narrow.matches) { track.style.transform = ''; return; }
+      offset[r] += v * dt;
+      const first = track.firstElementChild;
+      const w = first.getBoundingClientRect().width;
+      if (w > 0 && offset[r] >= w) {
+        offset[r] -= w;
+        track.appendChild(first);
+      }
+      track.style.transform = 'translate3d(' + (-offset[r]).toFixed(2) + 'px,0,0)';
+    });
+    requestAnimationFrame(frame);
   }
 
   /* Start once the tiles have made their entrance, not during the intro,
-     or the page would open on an already shuffled grid. */
+     or the page would open on rows already on the move. */
   const lead = tiles[0];
-  const start = () => setInterval(tick, TICK + SLIDE);
+  const start = () => requestAnimationFrame(frame);
   if (lead.classList.contains('entered')) start();
   else new MutationObserver((m, o) => {
     if (!lead.classList.contains('entered')) return;
