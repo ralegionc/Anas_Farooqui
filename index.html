@@ -775,12 +775,28 @@
   }
 </style>
 <!-- Google Analytics 4 -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-3ZKH77NY9E"></script>
 <script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-3ZKH77NY9E');
+  /* Owner opt-out, so my own visits stay out of the numbers. Opening the
+     site once with ?notrack remembers it in this browser; ?track turns
+     counting back on. An opted-out browser never loads the tag at all. */
+  (function () {
+    var ID = 'G-3ZKH77NY9E', KEY = 'af-notrack', off = false;
+    try {
+      var q = new URLSearchParams(location.search);
+      if (q.has('notrack')) localStorage.setItem(KEY, '1');
+      if (q.has('track')) localStorage.removeItem(KEY);
+      off = localStorage.getItem(KEY) === '1';
+    } catch (e) {}
+    if (off) { window['ga-disable-' + ID] = true; return; }
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', ID);
+  })();
 </script>
 <!-- End Google Analytics 4 -->
 </head>
